@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.api.repository.ReportRepository">
+
+<resultMap id="deliveryList" type="com.api.model.report.Report"> 
+	<result property="conNumber" column="connumber"/> 
+	<result property="deliveryDate" column="deliverydate"/> 
+	<result property="deliveryState" column="deliverystate"/> 
+	<result property="customerName" column="customername"/>
+	<result property="productName" column="productname"/>
+	<result property="sequence" column="sequence"/>
+</resultMap>
+<select id="getDeliveryList" resultMap="deliveryList"  parameterType = "Report">
+<![CDATA[
+select a.connumber, a.deliverydate, if(deliverystate < 0, concat('배송대기(',deliverystate,')'), if(deliverystate = 0, '배송대기(오늘)', concat('미배송(+',deliverystate,')'))) as deliverystate,
+       b.customername, c.productname,
+       concat((select count(*) from deliverydetail z where z.connumber = a.connumber and z.deliverydate <= a.deliverydate and z.deliverynumber <= a.deliverynumber and z.deliverystate != 'CANCEL'),
+               '/',
+              (select count(*) from deliverydetail z where z.connumber = a.connumber and z.deliverystate != 'CANCEL')) as sequence
+from  (select a.connumber, a.deliverynumber, a.deliverydate, datediff(curdate(), str_to_date(a.deliverydate,'%Y%m%d')) as deliverystate, a.customernumber
+       from   deliverydetail a
+       where  a.providernumber = #{providerNumber}
+       and    a.deliverystate = 'BEFORE'
+       order by a.providernumber, a.deliverystate, a.deliverydate
+       limit 5) a, customer b, contractproduct c
+where  a.customernumber = b.customernumber
+and    a.connumber = c.connumber
+order by a.deliverydate, b.customername
+]]>
+</select>
+
+<resultMap id="contractCount" type="com.api.model.report.Report"> 
+	<result property="customerCount" column="customercount"/> 
+	<result property="contractCount" column="contractcount"/> 
+	<result property="newContractCount" column="newcontractcount"/>
+	<result property="unsettledContractCount" column="unsettledcontractcount"/>
+</resultMap>
+<select id="getContractCount" resultMap="contractCount"  parameterType = "Report">
+select customercount, contractcount, newcontractcount, unsettledcontractcount
+from  (select count(*) as customercount, nvl(sum(contractcount),0) as contractcount
+       from  (select a.customernumber, count(*) as contractcount
+              from   contract a
+              where  a.providernumber = #{providerNumber}
+              and    a.contractstate != 'UNSETTLED'
+              group by a.customernumber) a) a,
+      (select nvl(count(*),0) as newcontractcount
+       from   contract a
+       where  a.providernumber = #{providerNumber}
+       and    a.registrationdatetime like concat(date_format(curdate(),'%Y%m%d'),'%')
+       and    a.contractstate = 'ACTIVATION') b,
+      (select count(*) as unsettledcontractcount
+       from  (select b.invoicenumber, 
+                    (select substr(max(concat(c.paymentdatetime, c.paymenttypecode)),15) from paymenthistory c 
+		             where c.providernumber = b.providernumber and c.invoicenumber = b.invoicenumber and c.connumber = b.connumber) as paymentinfo
+              from   contract a, invoice b
+              where  a.providernumber = #{providerNumber}
+              and    a.contractstate = 'ACTIVATION'
+              and    a.connumber = b.connumber
+              and    b.invoicedate between date_format(adddate(adddate(curdate(), interval -1 month), interval 1 day),'%Y%m%d') and date_format(curdate(),'%Y%m%d')
+              and    b.collectioncloseyn = 'N') a
+       where  a.paymentinfo is null
+       or     a.paymentinfo != 'REFUND') c
+</select>
+
+<resultMap id="productList" type="com.api.model.report.Report"> 
+	<result property="productName" column="productname"/> 
+	<result property="contractCount" column="contractcount"/> 
+</resultMap>
+<select id="getProductList" resultMap="productList" parameterType="Report">
+select b.productname, sum(b.quantity) as contractcount
+from   contract a, contractproduct b
+where  a.providernumber = #{providerNumber}
+and    a.registrationdatetime between concat(date_format(date_add(curdate(), interval -30 day),'%Y%m%d'),'000000') and concat(date_format(curdate(), '%Y%m%d'),'235959')
+and    a.contractstate != 'UNSETTLED'
+and    a.connumber = b.connumber
+group by b.productid, b.productname
+order by sum(b.quantity) desc
+limit 5
+</select>
+
+<resultMap id="weekContractCount" type="com.api.model.report.Report"> 
+	<result property="week" column="week"/> 
+	<result property="contractCount" column="contractcount"/> 
+</resultMap>
+<select id="getWeekContractCount" resultMap="weekContractCount"  parameterType = "Report">
+select a.week, nvl(round(b.contractcount),0) as contractcount
+from  (select rownum, 
+              case rownum when 0 then '월'
+	                      when 1 then '화'
+	                      when 2 then '수'
+	                      when 3 then '목'
+       		              when 4 then '금'
+      		              when 5 then '토'
+                          when 6 then '일'
+                          when 7 then '월' end as week
+       from  (select @rownum := @rownum +1 as rownum
+              from   codegroup a, (select @rownum := -1) b
+              limit  7) a) a left outer join 
+		     (select weekday(registrationdatetime) as registrationdatetime, sum(contractcount)/count(*) as contractcount
+              from  (select str_to_date(substr(a.registrationdatetime,1,8),'%Y%m%d') as registrationdatetime, count(*) as contractcount
+                     from   contract a
+                     where  a.providernumber = #{providerNumber}
+                     and    a.contractstate != 'UNSETTLED'
+                     group by str_to_date(substr(a.registrationdatetime,1,8),'%Y%m%d')) a
+              group by weekday(registrationdatetime)) b on (a.rownum = b.registrationdatetime)
+</select>
+
+<resultMap id="monthlyAmount" type="com.api.model.report.Report"> 
+	<result property="invoiceDate" column="invoicedate"/> 
+	<result property="invoiceAmount" column="invoiceamount"/> 
+</resultMap>
+<select id="getMonthlyAmount" resultMap="monthlyAmount"  parameterType = "Report">
+select a.invoicedate, nvl(invoiceamount,0) as invoiceamount
+from  (select substr(date_format(adddate(curdate(),interval -rownum month),'%Y%m%d'),1,6) as invoicedate
+       from  (select @rownum := @rownum +1 as rownum
+              from   codegroup a, (select @rownum := -1) b
+              limit  6) a) a left outer join 
+       (select substr(a.invoicedate,1,6) as invoicedate, sum(invoiceamount) as invoiceamount
+        from   invoice a
+        where  a.providernumber = #{providerNumber}
+        and    a.invoicedate between concat(substr(date_format(adddate(curdate(), interval -5 month),'%Y%m%d'),1,6),'01') and date_format(curdate(),'%Y%m%d')
+        and    a.collectioncloseyn = 'Y'
+        group by substr(a.invoicedate,1,6)) b on (a.invoicedate = b.invoicedate)
+order by if(a.invoicedate=date_format(curdate(),'%Y%m'),0,1), a.invoicedate
+</select>
+
+<resultMap id="monthlyAmountList" type="com.api.model.report.Report"> 
+	<result property="invoiceDate" column="invoicedate"/> 
+	<result property="invoiceAmount" column="invoiceamount"/> 
+	<result property="contractCount" column="contractcount"/> 
+</resultMap>
+<select id="getMonthlyAmountList" resultMap="monthlyAmountList"  parameterType = "Report">
+select a.invoicedate, nvl(b.invoiceamount,0) as invoiceamount, nvl(b.contractcount,0) as contractcount
+from  (select substr(date_format(adddate(curdate(),interval -rownum month),'%Y%m%d'),1,6) as invoicedate
+       from  (select @rownum := @rownum +1 as rownum
+              from   codegroup a, (select @rownum := -1) b
+              limit  12)a ) a left outer join 
+      (select substr(a.invoicedate,1,6) as invoicedate, sum(a.invoiceamount) as invoiceamount, count(*) as contractcount
+       from   invoice a
+       where  a.providernumber = #{providerNumber}
+       and    a.invoicedate between concat(substr(date_format(adddate(curdate(), interval -6 month),'%Y%m%d'),1,6),'01') and date_format(curdate(),'%Y%m%d')
+       and    a.collectioncloseyn = 'Y'
+       group by substr(a.invoicedate,1,6)) b on (a.invoicedate = b.invoicedate)
+order by a.invoicedate
+</select>
+</mapper> 

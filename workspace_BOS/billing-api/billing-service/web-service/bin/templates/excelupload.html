@@ -1,0 +1,29 @@
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.7.7/xlsx.core.min.js"></script>  
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/xls/0.7.4-a/xls.core.min.js"></script>
+<input type="file" id="excelfile" />  
+   <input type="button" id="viewfile" value="Export To Table" onclick="ExportToTable('excelfile','exceltable')" />  
+      <br />  
+      <br />  
+   <table class="table table-striped" id="exceltable">  
+</table>
+<input type="button" value="alert" id="test" onclick="alertModal()" />
+<input type="button" value="confirm" id="test" onclick="confirmModal()" />
+
+<script  type="text/javascript">
+function alertModal(){
+	Common.Dialog.alert({
+		title:'계약해지'
+        , content: '계약 해지 되었습니다.'
+    });    
+};
+
+function confirmModal(){
+	Common.Dialog.confirm({
+		title:'계약해지'
+        , content: '계약 해지 하시겠습니다?'
+        ,ok: function(){
+
+        }
+    });    
+};
+</script>

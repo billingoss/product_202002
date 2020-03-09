@@ -1,0 +1,634 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.api.repository.ContractListRepository">
+
+<resultMap id="contractList" type="com.api.model.contract.ContractList"> 
+	<result property="channelId" column="channelid"/> 
+	<result property="channelName" column="channelname"/> 
+	<result property="conNumber" column="connumber"/>
+	<result property="recurringDeliveryYn" column="recurringdeliveryyn"/>
+	<result property="recurringInvoiceYn" column="recurringinvoiceyn"/>
+	<result property="contractState" column="contractstate"/>
+	<result property="contractStateName" column="contractstatename"/>
+	<result property="registrationDateTime" column="registrationdatetime"/>
+	<result property="deliveryAddressId" column="deliveryaddressid"/>
+	<result property="productName" column="productname"/>
+	<result property="customerName" column="customername"/>
+	<result property="phoneNumber" column="phonenumber"/>
+	<result property="quantity" column="quantity"/>
+	<result property="remark" column="remark"/>
+	<result property="auditDateTime" column="auditdatetime"/>
+	<result property="employeeName" column="employeename"/>
+	<result property="customerRemark" column="customerremark"/>
+	<result property="totalCount" column="totalcount"/>
+	<result property="productCount" column="productcount"/>
+</resultMap>
+<select id="getContractList" resultMap="contractList"  parameterType = "ContractList">
+select a.channelid, (select codename from codegroupdetail z where z.codegroupid = 'CHANNEL' and z.code = a.channelid) as channelname,
+       a.connumber, a.recurringdeliveryyn, a.recurringinvoiceyn, 
+       a.contractstate, (select codename from codegroupdetail z where z.codegroupid = 'CONTRACTSTATE' and z.code = a.contractstate) as contractstatename,
+       substr(a.registrationdatetime,1,8) as registrationDateTime, a.remark, a.customerremark,
+       concat(a.productname,if(a.productcount>1,concat(' 외 ',(a.productcount-1),'건'),'')) as productname, a.quantity, a.productcount,
+       a.customername, a.phonenumber,
+       date_format(a.auditdatetime,'%Y%m%d%H%i') as auditdatetime, totalcount, 
+       nvl((select f.employeename from login e, employee f where e.loginid = a.auditid and e.employeenumber = f.employeenumber),a.auditid) as employeename
+from  (select a.channelid, a.connumber, a.recurringdeliveryyn, a.recurringinvoiceyn, 
+              a.contractstate, a.registrationdatetime, a.remark, a.auditdatetime,
+              a.customername, a.phonenumber, a.totalcount, a.auditid, a.customerremark,
+              b.productname, b.quantity,
+              rank() over(partition by a.connumber order by a.connumber, b.productid) as productno,
+              sum(1) over(partition by a.connumber) as productcount
+       from  (select a.channelid, a.connumber, a.recurringdeliveryyn, a.recurringinvoiceyn, 
+                     a.contractstate, a.registrationdatetime, a.remark, a.auditdatetime, a.auditid, a.customerremark, 
+                     b.customername, b.phonenumber, sum(1) over() as totalcount
+              from   contract a, customer b
+              where  a.providernumber = #{providerNumber}
+<if test='!"".equals(recurringDeliveryYn)'>
+              and    a.recurringdeliveryyn = #{recurringDeliveryYn}
+</if>
+<if test='!"".equals(recurringInvoiceYn)'>
+              and    a.recurringinvoiceyn = #{recurringInvoiceYn}
+</if>
+<if test='"ACTIVATION".equals(contractState) or "UNSETTLED".equals(contractState)'>
+              and    a.contractstate = #{contractState}
+</if>
+<if test='!("ACTIVATION".equals(contractState) or "UNSETTLED".equals(contractState))'>
+              and    a.contractstate not in ('ACTIVATION','UNSETTLED')
+</if>
+              and    a.registrationdatetime between concat(#{startDate},'000000') and concat(#{endDate},'235959')
+              and    a.customernumber = b.customernumber
+<if test='!"".equals(customerName)'>
+              and    b.customername like concat('%',#{customerName},'%')
+</if>
+<if test='!"".equals(phoneNumber)'>
+              and    b.phonenumber like concat('%',#{phoneNumber},'%')
+</if>
+<if test='!"".equals(productName)'>
+              and    exists (select 'x' from contractproduct c
+                             where  c.connumber = a.connumber
+                             and    c.productname like concat('%',#{productName},'%'))
+</if>
+              order by a.registrationdatetime desc, a.channelid, b.customername, a.connumber
+<if test='"Y".equals(pagingYn)'>
+              limit #{pageStart}, #{perPageNum}
+</if>
+		      ) a, contractproduct b
+       where  a.connumber = b.connumber) a
+where  a.productno = 1
+order by a.registrationdatetime desc, a.channelid, a.customername, a.connumber
+</select>
+
+<update id="updateContractTermination">
+update contract a set a.contractstate  = #{contractState}, a.effectenddatetime = date_format(curdate(),'%Y%m%d'), a.auditid = #{auditId}, a.auditdatetime = now()
+where  a.connumber = #{conNumber}
+</update>
+
+<update id="updateContractSuspend">
+update contract a set a.contractstate = #{contractState}, a.suspenddatetime = if(#{contractState}='SUSPEND',date_format(curdate(),'%Y%m%s'),''), a.auditid = #{auditId}, a.auditdatetime = now()
+where  a.connumber = #{conNumber}
+</update>
+
+<resultMap id="contract" type="com.api.model.contract.ContractList"> 
+	<result property="channelId" column="channelid"/> 
+	<result property="channelName" column="channelname"/> 
+	<result property="conNumber" column="connumber"/>
+	<result property="recurringDeliveryYn" column="recurringdeliveryyn"/>
+	<result property="recurringInvoiceYn" column="recurringinvoiceyn"/>
+	<result property="contractState" column="contractstate"/>
+	<result property="contractStateName" column="contractstatename"/>
+	<result property="registrationDateTime" column="registrationdatetime"/>
+	<result property="duration" column="duration"/>
+	<result property="paymentDay" column="paymentday"/>
+	<result property="deliveryCycle" column="deliverycycle"/>
+	<result property="deliveryCycleName" column="deliverycyclename"/>
+	<result property="deliveryDay" column="deliveryday"/>
+	<result property="deliveryStartDateTime" column="deliverystartdatetime"/>
+	<result property="deliveryTimes" column="deliverytimes"/>
+	<result property="deliveryRemark" column="deliveryremark"/>
+	<result property="productName" column="productname"/>
+	<result property="customerName" column="customername"/>
+	<result property="phoneNumber" column="phonenumber"/>
+	<result property="zipCode" column="zipcode"/>
+	<result property="baseAddress" column="baseaddress"/>
+	<result property="detailAddress" column="detailaddress"/>
+	<result property="quantity" column="quantity"/>
+	<result property="remark" column="remark"/>
+	<result property="productYn" column="productyn"/>
+	<result property="customerRemark" column="customerremark"/>
+	<result property="additionValue" column="additionvalue"/>
+</resultMap>
+<select id="getContract" resultMap="contract"  parameterType = "ContractList">
+select a.channelid, (select codename from codegroupdetail z where z.codegroupid = 'CHANNEL' and z.code = a.channelid) as channelname,
+       a.connumber, a.recurringdeliveryyn, a.recurringinvoiceyn, 
+       a.contractstate, (select codename from codegroupdetail z where z.codegroupid = 'CONTRACTSTATE' and z.code = a.contractstate) as contractstatename,
+       a.registrationdatetime, a.duration, nvl(a.paymentday,'') as paymentday, 
+       a.deliverycycle, nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYCYCLE' and z.code = a.deliverycycle),'') as deliverycyclename,
+       a.deliveryday, a.deliverystartdatetime, a.deliverytimes,
+       a.deliveryremark, a.remark, a.customerremark,
+       concat(b.productname,if(count(*)>1,concat(' 외 ',(count(*)-1),'건'),'')) as productname, b.quantity,
+       c.customername, c.phonenumber,
+       d.zipcode, d.baseaddress, d.detailaddress,
+       if (count(*)>1,'Y','N') as productyn,
+      (select if(count(*)>1,'Y','N') from providerinformation e where e.providernumber = a.providernumber and e.code = 'CONTRACTADDITION' and e.detailcode = a.channelid) as additionValue
+from   contract a, contractproduct b, customer c, address d
+where  a.connumber = #{conNumber}
+and    a.connumber = b.connumber
+and    a.customernumber = c.customernumber
+and    a.deliveryaddressid = d.addressid
+order by b.productid
+limit 1
+</select>
+
+<resultMap id="contractProduct" type="com.api.model.contract.ContractList"> 
+	<result property="productId" column="productid"/> 
+	<result property="productName" column="productname"/> 
+	<result property="quantity" column="quantity"/>
+	<result property="priceAmount" column="priceamount"/>
+</resultMap>
+<select id="getContractProduct" resultMap="contractProduct"  parameterType = "ContractList">
+select a.productid, a.productname, a.quantity, b.priceamount
+from   contractproduct a, product b
+where  a.connumber = #{conNumber}
+and    a.productid = b.productid
+order by a.productname
+</select>
+
+<resultMap id="contractDeliveryList" type="com.api.model.contract.ContractList"> 
+	<result property="recurringDeliveryYn" column="recurringdeliveryyn"/>
+	<result property="deliveryType" column="deliverytype"/>
+	<result property="deliveryTypeName" column="deliverytypename"/>
+	<result property="contractState" column="contractstate"/>
+	<result property="contractStateName" column="contractstatename"/>
+	<result property="deliveryNumber" column="deliverynumber"/>
+	<result property="deliveryCompany" column="deliverycompany"/>
+	<result property="deliveryCompanyName" column="deliverycompanyname"/>
+	<result property="deliveryState" column="deliverystate"/> 
+	<result property="deliveryStateName" column="deliverystatename"/> 
+	<result property="deliveryDate" column="deliverydate"/> 
+	<result property="customerName" column="customername"/>
+	<result property="phoneNumber" column="phonenumber"/>
+	<result property="zipCode" column="zipcode"/>
+	<result property="baseAddress" column="baseaddress"/>
+	<result property="detailAddress" column="detailaddress"/>
+	<result property="totalCount" column="totalcount"/>
+	<result property="auditDateTime" column="auditdatetime"/>
+	<result property="employeeName" column="employeename"/>
+</resultMap>
+<select id="getContractDeliveryList" resultMap="contractDeliveryList"  parameterType = "ContractList">
+select a.recurringdeliveryyn, 
+       a.deliverytype, (select codename from codegroupdetail z where z.codegroupid = 'DELIVERYTYPE' and z.code = a.deliverytype) as deliverytypename,
+       a.contractstate, (select codename from codegroupdetail z where z.codegroupid = 'CONTRACTSTATE' and z.code = a.contractstate) as contractstatename,
+       b.deliverynumber,
+       b.deliverycompany, (select codename from codegroupdetail z where z.codegroupid = 'DELIVERYCOMPANY' and z.code = b.deliverycompany) as deliverycompanyname,
+       b.deliverystate, (select codename from codegroupdetail z where z.codegroupid = 'DELIVERYSTATE' and z.code = b.deliverystate) as deliverystatename,
+       b.deliverydate, date_format(b.auditdatetime,'%Y%m%d%H%i') as auditdatetime,
+       c.customername, c.phonenumber, 
+       d.zipcode, d.baseaddress, d.detailaddress,
+       nvl((select f.employeename from login e, employee f where e.loginid = b.auditid and e.employeenumber = f.employeenumber),b.auditid) as employeename,
+       sum(1) over() as totalcount
+from   contract a, deliverydetail b, customer c, address d
+where  a.connumber = #{conNumber}
+and    a.connumber = b.connumber
+and    b.customernumber = c.customernumber
+and    b.deliveryaddressid = d.addressid
+<if test='!"D".equals(sortingFlag)'>
+order by b.deliverydate, b.deliverynumber
+</if>
+<if test='"D".equals(sortingFlag)'>
+order by b.deliverydate desc, b.deliverynumber desc
+</if>
+<if test='"Y".equals(pagingYn)'>
+limit #{pageStart}, #{perPageNum}
+</if>
+</select>
+
+<resultMap id="contractAddress" type="com.api.model.contract.ContractList"> 
+	<result property="conNumber" column="connumber"/>
+	<result property="deliveryNumber" column="deliverynumber"/>
+	<result property="deliveryDate" column="deliverydate"/>
+	<result property="customerNumber" column="customernumber"/>
+	<result property="deliveryCustomerNumber" column="deliverycustomernumber"/>
+	<result property="deliveryCompany" column="deliverycompany"/>
+	<result property="deliveryChargeAmount" column="deliverychargeamount"/>
+	<result property="deliveryChargeType" column="deliverychargetype"/>
+	<result property="deliveryRemark" column="deliveryremark"/>
+	<result property="addressId" column="addressid"/>
+	<result property="zipCode" column="zipcode"/>
+	<result property="baseAddress" column="baseaddress"/>
+	<result property="detailAddress" column="detailaddress"/>
+	<result property="remark" column="remark"/>
+	<result property="customerRemark" column="customerRemark"/>
+</resultMap>
+<select id="getConctractAddress" resultMap="contractAddress"  parameterType = "ContractList">
+select a.connumber, 0 as deliverynumber, date_format(curdate(),'%Y%m%d') as deliverydate, a.customernumber, a.deliverycustomernumber, a.deliverycompany, a.deliverychargeamount, 
+       a.deliverychargetype, a.deliveryremark, a.remark, a.customerremark,
+       b.addressid, b.zipcode, b.baseaddress, b.detailaddress
+from   contract a, address b
+where  a.connumber = #{conNumber}
+and    a.deliveryaddressid = b.addressid
+</select>
+
+<select id="getDeliveryAddress" resultMap="contractAddress"  parameterType = "ContractList">
+select a.connumber, a.deliverynumber, a.deliverydate, a.customernumber, a.deliverycustomernumber, a.deliverycompany, a.deliverychargeamount, a.deliverychargetype, a.deliveryremark,
+       b.addressid, b.zipcode, b.baseaddress, b.detailaddress
+from   deliverydetail a, address b
+where  a.deliverynumber = #{deliveryNumber}
+and    a.deliveryaddressid = b.addressid
+</select>
+
+<resultMap id="addressId" type="com.api.model.contract.ContractList"> 
+	<result property="addressId" column="addressid"/>
+</resultMap>
+<select id="getAddressId" resultMap="addressId"  parameterType = "ContractList">
+SELECT concat('ADD',nextval(addressid_seq)) as addressid
+</select>
+
+<insert id="insertAddress">
+insert into address (addressid,zipcode,baseaddress,detailaddress,auditid,auditdatetime)
+values (#{addressId},#{zipCode},#{baseAddress},#{detailAddress},#{auditId}, now())
+</insert>
+
+<insert id="insertDeliveryDetail" useGeneratedKeys="true" keyProperty="deliverynumber">
+insert into deliverydetail (connumber,customernumber,providernumber,invoicenumber,invoicedate,deliverydate,deliverystate,
+                            deliverydatetime,deliveryremark,deliverycustomernumber,deliverycompany,deliverychargeamount,deliverychargetype,deliveryaddressid,auditid,auditdatetime)
+values (#{conNumber},#{customerNumber},#{providerNumber},0,'',#{deliveryDate},#{deliveryState},
+       null,#{deliveryRemark},#{customerNumber},#{deliveryCompany},nvl(#{deliveryChargeAmount},0),#{deliveryChargeType},#{addressId},#{auditId},now())
+</insert>
+
+<update id="updateDeliveryDetailDate">
+update deliverydetail set deliverydate = #{deliveryDate}, deliveryaddressid = #{addressId}, deliveryremark = #{deliveryRemark}, auditid = #{auditId}, auditdatetime = now()
+where  deliverynumber = #{deliveryNumber}
+</update>
+
+<update id="updateDeliveryDetail">
+update deliverydetail a set a.deliverystate = #{deliveryState}, deliverydatetime = if(#{deliveryState}='DONE',now(),deliverydatetime) , a.auditid = #{auditId}, a.auditdatetime = now()
+where  deliverynumber = #{deliveryNumber}
+</update>
+
+<resultMap id="deliveryList" type="com.api.model.contract.ContractList"> 
+	<result property="deliveryNumber" column="deliverynumber"/>
+	<result property="conNumber" column="connumber"/>
+	<result property="deliveryCompany" column="deliverycompany"/>
+	<result property="deliveryCompanyName" column="deliverycompanyName"/>
+	<result property="deliveryState" column="deliverystate"/> 
+	<result property="deliveryStateName" column="deliverystatename"/> 
+	<result property="deliveryDate" column="deliverydate"/> 
+	<result property="deliveryType" column="deliverytype"/>
+	<result property="deliveryTypeName" column="deliverytypename"/>
+	<result property="contractState" column="contractstate"/>
+	<result property="contractStateName" column="contractstatename"/>
+	<result property="productName" column="productname"/>
+	<result property="customerName" column="customername"/>
+	<result property="phoneNumber" column="phonenumber"/>
+	<result property="zipCode" column="zipcode"/>
+	<result property="baseAddress" column="baseaddress"/>
+	<result property="detailAddress" column="detailaddress"/>
+	<result property="totalCount" column="totalcount"/>
+	<result property="quantity" column="quantity"/>
+	<result property="remark" column="remark"/>
+	<result property="deliverySeq" column="deliveryseq"/>
+	<result property="auditDateTime" column="auditdatetime"/>
+	<result property="employeeName" column="employeename"/>
+	<result property="customerRemark" column="customerremark"/>
+	<result property="productCount" column="productcount"/>
+</resultMap>
+<select id="getDeliveryList" resultMap="deliveryList"  parameterType = "ContractList">
+select a.deliverynumber, a.connumber,
+       a.deliverycompany, (select codename from codegroupdetail z where z.codegroupid = 'DELIVERYCOMPANY' and z.code = a.deliverycompany) as deliverycompanyname,
+       a.deliverystate, (select codename from codegroupdetail z where z.codegroupid = 'DELIVERYSTATE' and z.code = a.deliverystate) as deliverystatename,
+       a.deliverydate, 
+       a.deliverytype, (select codename from codegroupdetail z where z.codegroupid = 'DELIVERYTYPE' and z.code = a.deliverytype) as deliverytypename,
+       a.contractstate, (select codename from codegroupdetail z where z.codegroupid = 'CONTRACTSTATE' and z.code = a.contractstate) as contractstatename,
+       a.recurringdeliveryyn, a.remark, a.customerremark, 
+       a.productname, a.quantity,
+       a.customername, a.phonenumber,
+       a.zipcode, a.baseaddress, a.detailaddress,
+       if (a.deliverystate='CANCEL',0,
+          (select count(*)+1 from deliverydetail g 
+           where g.connumber = a.connumber and g.deliverystate != 'CANCEL' 
+           and  (g.deliverydate &lt; a.deliverydate or (g.deliverydate = a.deliverydate and g.deliverynumber &lt; a.deliverynumber)))) as deliveryseq,
+       sum(1) over() as totalcount,
+       date_format(a.auditdatetime,'%Y%m%d%H%i') as auditdatetime,
+       nvl((select g.employeename from login f, employee g where f.loginid = a.auditid and f.employeenumber = g.employeenumber),a.auditid) as employeename,
+      (select count(*) from contractproduct h where h.connumber = a.connumber) as productcount
+from  (select a.deliverynumber, a.connumber, a.deliverycompany, a.deliverystate, a.deliverydate, a.auditdatetime, a.auditid,
+              b.deliverytype, b.contractstate, b.recurringdeliveryyn, b.remark, b.customerremark, 
+              c.productname, c.quantity,
+              d.customername, d.phonenumber,
+              e.zipcode, e.baseaddress, e.detailaddress,
+              rank() over(partition by a.deliverydate, a.deliverynumber order by a.deliverydate, a.deliverynumber, c.productid ) as productno
+       from   deliverydetail a, contract b, contractproduct c, customer d, address e
+       where  a.providernumber = #{providerNumber}
+       and    a.deliverydate between #{startDate} and #{endDate}
+<if test='!"".equals(deliveryCompany)'>
+       and    a.deliverycompany = #{deliveryCompany}
+</if>
+<if test='!"".equals(deliveryState)'>
+       and    a.deliverystate = #{deliveryState}
+</if>
+       and    a.connumber = b.connumber
+<if test='!"".equals(recurringDeliveryYn)'>
+       and    b.recurringdeliveryyn = #{recurringDeliveryYn}
+</if>
+<if test='"ACTIVATION".equals(contractState) or "UNSETTLED".equals(contractState)'>
+       and    b.contractstate = #{contractState}
+</if>
+<if test='!("ACTIVATION".equals(contractState) or "UNSETTLED".equals(contractState))'>
+       and    b.contractstate not in ('ACTIVATION','UNSETTLED')
+</if>
+       and    b.connumber = c.connumber
+       and    a.customernumber = d.customernumber
+<if test='!"".equals(customerName)'>
+       and    d.customername like concat('%',#{customerName},'%')
+</if>
+<if test='!"".equals(phoneNumber)'>
+       and    d.phonenumber like concat('%',#{phoneNumber},'%')
+</if>
+       and    a.deliveryaddressid = e.addressid) a
+<if test='"N".equals(productYn)'>
+where  a.productno = 1
+</if>
+<if test='!"D".equals(sortingFlag)'>
+order by a.deliverydate, a.customername, a.phonenumber, a.productname, a.deliverynumber
+</if>
+<if test='"D".equals(sortingFlag)'>
+order by a.deliverydate desc, a.customername, a.phonenumber, a.productname, a.deliverynumber desc
+</if>
+<if test='"Y".equals(pagingYn)'>
+limit #{pageStart}, #{perPageNum}
+</if>
+</select>
+
+<resultMap id="deliveryDate" type="com.api.model.contract.ContractList"> 
+	<result property="deliveryDate" column="deliverydate"/> 
+</resultMap>
+<select id="getDeliveryDate" resultMap="deliveryDate"  parameterType = "ContractList" >
+select deliverydate
+from   deliverydetail a, contract b
+where  a.providernumber = #{providerNumber}
+and    a.deliverydate between #{startDate} and #{endDate}
+and    a.deliverystate = 'BEFORE'
+and    a.connumber = b.connumber
+and    b.contractstate = 'ACTIVATION'
+group by deliverydate
+</select>
+
+<resultMap id="deliveryDetailExcel" type="com.api.model.contract.ContractList"> 
+	<result property="providerNumber" column="providernumber"/>
+	<result property="deliveryCompany" column="deliverycompany"/>
+	<result property="deliveryCompanyName" column="deliverycompanyName"/>
+	<result property="deliveryState" column="deliverystate"/> 
+	<result property="deliveryStateName" column="deliverystatename"/> 
+	<result property="deliveryRemark" column="deliveryremark"/>
+	<result property="productName" column="productname"/>
+	<result property="quantity" column="quantity"/>
+	<result property="customerName" column="customername"/>
+	<result property="phoneNumber" column="phonenumber"/>
+	<result property="zipCode" column="zipcode"/>
+	<result property="postAreaCode" column="postareacode"/>
+	<result property="baseAddress" column="baseaddress"/>
+	<result property="channelId" column="channelid"/>
+	<result property="channelName" column="channelname"/>
+	<result property="remark" column="remark"/>
+	<result property="deliverySeq" column="deliveryseq"/>
+	<result property="sameCustomerYn" column="samecustomeryn"/>
+	<result property="seq" column="seq"/>
+	<result property="customerRemark" column="customerremark"/>
+</resultMap>
+<select id="getDeliveryDetailExcel" resultMap="deliveryDetailExcel"  parameterType = "ContractList" >
+select a.providernumber, a.deliverydate, 
+       a.deliverycompany, nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYCOMPANY' and z.code = a.deliverycompany),'') as deliverycompanyname,
+       a.deliverystate, nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYSTATE' and z.code = a.deliverystate),'') as deliverystatename, 
+       a.deliveryremark, 
+       nvl((select y.value2 from providerinformation y where y.providernumber = a.providernumber and y.code = 'DELIVERYPRODUCTNAME' and y.detailcode = a.deliverycompany and y.value1 = b.productname),b.productname) as productname,
+       b.quantity,
+	   c.customername, nvl(c.cellphonenumber,c.phonenumber) as phonenumber, 
+       d.zipcode, 
+       nvl(concat(f.postofficenumber,f.deliveryofficenumber,f.teamofficenumber,f.detailofficenumber),'') as postareacode,
+	   concat(concat(d.baseaddress,' '),d.detailaddress) as baseaddress,
+       e.channelid, (select codename from codegroupdetail z where z.codegroupid = 'CHANNEL' and z.code = e.channelid) as channelname,
+       e.remark, e.customerremark, 
+       if (a.deliverystate='CANCEL',0,
+          (select count(*)+1 from deliverydetail g 
+           where g.connumber = a.connumber and g.deliverystate != 'CANCEL' 
+           and  (g.deliverydate &lt; a.deliverydate or (g.deliverydate = a.deliverydate and g.deliverynumber &lt; a.deliverynumber)))) as deliveryseq,
+       if(sum(1) over(partition by d.zipcode, c.customername, c.phonenumber, d.detailaddress)=1,'','Y') as samecustomeryn
+from   deliverydetail a, contractproduct b, customer c, 
+       address d left outer join postareacode as f on (f.deliverytype = 'POST' and f.zipcode = d.zipcode), 
+       contract e
+where  a.providernumber = #{providerNumber}
+and    a.deliverydate = #{deliveryDate}
+and    a.deliverycompany = #{deliveryCompany}
+and    a.deliverystate = 'BEFORE'
+and    a.connumber = b.connumber
+and    a.deliverycustomernumber = c.customernumber
+and    a.deliveryaddressid = d.addressid
+and    a.connumber = e.connumber
+and    e.contractstate = 'ACTIVATION'
+order by d.zipcode, c.customername, c.phonenumber, d.detailaddress, b.productname, a.deliverynumber
+</select>
+
+<resultMap id="deliveryProductCount" type="com.api.model.contract.ContractList"> 
+	<result property="productCount" column="productcount"/> 
+</resultMap>
+<select id="getDeliveryProductCount" resultMap="deliveryProductCount"  parameterType = "ContractList" >
+select count(*) as productcount
+from   deliverydetail a, contractproduct b
+where  a.providernumber = #{providerNumber}
+and    a.deliverydate = #{deliveryDate}
+and    a.deliverycompany = #{deliveryCompany}
+and    a.deliverystate = 'BEFORE'
+and    a.connumber = b.connumber
+</select>
+
+<update id="updateDeliveryDetailState">
+update deliverydetail a set a.deliverystate = 'DONE', a.deliverydatetime = now(), a.auditid = #{auditId}, a.auditdatetime = now()
+where  a.providernumber = #{providerNumber}
+and    a.deliverydate = #{deliveryDate}
+and    a.deliverycompany = #{deliveryCompany}
+and    a.deliverystate = 'BEFORE'
+</update>
+
+<update id="updateContractState">
+update contract c set c.contractstate = 'DONE', c.effectenddatetime = date_format(curdate(),'%Y%m%d'), c.auditid = #{auditId}, c.auditdatetime = now()
+where  c.providernumber = #{providerNumber}
+and    c.contractstate = 'ACTIVATION'
+and    c.connumber in (select a.connumber
+                       from   deliverydetail a
+                       where  a.providernumber = #{providerNumber}
+                       and    a.deliverydate = #{deliveryDate}
+                       and    a.deliverycompany = #{deliveryCompany}
+                       and    a.deliverystate = 'DONE'
+                       and    not exists (select 'x' from deliverydetail b
+                                          where  b.connumber = a.connumber
+                                          and    b.deliverystate in ('BEFORE', 'ORDERDONE'))
+                       group by a.connumber)
+</update>
+
+<resultMap id="contractSearch" type="com.api.model.contract.ContractList"> 
+	<result property="conNumber" column="connumber"/>
+	<result property="registrationDateTime" column="registrationdatetime"/>
+	<result property="contractState" column="contractstate"/>
+	<result property="contractStateName" column="contractstatename"/>
+	<result property="productId" column="productid"/>
+	<result property="productName" column="productname"/>
+	<result property="quantity" column="quantity"/>
+</resultMap>
+<select id="getContractSearch" resultMap="contractSearch"  parameterType = "ContractList" >
+select a.connumber, a.registrationdatetime, 
+       a.contractstate, (select codename from codegroupdetail z where z.codegroupid = 'CONTRACTSTATE' and z.code = a.contractstate) as contractstatename,
+       a.productid, concat(a.productname,if(a.productcount>1,concat(' 외 ',(a.productcount-1),'건'),'')) as productname, a.quantity
+from  (select a.connumber, substr(a.registrationdatetime,1,8) as registrationdatetime, a.contractstate,
+              b.productid, b.productname, b.quantity, 
+             (select count(*) from contractproduct c where c.connumber = a.connumber) as productcount,
+              rank() over (partition by a.connumber order by a.connumber, b.productid) as no
+       from   contract a, contractproduct b
+       where  a.providernumber = #{providerNumber}
+       and    a.customernumber = #{customerNumber}
+       and    a.contractstate != 'UNSETTLED'
+       and    a.connumber = b.connumber) a
+where  no = 1
+order by a.connumber desc
+<if test='"Y".equals(pagingYn)'>
+limit #{pageStart}, #{perPageNum}
+</if>
+</select>
+
+<update id="updateContractDelivery">
+update contract a set a.deliveryaddressid = #{addressId}, a.deliveryremark = #{deliveryRemark}, a.remark = #{remark}, a.customerremark = #{customerRemark}, a.auditid = #{auditId}, a.auditdatetime = now()
+where  a.connumber = #{conNumber}
+</update>
+
+<update id="updateContractDeliveryDetail">
+update deliverydetail a set a.deliveryaddressid = #{addressId}, a.deliveryremark = #{deliveryRemark}, a.auditid = #{auditId}, a.auditdatetime = now()
+where  a.connumber = #{conNumber}
+and    a.deliverystate != 'DONE'
+</update>
+
+<resultMap id="deliveryRemainCount" type="com.api.model.contract.ContractList"> 
+	<result property="deliveryRemainCount" column="deliveryremaincount"/>
+</resultMap>
+<select id="getDeliveryRemainCount" resultMap="deliveryRemainCount"  parameterType = "ContractList" >
+select count(*) as deliveryremaincount
+from   deliverydetail a
+where  a.connumber = #{conNumber}
+and    a.deliverystate in ('BEFORE','ORDERDONE')
+</select>
+
+<resultMap id="contractAddition" type="com.api.model.contract.ContractList"> 
+	<result property="additionType1" column="additiontype1"/>
+	<result property="additionType2" column="additiontype2"/>
+	<result property="additionCode" column="additioncode"/>
+	<result property="additionValue" column="additionvalue"/>
+</resultMap>
+<select id="getContractAddition" resultMap="contractAddition"  parameterType = "ContractList" >
+select a.optioncode as additiontype1, a.optionvalue1 as additiontype2, b.additioncode, b.additionvalue
+from   providerinformation a, contractaddition b
+where  a.providernumber = #{providerNumber}
+and    a.code = 'CONTRACTADDITION'
+and    a.detailcode = (select channelId from contract c where c.connumber = #{conNumber})
+and    date_format(now(),'%Y%m%d') between a.effectstartdate and a.effectenddate
+and    b.connumber = #{conNumber}
+and    a.value1 = b.additioncode
+order by a.seq, b.seq
+</select>
+
+<delete id="deleteContractAddition">
+delete from contractaddition 
+where  connumber = #{conNumber}
+</delete>
+
+<insert id="insertContractAddition">
+insert into contractaddition (connumber, seq, additioncode, additionvalue, productid, auditid, auditdatetime)
+select #{conNumber}, nvl(max(seq),0)+1, #{additionCode}, #{additionValue}, nvl(#{productId},''), #{auditId}, now()
+from   contractaddition
+where  connumber = #{conNumber}
+</insert>
+
+<insert id="insertDeliveryDetailBatch">
+<![CDATA[
+insert into deliverydetail (connumber,customernumber,providernumber,invoicenumber,invoicedate,deliverydate,deliverystate,
+                            deliverydatetime,deliveryremark,deliverycustomernumber,deliverycompany,deliverychargeamount,deliverychargetype,deliveryaddressid,auditid,auditdatetime)
+select a.connumber, a.customernumber, a.providernumber, 0, '', 
+       date_format(case deliverydayflag when 'DAY' then firstdate + interval deliveryday-1 day
+                                        when 'WEEK' then (case when deliveryday<firstday then firstdate + interval (deliveryweek-1)*7+6-firstday+deliveryday+1 day
+                                                               when deliveryday=firstday then firstdate + interval (deliveryweek-1)*7 day
+                                                               when deliveryday>firstday then firstdate + interval (deliveryweek-1)*7+deliveryday-firstday day
+                                                          end)
+                   end,'%Y%m%d') as deliverydate,
+       if(c.prepaymentyn='Y',if(c.payableyn='Y','ORDERDONE','BEFORE'),'BEFORE') as deliverystate,
+       null, a.deliveryremark, a.deliverycustomernumber, a.deliverycompany, a.deliverychargeamount, a.deliverychargetype, a.deliveryaddressid, a.auditid, now()
+from  (select a.providernumber, a.connumber, a.channelid, 
+              a.customernumber, a.deliveryremark, a.deliverycustomernumber, a.deliverycompany, a.deliverychargeamount, a.deliverychargetype, a.deliveryaddressid, a.auditid, 
+              a.deliverydate as firstyear, str_to_date(concat(date_format(a.deliverydate,'%Y'),'1231'),'%Y%m%d') as lastyear,
+              a.deliverydate+interval (rownum-1)*if(a.deliverycycle='MONTH',1,2) month as firstdate,
+              dayofweek(a.deliverydate+interval (rownum-1)*if(a.deliverycycle='MONTH',1,2) month)-1 as firstday
+       from  (select a.providernumber, a.connumber, a.channelid, a.deliverycycle, 
+                     a.customernumber, a.deliveryremark, a.deliverycustomernumber, a.deliverycompany, a.deliverychargeamount, a.deliverychargetype, a.deliveryaddressid, a.auditid, 
+                     str_to_date(concat(substr((select max(deliverydate) from deliverydetail b where b.connumber = a.connumber),1,4)+1,'0101'),'%Y%m%d') as deliverydate
+              from   contract a
+              where  a.connumber = #{conNumber}) a, 
+             (select @rownum := @rownum + 1 as rownum
+              from   codegroup a, (select @rownum := 0) b
+              limit  12) b
+       ) a, deliveryday b, channelbillinginformation c
+where  a.firstdate between firstyear and lastyear
+and    a.providernumber = b.providernumber
+and    a.channelid = b.channelid
+and    b.deliveryseq = 2
+and    date_format(now(),'%Y%m%d') between b.effectstartdate and b.effectenddate
+and    a.channelid = c.channelid
+and    a.providernumber = c.providernumber
+]]>
+</insert>
+
+<update id="updateDeliveryDetailOnlyDate">
+update deliverydetail a set a.deliverydate = #{deliveryDate}, a.auditid = #{auditId}, a.auditdatetime = now()
+where  a.deliverynumber = #{deliveryNumber}
+and    a.deliverystate = 'BEFORE'
+</update>
+
+<insert id="insertChannelContractChange">
+insert into channelcontractchange (channelid, registrationdatetime, seq, channelcustomernumber, channelordernumber, channelproductid, changetype, changedatetime, processyn, auditid, auditdatetime)
+select #{channelId}, date_format(now(),'%Y%m%d'), nvl(max(seq),0)+1, #{channelCustomerNumber}, #{channelOrderNumber}, #{channelProductId}, #{changeType}, #{changeDateTime}, 'N', #{auditId}, now()
+from   channelcontractchange a
+where  a.channelid = #{channelId}
+and    a.registrationdatetime = date_format(now(),'%Y%m%d')
+</insert>
+
+<update id="updateChannelContractChangeProcess">
+update channelcontractchange a set processyn = 'P'
+where  a.channelid = #{channelId}
+and    a.registrationdatetime = date_format(now(),'%Y%m%d')
+and    a.changetype = 'TERMINATION'
+and    a.processyn = 'N'
+and    exists (select 'x' from contract b 
+               where   b.channelid = a.channelid
+               and     b.channelordernumber = a.channelordernumber
+               and     b.contractstate in ('ACTIVATION','SUSPEND'))
+</update>
+
+<update id="updateContractChannelState">
+update contract a set a.contractstate = 'TERMINATION', a.effectenddatetime = date_format(now(),'%Y%m%d'), auditid = #{auditId}, auditdatetime = now()
+where (a.channelid, a.channelordernumber) in (select b.channelid, b.channelordernumber 
+                                              from   channelcontractchange b
+                                              where  b.channelid = #{channelId}
+                                              and    b.registrationdatetime = date_format(now(),'%Y%m%d')
+                                              and    b.changetype = 'TERMINATION'
+                                              and    b.processyn = 'P')
+and    a.contractstate in ('ACTIVATION','SUSPEND')
+</update>
+
+<update id="updateChannelContractChangeDone">
+update channelcontractchange a set processyn = 'Y'
+where  a.channelid = #{channelId}
+and    a.registrationdatetime = date_format(now(),'%Y%m%d')
+and    a.changetype = 'TERMINATION'
+and    a.processyn = 'P'
+and    exists (select 'x' from contract b 
+               where   b.channelid = a.channelid
+               and     b.channelordernumber = a.channelordernumber
+               and     b.contractstate = 'TERMINATION')
+</update>
+
+</mapper> 

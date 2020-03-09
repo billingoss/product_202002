@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout" layout:decorator="layout/default">
+<!-- index.html 고유 CSS 추가 -->
+<th:block layout:fragment="css">
+</th:block>
+<!-- index.html 고유 스크립트 추가 -->
+<th:block layout:fragment="script">
+<script type="text/javascript">
+google.charts.load('current', {
+    'packages': ['corechart', 'line']
+});
+google.charts.setOnLoadCallback(drawChart1);
+google.charts.setOnLoadCallback(drawChart2);
+google.charts.setOnLoadCallback(drawChart3);
+google.charts.setOnLoadCallback(drawChart4);
+
+//지역별결제금액비율차트-pie
+function drawChart1() {
+    var data = google.visualization.arrayToDataTable([
+        ['지역', '비율'],
+        ['서울특별시', 171],
+        ['경기도', 27],
+        ['경상남도', 82],
+        ['부산광역시', 72],
+        ['인천광역시', 23],
+        ['충청남도', 23],
+        ['대구광역시', 42],
+        ['강원도', 77],
+        ['충청북도', 71],
+        ['전라남도', 27],
+        ['대전광역시', 82],
+        ['경상북도', 72],
+        ['전라북도', 23],
+        ['광주광역시', 12],
+        ['울산광역시', 42],
+        ['기타', 77]
+    ]);
+
+    var pieOptions = {
+        fontSize: 14,
+        fontColor: '#666',
+        fontName: 'Noto Sans KR',
+        chartArea: {
+            left: 0,
+            top: 0,
+            width: '100%',
+            height: '85%'
+        },
+        height: 360,
+        pieHole: 0.3,
+        legend: {
+            position: "bottom",
+            maxLines: '4',
+            textStyle: {
+                color: '#666',
+                fontSize: 14
+            }
+        },
+        colors: [
+            '#a289df', '#97d779', '#f87060', '#ec87bf',
+            '#45c287', '#5ca7cf', '#f6b37f', '#89c1b8',
+            '#f87060', '#ffd165', '#a8c4c4', '#cfa972',
+            '#7396d5', '#bbd347', '#99b6d4', '#879296'
+        ]
+    };
+
+    var chart = new google.visualization.PieChart(document.getElementById('pie_chart'));
+    chart.draw(data, pieOptions);
+    window.addEventListener('resize', function() {
+        chart.draw(data, pieOptions);
+    }, false);
+}
+
+//결제금액추이-line
+function drawChart2() {
+    var data = google.visualization.arrayToDataTable([
+        ['Year', '금액'],
+        ['2018.10', 1000],
+        ['2018.11', 1170],
+        ['2018.12', 660],
+        ['2019.01', 1500],
+        ['2019.02', 700],
+        ['2019.03', 150],
+        ['2019.04', 680],
+        ['2019.05', 3000],
+    ]);
+
+    var curveOptions = {
+        fontSize: 14,
+        fontName: 'Noto Sans KR',
+        chartArea: {
+            right: 0,
+            width: "93%",
+            height: "80%"
+        },
+        curveType: 'function',
+        lineWidth: 4,
+        legend: {
+            position: "none"
+        },
+
+        colors: ['#5ca7cf']
+    };
+
+    var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
+    chart.draw(data, curveOptions);
+    window.addEventListener('resize', function() {
+        chart.draw(data, curveOptions);
+    }, false);
+}
+
+//요일별결제금액-line
+function drawChart3() {
+    var data = google.visualization.arrayToDataTable([
+        ['', '금액'],
+        ['월', 900],
+        ['화', 170],
+        ['수', 660],
+        ['목', 100],
+        ['금', 700],
+        ['토', 150],
+        ['일', 480],
+    ]);
+
+    var lineOptions = {
+        fontSize: 14,
+        fontName: 'Noto Sans KR',
+        curveType: 'function',
+        height: 250,
+        legend: {
+            position: "none"
+        },
+        colors: ['#5ca7cf']
+    };
+
+    var chart = new google.charts.Line(document.getElementById('linechart_material'));
+    chart.draw(data, google.charts.Line.convertOptions(lineOptions));
+    window.addEventListener('resize', function() {
+        chart.draw(data, lineOptions);
+    }, false);
+}
+
+//판매채널별결제금액-bar
+function drawChart4() {
+    var data = google.visualization.arrayToDataTable([
+        ['year', '기타', '29cm', '네이버쇼핑', 'Billing OSS', {
+            role: 'annotation'
+        }],
+        ['2018.10', 120, 324, 220, 40, ''],
+        ['2018.11', 146, 252, 235, 604, ''],
+        ['2018.12', 278, 149, 29, 230, ''],
+        ['2019.01', 218, 189, 249, 154, ''],
+        ['2019.02', 170, 214, 270, 401, ''],
+        ['2019.03', 116, 224, 253, 620, ''],
+        ['2019.04', 428, 149, 295, 370, ''],
+        ['2019.05', 248, 149, 249, 54, ''],
+        ['2019.06', 228, 159, 789, 574, ''],
+        ['2019.07', 238, 419, 229, 544, ''],
+        ['2019.08', 828, 619, 429, 524, ''],
+        ['2019.09', 428, 129, 219, 544, '']
+    ]);
+
+    var view = new google.visualization.DataView(data);
+    var barOptions = {
+        fontSize: 14,
+        fontName: 'Noto Sans KR',
+        chartArea: {
+            left: 70,
+            width: "83%",
+            height: "75%"
+        },
+        height: '260',
+        isStacked: true,
+        bar: {
+            groupWidth: "20%"
+        },
+        vAxis: {
+            minValue: 0
+        },
+        legend: {
+            textStyle: {
+                color: '#666',
+                fontSize: 14
+            }
+        },
+        colors: ['#879296', '#75bcea', '#fdd676', '#45c287'],
+    };
+
+    var chart = new google.visualization.ColumnChart(document.getElementById("columnchart_values"));
+    chart.draw(view, barOptions);
+    window.addEventListener('resize', function() {
+        chart.draw(data, barOptions);
+    }, false);
+}
+</script>
+</th:block>
+        <!-- container -->
+        <div id="container" layout:fragment="contentFragment">
+            <div id="contents" class="report">
+                <h2 class="h2">보고서</h2>
+
+                <section>
+                    <div class="select_year">
+                        <div class="select-box w_ms mr5">
+                            <select class="select2Basic" id="">
+								<option value="1">2019년</option>
+							</select>
+                        </div>
+                        <div class="select-box w_ms">
+                            <select class="select2Basic" id="">
+								<option value="1">9월</option>
+							</select>
+                        </div>
+                    </div>
+                    <!--토탈결과//-->
+                    <div class="cont-box w853 mr20 pd0">
+                        <ul class="report_list">
+                            <li>
+                                <dl>
+                                    <dt>결제금액</dt>
+                                    <dd class="num"><span>9.8</span>천만원</dd>
+                                    <dd>
+                                        <span class="label up"><i class="icon_up">▲</i> 30%</span>
+                                    </dd>
+                                </dl>
+                            </li>
+                            <li>
+                                <dl>
+                                    <dt>주문건수</dt>
+                                    <dd class="num"><span>50,333</span></dd>
+                                    <dd>
+                                        <span class="label down"><i class="icon_down"></i> 32.0%</span>
+                                    </dd>
+                                </dl>
+                            </li>
+                            <li>
+                                <dl>
+                                    <dt>최고 판매 채널</dt>
+                                    <dd class="num">Billing OSS</dd>
+                                    <dd>
+                                        <span class="label up"><i class="icon_up">▲</i> 30%</span>
+                                    </dd>
+                                </dl>
+                            </li>
+                            <li>
+                                <dl>
+                                    <dt>환불 금액</dt>
+                                    <dd class="num"><span>34.2</span>만원</dd>
+                                    <dd>
+                                        <span class="label up"><i class="icon_up"></i> 30%</span>
+                                    </dd>
+                                </dl>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- 지역별결제금액비율//-->
+                    <div class="cont-box w416 fr">
+                        <div class="con_title">
+                            <h3 class="h3">지역별 결제금액 비율</h3>
+                        </div>
+
+                        <div class="graph-area pie">
+                            <div id="pie_chart"></div>
+                        </div>
+                    </div>
+
+                    <!-- 결제금액추이//-->
+                    <div class="cont-box w853 mr20">
+                        <div class="con_title">
+                            <h3 class="h3">결제금액추이</h3>
+                        </div>
+
+                        <div class="graph-area">
+                            <div id="curve_chart"></div>
+                        </div>
+                    </div>
+
+                    <!-- 요일별결제금액//-->
+                    <div class="cont-box w416 mr20">
+                        <div class="con_title">
+                            <h3 class="h3">요일별 결제 금액</h3>
+                            <!-- <div class="ab-r">
+								<span class="blt"><i></i>평균결제금액</span>
+							</div> -->
+                        </div>
+
+                        <div class="graph-area" style="height:250px;">
+                            <div id="linechart_material"></div>
+                        </div>
+                    </div>
+
+                    <!-- 상품별결제금액//-->
+                    <div class="cont-box w416 mr20">
+                        <div class="con_title">
+                            <h3 class="h3">상품별 결제 금액</h3>
+                            <div class="ab-r">
+                                <span class="blt"><i></i>결제금액</span>
+                            </div>
+                        </div>
+                        <div class="gage_area">
+                            <ul class="type1">
+                                <li>
+                                    <p class="title">
+                                        <span>직장인을 위한 셔츠 정기배송</span>
+                                        <em><i>4,000</i>만원</em>
+                                    </p>
+                                    <div class="bar_gage">
+                                        <p class="on" style="width: 100%"></p>
+                                    </div>
+                                </li>
+                                <li>
+                                    <p class="title">
+                                        <span>유러피안 플라워 정기배송</span>
+                                        <em><i>4,000</i>만원</em>
+                                    </p>
+                                    <div class="bar_gage">
+                                        <p class="on" style="width: 20%"></p>
+                                    </div>
+                                </li>
+                                <li>
+                                    <p class="title">
+                                        <span>양말 정기배송</span>
+                                        <em><i>4,000</i>만원</em>
+                                    </p>
+                                    <div class="bar_gage">
+                                        <p class="on" style="width: 60%"></p>
+                                    </div>
+                                </li>
+                                <li>
+                                    <p class="title">
+                                        <span>면도기 정기배송</span>
+                                        <em><i>4,000</i>만원</em>
+                                    </p>
+                                    <div class="bar_gage">
+                                        <p class="on" style="width: 35%"></p>
+                                    </div>
+                                </li>
+                                <li>
+                                    <p class="title">
+                                        <span>오동나무 칫솔 정기배송</span>
+                                        <em><i>4,000</i>만원</em>
+                                    </p>
+                                    <div class="bar_gage">
+                                        <p class="on" style="width: 70%"></p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 상품별환불금액//-->
+                    <div class="cont-box w416">
+                        <div class="con_title">
+                            <h3 class="h3">상품별 환불 금액</h3>
+                            <div class="ab-r">
+                                <span class="blt icon_02"><i></i>환불금액</span>
+                            </div>
+                        </div>
+                        <div class="gage_area">
+                            <ul class="type2">
+                                <li>
+                                    <p class="title">
+                                        <span>직장인을 위한 셔츠 정기배송</span>
+                                        <em><i>4,000</i>만원</em>
+                                    </p>
+                                    <div class="bar_gage">
+                                        <p class="on" style="width: 80%"></p>
+                                    </div>
+                                </li>
+                                <li>
+                                    <p class="title">
+                                        <span>유러피안 플라워 정기배송</span>
+                                        <em><i>4,000</i>만원</em>
+                                    </p>
+                                    <div class="bar_gage">
+                                        <p class="on" style="width: 100%"></p>
+                                    </div>
+                                </li>
+                                <li>
+                                    <p class="title">
+                                        <span>양말 정기배송</span>
+                                        <em><i>4,000</i>만원</em>
+                                    </p>
+                                    <div class="bar_gage">
+                                        <p class="on" style="width: 10%"></p>
+                                    </div>
+                                </li>
+                                <li>
+                                    <p class="title">
+                                        <span>면도기 정기배송</span>
+                                        <em><i>4,000</i>만원</em>
+                                    </p>
+                                    <div class="bar_gage">
+                                        <p class="on" style="width: 30%"></p>
+                                    </div>
+                                </li>
+                                <li>
+                                    <p class="title">
+                                        <span>오동나무 칫솔 정기배송</span>
+                                        <em><i>4,000</i>만원</em>
+                                    </p>
+                                    <div class="bar_gage">
+                                        <p class="on" style="width: 60%"></p>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 판매채널별결제금액//-->
+                    <div class="cont-box wfull mb0">
+                        <div class="con_title mb0">
+                            <h3 class="h3">판매채널별 결제 금액</h3>
+                            <!-- <div class="ab-r">
+								<span class="blt"><i></i>Billing OSS</span>
+								<span class="blt icon_01"><i></i>네이버쇼핑</span>
+								<span class="blt icon_02"><i></i>29cm</span>
+								<span class="blt icon_03"><i></i>기타</span>
+							</div> -->
+                        </div>
+                        <div class="graph-area" style="height:260px;">
+                            <div id="columnchart_values"></div>
+                        </div>
+                    </div>
+
+                </section>
+            </div>
+        </div>
+        <!-- //container -->
+</html>

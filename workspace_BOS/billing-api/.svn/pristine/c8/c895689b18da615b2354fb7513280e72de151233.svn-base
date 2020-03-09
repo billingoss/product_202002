@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+
+<head>
+<!-- header -->
+<meta charset="UTF-8"/>
+<title>정기배송 | BILL Letter</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="viewport" id="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,initial-scale=1.0"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="-1"/>
+<link rel="stylesheet" href="/mobileResources/css/library/csslibrary.css"/>
+<link rel="stylesheet" href="/mobileResources/css/screen.css"/>
+<!--[if lt IE 9]>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js" type="text/javascript" charset="utf-8"></script>
+<![endif]-->
+<script src="/mobileResources/js/library/jquery.min.js"></script>
+<script src="/mobileResources/js/library/jquerylibrary.min.js"></script>
+<script src="/mobileResources/js/screen.js"></script>
+<script src="/js/commonlib.js" type="text/javascript"></script>
+<!-- //header -->
+
+<script type="text/javascript">
+
+$(document).ready(function(){
+
+    /*<![CDATA[*/
+    $('#searchButton').click(function(){
+    	
+    	if ($('#customerName').val() == '') {
+			old_alert("조회할 주문자 이름을 입력하십시오.");
+			$('#customerName').focus();
+			return;
+    	}
+		if (!isKorean($('#customerName').val())){
+			old_alert("주문자 이름은 한글과 영문만 입력가능합니다.");
+			$('#customerName').focus();
+			return;
+		}
+    	if ($('#phoneNumber').val().replace(/-/g, '') == '') {
+			old_alert("조회할 전화번호를 입력하십시오.");
+			$('#phoneNumber').focus();
+			return;
+    	}
+		if (isNumber($('#phoneNumber').val().replace(/-/g, '')) == false) {
+			old_alert('연락처는 숫자만 입력하십시오.');
+			$('#phoneNumber').focus();
+			return;
+		}
+		
+    	var param = new Object();
+    	param.channelCustomerNumber = $('#channelCustomerNumber').val();
+    	param.customerName = $('#customerName').val();
+    	param.phoneNumber = $('#phoneNumber').val().replace(/-/g, '');
+    	
+		$.ajax({
+			method:'get',
+			url: '/billletter/productsaledetail',
+			data: param,
+			error: function(xhr, status, error){
+				old_alert(error);
+			},
+			success : function(data){
+				$('#productSaleList').html(data);
+			}
+		});	
+	});	
+    	
+	$('#saleButton').click(function(){
+
+		var f = document.saleForm;
+		f.action = '/billletter/doctornoah';
+		f.submit();
+
+		/*
+		var param = new Object();
+		param.customerName = $('#customerName').val();
+		param.phoneNumber = $('#phoneNumber').val();
+		param.channelCustomerNumber = $('#channelCustomerNumber').val();
+		param.productId = $('#productId').val();
+		
+		$.ajax({
+			method:'get',
+			url: '/billletter/productsale',
+			data: param,
+			error: function(xhr, status, error){
+				old_alert(error);
+			},
+			success : function(json){
+				$('body').html(json);
+			}
+		});
+		*/
+	});
+	/*]]>*/
+});
+</script>
+</head>
+<body id="saleBody">
+<form name="saleForm" onsubmit="return false;">
+<input type="hidden" id="channelCustomerNumber" name="channelCustomerNumber" th:value="${contractInsert.channelCustomerNumber}"/>
+<input type="hidden" id="productId" name="productId" th:value="${contractInsert.productId}"/>
+    <div class="wrapper">
+        <!-- container -->
+        <div id="container">
+            <div id="contents" class="cont">
+                <div class="title">
+					<h3>정기배송신청내역</h3>
+					<!-- <button type="button" class="back_btn">뒤로가기</button> -->
+				</div>
+
+                <section class="section">
+                    <div class="inner">
+                        <div class="tit_box">
+                            <h4 class="tit">고객정보</h4>
+                        </div>
+
+                        <div class="form_box">
+                            <dl>
+                                <dt>주문자</dt>
+                                <dd>
+                                    <div class="address-box mb10">
+	                                    <span class="post_item"><input type="text" placeholder="주문자 이름 입력" id="customerName" name="customerName"/></span>
+                                        <span class="btn_item"><button class="btn btn_blue" role="button" id="searchButton" style="margin-top:0px;">조회</button></span>
+                                    </div>
+                                </dd>
+                                <dt>연락처</dt>
+                                <dd>
+                                    <input type="text" placeholder="휴대전화 입력" id="phoneNumber" name="phoneNumber"/>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </section>
+                
+                <div id="productSaleList"></div>
+
+                <!-- 하단버튼//-->
+                <div class="btn-area">
+                    <p>
+                        <a id="saleButton">정기배송 신청하기</a>
+                    </p>
+                </div>
+                <!--// 하단버튼-->
+
+            </div>
+        </div>
+        <!-- //container -->
+    </div>
+</form>    
+</body>
+</html>

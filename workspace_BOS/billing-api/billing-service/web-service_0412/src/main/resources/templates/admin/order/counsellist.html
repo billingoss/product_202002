@@ -1,0 +1,469 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+		$("#searchbarcounsel").load("/order/searchbarcounsel");
+		
+		$('#contracttable').on('click', 'tr', function(){
+			$('#contracttable input[type=checkbox]').prop('checked', false);
+			$('td input:checkbox', this).prop('checked', true);
+			$('#contracttable tr').attr('style','');
+			$(this).attr('style','background-color: #D9E5FF');
+
+			getDataDelivery(1);
+		});
+
+		$('#deliverytable').on('click', 'tr', function(){
+			$('#deliverytable input[type=checkbox]').prop('checked',false);
+			$('td input:checkbox',this).prop('checked',true);
+			$('#deliverytbody tr').attr('style','');
+			$(this).attr('style','background-color: #D9E5FF');
+		});
+		
+		$('#counseltable').on('click', 'tr', function(){
+			$('#counseltable input[type=checkbox]').prop('checked',false);
+			$('td input:checkbox',this).prop('checked',true);
+			$('#counseltable tr').attr('style','');
+			$(this).attr('style','background-color: #D9E5FF');
+		});
+
+		function getDataDelivery(page) {
+			var param = new Object();
+			param.page = page;
+			param.perPageNum = 5; /*만약값을셋팅하지 않으면 기본 페이지당 row수 10*/
+			param.connumber = $('#contracttable input[type=checkbox]:checked').val().split('|')[0];
+			
+			$.ajax({
+				method : 'get',
+				url : '/order/getcustomerdeliverylist',
+				data : param, //JSON.stringify(paramData) , /* queryString, */
+				dataType : 'json',
+				error : function(xhr, status, error) {
+					alert(error);
+				},
+				success : handleDataDelivery
+			});
+		}
+
+		function handleDataDelivery(data) {
+			debugger;
+
+			//PageMaker정보를 Json으로부터 분리한다.
+			json = data.lists; //hashmap의 list array데이타
+			pageMaker = data.pageMaker; //pageMaker 
+
+			$('#deliverytotalcount').html('총 : ' + pageMaker.totalCount + '건');
+			
+			$('#deliverytbody').empty();
+			var trHTML = '';
+
+			$.each(json, function(i, item) {
+				 trHTML += '<tr>'    
+				 		+ '<td style="vertical-align: middle"><input type="checkbox" value="'+ item.deliverynumber + '"/></td>'
+				 		+ '<td style="vertical-align: middle">' + ((pageMaker.cri.page-1) * 5 + i + 1) + '</td>'
+						+ '<td style="vertical-align: middle">' + (item.deliverydate.length==8?item.deliverydate.substring(0,4)+'-'+item.deliverydate.substring(4,6)+'-'+item.deliverydate.substring(6,8):item.deliverydate) + '</td>'
+						+ '<td style="vertical-align: middle">' + item.deliverycompanyname + '</td>'
+						+ '<td style="vertical-align: middle">' + item.customername + '</td>'
+						+ '<td class="phone" style="vertical-align: middle">' + item.customerphonenumber + '</td>'
+						+ '<td style="vertical-align: middle">' + item.productname + '</td>'
+						+ '<td style="vertical-align: middle">' + item.deliveryaddress + '</td>'
+						+ '<td style="vertical-align: middle">' + item.deliverystatename + '</td>'
+                        + '</tr>';
+			});
+			$('#deliverytbody').append(trHTML);
+			formatPhone();
+			pagingDeliveryProc(pageMaker);
+		}
+		
+		$('#counseltbody').on('click', 'input[type=checkbox]', function(){
+			$('#counseltbody input[type=checkbox]').prop('checked',false);
+			$(this).prop('checked',true);
+		});
+		
+		$('#counseltbody').on('click', 'tr', function(){
+			$('#counseltbody input[type=checkbox]').prop('checked', false);
+			$('td input:checkbox',this).prop('checked',true);
+			$('#counseltbody tr').attr('style','');
+			$(this).attr('style','backgroupd-color:#D9E5FF');
+		});
+		
+		$('#terminationcontract').click(function(){
+			if (!$('#contracttable input[type=checkbox]:checked').val()){
+				  alert("해지하실 주문을 선택하십시오.");
+				  return;
+			}
+			var contract = $('#contracttable input[type=checkbox]:checked').val().split('|');
+			
+			if (!(contract[3] == 'ACTIVATION' || contract[3] == 'SUSPEND')){
+				  alert("해지할수 있는 상태가 아닙니다.");
+				  return;
+			}	  
+			
+			var param = new Object();
+			param.connumber = contract[0];
+			param.contractstate = 'TERMINATION';
+			$.ajax({
+					method : 'post',
+		    		url : '/order/updatecontract/',
+		    		data : param,
+					error: function(xhr, status, error){ 	
+						alert(error);
+					},
+					success : function(data){
+						alert("저장되었습니다.");
+						getDataContract(1);
+					}
+			});
+		});
+		
+		$('#suspendcontract').click(function(){
+			if (!$('#contracttable input[type=checkbox]:checked').val()){
+				  alert("정지하실 주문을 선택하십시오.");
+				  return;
+			}
+			
+			var contract = $('#contracttable input[type=checkbox]:checked').val().split('|');
+			var param = new Object();
+			param.connumber = contract[0];
+			if (contract[3] == 'SUSPEND'){
+				param.contractstate = 'ACTIVATION';
+			} else if (contract[3] == 'ACTIVATION'){
+				param.contractstate = 'SUSPEND';
+			} else {
+				  alert("정지/정지해제 할 수 있는 상태가 아닙니다.");
+				  return;
+			}	  
+			
+			$.ajax({
+					method : 'post',
+		    		url : '/order/updatecontract/',
+		    		data : param,
+					error: function(xhr, status, error){ 	
+						alert(error);
+					},
+					success : function(data){
+						alert("저장되었습니다.");
+						getDataContract(1);
+					}
+			});
+		});
+	 	
+		$("#insertdelivery").click(function(){
+			var contractstate = $('#contracttable input[type=checkbox]:checked').val().split('|')[3];
+			if (contractstate == 'DONE' || contractstate == 'SUSPEND' || contractstate == 'TERMINATION'){
+				  alert("정지/해지/완료된 주문은 배송일정을 추가할 수 없습니다.");
+				  return;
+			}
+			
+			if (!$('#contracttable input[type=checkbox]:checked').val()){
+				  alert("등록하실 주문내역을 선택하십시오.");
+				  return;
+			}
+			
+			var param = new Object();
+			param.deliverynumber = $('#deliverytable input:checkbox:eq(0)').val();
+			param.saveflag = 'I';
+			param.returnobject = 'contracttable input[type=checkbox]:checked';
+			
+			$.ajax({
+					method : 'get',
+		    		url : '/order/savedeliverypopup',
+		    		data : param,
+					error: function(xhr, status, error){ 	
+					  alert("등록하실 배송일정을 선택하십시오.");
+					},
+					success : function(data){
+						 $('#savedialog .modal-content').html(data);
+		            	 $("#savedialog").modal('show'); 
+					}
+			});
+		});
+		
+		$("#updatedelivery").click(function(){
+			var contractstate = $('#contracttable input[type=checkbox]:checked').val().split('|')[3];
+			if (contractstate == 'DONE' || contractstate == 'SUSPEND' || contractstate == 'TERMINATION'){
+				  alert("정지/해지/완료된 주문은 배송일정을 추가할 수 없습니다.");
+				  return;
+			}
+
+			if (!$('#deliverytable input[type=checkbox]:checked').val()){
+				  alert("변경하실 배송일정을 선택하십시오.");
+				  return;
+			}
+
+			var param = new Object();
+			param.deliverynumber = $('#deliverytable input[type=checkbox]:checked').val();
+			param.saveflag = 'U';
+			param.returnobject = 'contracttable input[type=checkbox]:checked';
+
+			$.ajax({
+					method : 'get',
+		    		url : '/order/savedeliverypopup',
+		    		data : param,
+					error: function(xhr, status, error){ 	
+						  alert("등록하실 배송일정을 선택하십시오.");
+					},
+					success : function(data){
+						 $('#savedialog .modal-content').html(data);
+		            	 $("#savedialog").modal('show'); 
+					}
+			});
+		});
+		
+		$("#insertcounsel").click(function(){
+			if ($('#customernumber').val() == ''){
+				  alert("등록하실 고객을 조회하십시오.");
+				  return;
+			}
+			
+			var param = new Object();
+			param.customernumber = $('#customernumber').val();
+			param.customername = $('#customername').val();
+			param.customerphonenumber = $('#customerphonenumber').val();
+			param.saveflag = 'I';
+			
+			$.ajax({
+					method : 'get',
+		    		url : '/order/savecounselpopup',
+		    		data : param,
+					error: function(xhr, status, error){ 	
+					  alert(error);
+					},
+					success : function(data){
+						 $('#savedialog .modal-content').html(data);
+		            	 $("#savedialog").modal('show'); 
+					}
+			});
+		});
+		
+	 	$("#updatecounsel").click(function(){
+	 		
+			if ($('#customernumber').val() == ''){
+				  alert("등록하실 고객을 조회하십시오.");
+				  return;
+			}
+			
+	 		if (!$('#counseltable input[type=checkbox]:checked').val()){
+				  alert("변경하실 상담내역을 선택하십시오.");
+				  return;
+	 		}
+	 		
+	 		var param = new Object();
+	 		param.customernumber = $('#customernumber').val();
+	 		param.counsellingdate = $('#counseltable input[type=checkbox]:checked').val().substring(0,8);
+	 		param.counsellingtime = $('#counseltable input[type=checkbox]:checked').val().substring(8,16);
+	 		param.customername = $('#customername').val();
+	 		param.customerphonenumber = $('#customerphonenumber').val();
+	 		param.saveflag = 'U';
+	 		
+			$.ajax({
+				method : 'get',
+	    		url : '/order/savecounselpopup/',
+	    		data : param,
+				error: function(xhr, status, error){ 	
+				  alert(error);
+				},
+				success : function(data){
+					 $('#savedialog .modal-content').html(data);
+	            	 $("#savedialog").modal('show'); 
+				}
+			});
+	 	});
+	 	
+		function pagingDeliveryProc(pageMaker) {
+			//============= 시작=====================
+			$("#paginationdelivery").empty();
+			if (pageMaker.totalCount != 0) {
+				$("#paginationdelivery").empty();
+				if (pageMaker.prev == true) {
+					
+					/*<![CDATA[*/  //타임리프에서 부등호상용시 조심해야함 반드시 CDATA로 감싸야함
+					$("#paginationdelivery").append('<li class="goBackPage"><a><<</a></li>'); //다음페이지로 가기 버튼 활성화
+					/*]]>*/
+				}
+
+
+				//아래는 타임리프사용시 조시매야한다. for하기와 같이 쓰지않음 에러발생함
+				/*<![CDATA[*/
+				for (var i = pageMaker.startPage; i <= pageMaker.endPage; i++) {
+					/*]]>*/
+
+					if (pageMaker.cri.page == i) { 
+						$("#paginationdelivery").append('<li class="disabled active" style="color: red;"><a>' + i + "</a></li>"); //버튼 비활성화
+					} else {
+						$("#paginationdelivery").append('<li class="goPage" data-page="' + i + '"><a>' + i + "</a></li>"); //버튼 활성화
+					}
+				}
+
+				if (pageMaker.next == true) {
+					$("#paginationdelivery").append('<li class="goNextPage"><a>>></a></li>'); //다음페이지로 가기 버튼 활성화
+				}
+			}
+		//=============paginationdelivery 끝=====================
+		}
+
+		//===================페이지이벤트처리시작==========================
+        $(document).on("click", "#paginationdelivery .goBackPage", function(){
+        	page = Number(pageMaker.startPage) - 1;
+        	getDataDelivery(page);
+        });
+
+
+		$(document).on("click", "#paginationdelivery .goPage", function(){
+			page = $(this).attr("data-page");
+			getDataDelivery(page);
+		});
+
+        $(document).on("click", "#paginationdelivery .goNextPage", function(){
+			page = Number(pageMaker.endPage) + 1;
+			getDataDelivery(page);
+		});
+	});
+</script>		
+<section class="page container">
+<div class="row">
+	<div id="searchbarcounsel">
+	</div>
+</div>
+<div id="deliverydiv">
+	<div class="row">
+		<div class="col-md-12">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+		    		<h2 class="panel-title">
+		     			<strong>주문내역 조회</strong>
+		    		</h2>
+		   		</div>
+		   		<div class="panel-body">
+		    		<div class="table-responsive">
+						<div class="form-group">
+							<b><span id="contracttotalcount"></span></b>
+						</div>
+ 		     			<table class="table" id="contracttable" style="display:block; overflow-x:scroll; overflow-y:hidden; height:100%; white-space:nowrap;"> 
+			      			<thead  class="table-header-bg">
+			       				<tr>
+			        				<th>선택</th>
+			        				<th>번호</th>
+			        				<th>등록일</th>
+			        				<th>판매채널구분</th>
+			        				<th>회원구분</th>
+			        				<th>정기배송여부</th>
+			        				<th>상태</th>
+			        				<th>수취인명</th>
+			        				<th>수취인연락처</th>
+			        				<th>상품명</th>
+			        				<th>신청수량</th>
+			        				<th>배송일</th>
+			        				<th>배송유형</th>
+			        				<th>우편번호</th>
+			        				<th>주소</th>
+			        				<th>배송메시지</th>
+			        				<th>배송시작일</th>
+			        				<th>종료일</th>
+			        				<th>이용기간(월)</th>
+			        				<th>배송주기</th>
+			        				<th>배송횟수</th>
+			        				<th>전체발송회차</th>
+			        				<th>현재발송회차</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">고객요청</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세1</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세2</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세3</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세4</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세5</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">빅이슈권수</th>
+			        				<th>신청일</th>
+			        				<th>고객명</th>
+			        				<th>연락처</th>
+			        				<th>결제일</th>
+			        				<th>결제수단</th>
+			        				<th>결제금액</th>
+			        				<th>배송비유형</th>
+			        				<th>배송비</th>
+								</tr>
+							</thead>
+							<tbody id="contracttbody" class="table-body-row">
+							</tbody>
+	     				</table>
+	    			</div>
+				</div>
+				<div  align="center">
+					<ul id="paginationcontract" class="pagination"></ul>
+				    <button class="btn btn-primary pull-right" style="margin: 3px;" id="suspendcontract">정지/정지해제</button>
+				    <button class="btn btn-primary pull-right" style="margin: 3px;" id="terminationcontract">해지</button>
+				</div>
+				<div class="panel-heading">
+		    		<h2 class="panel-title">
+		     			<strong>배송내역 조회</strong>
+		    		</h2>
+		   		</div>
+		   		<div class="panel-body">
+		    		<div class="table-responsive">
+						<div class="form-group">
+							<b><span id="deliverytotalcount"></span></b>
+						</div>
+		     			<table class="table" id="deliverytable">
+			      			<thead  class="table-header-bg">
+			       				<tr>
+			        				<th>선택</th>
+			        				<th>번호</th>
+			        				<th>배송일자</th>
+			        				<th>배송업체</th>
+			        				<th>수취인명</th>
+			        				<th>이동전화번호</th>
+			        				<th>상품명</th>
+			        				<th>배송주소</th>
+			        				<th>배송여부</th>
+								</tr>
+							</thead>
+							<tbody id="deliverytbody" class="table-body-row">
+							</tbody>
+	     				</table>
+	    			</div>
+				</div>
+				<div  align="center">
+					<ul id="paginationdelivery" class="pagination"></ul>
+				    <button class="btn btn-primary pull-right" style="margin: 3px;" id="updatedelivery">수정</button>
+				    <button class="btn btn-primary pull-right" style="margin: 3px;" id="insertdelivery">등록</button>
+				</div>
+				<div class="panel-heading">
+		    		<h2 class="panel-title">
+		     			<strong>고객 상담 내역</strong>
+		    		</h2>
+		   		</div>
+		   		<div class="panel-body">
+		    		<div class="table-responsive">
+						<div class="form-group">
+							<b><span id="counseltotalcount"></span></b>
+						</div>
+ 		     			<table class="table" id="counseltable"> 
+			      			<thead  class="table-header-bg">
+			       				<tr>
+			        				<th>선택</th>
+			        				<th>번호</th>
+			        				<th>일시</th>
+			        				<th>요청구분</th>
+			        				<th>요청내용</th>
+			        				<th>상담경로</th>
+			        				<th>답변내용</th>
+			        				<th>상태</th>
+								</tr>
+							</thead>
+							<tbody id="counseltbody" class="table-body-row">
+							</tbody>
+	     				</table>
+	    			</div>
+				</div>
+				<div  align="center">
+					<ul id="paginationcousel" class="pagination"></ul>
+				    <button class="btn btn-primary pull-right" style="margin: 3px;" id="updatecounsel">수정</button>
+				    <button class="btn btn-primary pull-right" style="margin: 3px;" id="insertcounsel">등록</button>
+				</div>
+		  	</div>
+	 	</div>
+	</div>
+	<div class="modal" id="savedialog" role="dialog">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content"></div>
+		</div>
+	</div>	
+</div>
+</section>

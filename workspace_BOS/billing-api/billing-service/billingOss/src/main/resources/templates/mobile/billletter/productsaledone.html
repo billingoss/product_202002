@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+
+<head>
+<!-- header -->
+<meta charset="UTF-8"/>
+<title>정기배송 | BILL Letter</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="viewport" id="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,initial-scale=1.0"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="-1"/>
+<link rel="stylesheet" href="/mobileResources/css/library/csslibrary.css"/>
+<link rel="stylesheet" href="/mobileResources/css/screen.css"/>
+<!--[if lt IE 9]>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js" type="text/javascript" charset="utf-8"></script>
+<![endif]-->
+<script src="/mobileResources/js/library/jquery.min.js"></script>
+<script src="/mobileResources/js/library/jquerylibrary.min.js"></script>
+<script src="/mobileResources/js/screen.js"></script>
+<script src="/js/commonlib.js" type="text/javascript"></script>
+<!-- //header -->
+
+<script type="text/javascript">
+$(document).ready(function(){
+	
+	$('#totalPrice').val($('#priceAmount').val()*$('#productQuantity').val());
+	$('#saleMessage').html($('#productName').val() + ' 매월 <b>' + numberComma($('#totalPrice').val()) + '원</b> 정기결제 신청이 완료되었습니다.');
+	
+	/*<![CDATA[*/
+	$('#saleDetailButton').click(function(){
+		
+		var f = document.saleForm;
+		f.action = '/billletter/productsalelist';
+		f.submit();
+	});
+	/*]]>*/
+});
+</script>
+</head>
+<body id="saleBody">
+<form name="saleForm" onsubmit="return false;">
+	<div th:each="result : ${contractList}" >
+		<input type="hidden" id="customerName" name="customerName" th:value="${result.customerName}"/>
+		<input type="hidden" id="phoneNumber" name="phoneNumber" th:value="${result.phoneNumber}"/>
+		<input type="hidden" id="channelCustomerNumber" name="channelCustomerNumber" th:value="${result.channelCustomerNumber}"/>
+		<input type="hidden" id="productId" name="productId" th:value="${result.productId}"/>
+		<input type="hidden" id="conNumber" name="conNumber" th:value="${result.conNumber}"/>
+		<input type="hidden" id="productName" name="productName" th:value="${result.productName}"/>
+		<input type="hidden" id="priceAmount" name="priceAmount" th:value="${result.priceAmount}"/>
+		<input type="hidden" id="productQuantity" name="productQuantity" th:value="${result.productQuantity}"/>
+		<input type="hidden" id="totalPrice" name="totalPrice"/>
+	</div>	
+    <div class="wrapper">
+        <!-- container -->
+        <div id="container">
+            <div id="contents" class="cont">
+                <div class="title">
+					<h3>정기배송 신청완료</h3>
+					<!-- <button type="button" class="back_btn">뒤로가기</button> -->
+				</div>
+
+                <!-- 상품정보//-->
+                <section class="section">
+                    <div class="inner">
+                        <div class="tit_box">
+                            <h4 class="tit">정기배송신청내역</h4>
+                        </div>
+                        <div class="product_box">
+                            <!---->
+                            <div class="img_info">
+                                <p class="img">
+                                    <img src="/images/common/@temp_1.jpg" />
+                                </p>
+                                <p class="info">
+                                    <span id="saleMessage"/>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <!-- 하단버튼//-->
+                <div class="btn-area">
+                    <p>
+                        <a href="#none" id="saleDetailButton">주문상세보기</a>
+                    </p>
+                </div>
+                <!--// 하단버튼-->
+
+            </div>
+        </div>
+        <!-- //container -->
+
+    </div>
+</form>    
+</body>
+</html>

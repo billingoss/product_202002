@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+
+<head>
+<!-- header -->
+<meta charset="UTF-8"/>
+<title>정기배송 | BTV</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="viewport" id="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,initial-scale=1.0"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="-1"/>
+<link rel="stylesheet" href="/mobileResources/css/library/csslibrary.css"/>
+<link rel="stylesheet" href="/mobileResources/css/screen.css"/>
+<!--[if lt IE 9]>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js" type="text/javascript" charset="utf-8"></script>
+<![endif]-->
+<script src="/mobileResources/js/library/jquery.min.js"></script>
+<script src="/mobileResources/js/library/jquerylibrary.min.js"></script>
+<script src="/mobileResources/js/screen.js"></script>
+<script src="/js/commonlib.js" type="text/javascript"></script>
+<!-- <script src="http://dmaps.daum.net/map_js_init/postcode.v2.js"></script> -->
+<script src="https://ssl.daumcdn.net/dmaps/map_js_init/postcode.v2.js"></script>
+<!-- //header -->
+<script type="text/javascript">
+$(document).ready(function(){
+/*<![CDATA[*/
+/*]]>*/
+});
+</script>
+</head>
+
+<body id="saleBody">
+<form name="saleForm" onsubmit="return false;">
+<input type="hidden" id="providerNumber" name="providerNumber" th:value="${contract.providerNumber}"/>
+<input type="hidden" id="conNumber" name="conNumber" th:value="${contract.conNumber}"/>
+
+    <div class="wrapper">
+        <!-- container -->
+        <div id="container">
+            <div id="contents" class="cont">
+                <div class="title">
+					<h3 th:text="${contractFlag=='BEFORE'?'정기결제 신청안내':'정기결제 신청완료'}"></h3>
+				</div>
+
+                <!-- 업체정보//-->
+                <section class="section">
+                    <div class="inner">
+                        <div class="product_box" style="border-top:unset;padding:unset;">
+                            <div class="img_info">
+                                <p class="img">
+                                    <img th:src="${provider.optionValue1}"/>
+                                </p>
+                                <p class="info">
+                                    <em><th:block th:utext="${provider.value2}"/></em>
+                                    <span th:text="${provider.value1}"></span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 상품정보//-->
+                <section class="section">
+                    <div class="inner">
+                        <div class="tit_box">
+                            <h4 class="tit" >신청정보</h4>
+                        </div>
+                        <div class="product_box">
+                            <div class="img_info" style="margin-bottom:20px;">
+                                <p class="img">
+                                    <img th:src="${contract.productImageUrl}"/>
+                                </p>
+                                <p class="info">
+                                    <span th:text="${contract.productName}">
+									</span>
+                                    <em><th:block th:utext="${contract.productDescription}"/></em>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="form_box">
+                            <dl>
+                                <dt>주문자</dt>
+                                <dd>
+                                    <input type="text" readonly="readonly" th:value="${contract.customerName}"/>
+                                </dd>
+                                <dt>연락처</dt>
+                                <dd>
+                                    <input type="text" readonly="readonly" th:value="${contract.phoneNumber}"/>
+                                </dd>
+                            </dl>
+                        </div>    
+                    </div>
+                </section>
+
+                <!-- 하단버튼//-->
+                <div class="btn-area">
+                    <p>
+                        <a href="#none" id="saleButton" th:text="${contractFlag=='BEFORE'?'이미 정기결제 신청된 구매아이디입니다.':'정기결제 신청이 완료되었습니다.'}"></a>
+                    </p>
+                </div>
+                <!--// 하단버튼-->
+
+            </div>
+        </div>
+        <!-- //container -->
+    </div>
+</form>    
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!-- modal list KKH추가 -->
+<!-- Modal -->
+<div class="modal-header modal-popup-header">
+	<h5 class="modal-title">
+		&nbsp;<button type="button" class="close" id="invoicedetailclose">&times;</button>
+	</h5>
+</div>
+<div class="modal-body" style="padding-bottom: 30px;">
+	<div class="panel panel-default">
+	  <div class="panel-heading">
+	   <h4 class="panel-title">
+	    <strong>▶ 기본정보</strong>
+	   </h4>
+	  </div>
+	  
+	     <input type="hidden" class="form-control" id="emailinvoicenumber" th:value="${invoicenumber}"/> 
+	     <input type="hidden" class="form-control" id="emailinvoicedate" th:value="${invoicedate}"/> 
+	     <input type="hidden" class="form-control" id="emailconnumber" th:value="${connumber}"/>
+	     <input type="hidden" class="form-control" id="emailaddr" th:value="${invoicecustomerinfo.email}"/>
+	 
+	  <div class="panel-body">
+	   <div class="form-horizontal" role="form">
+	    <div class="form-group">
+	     <label for="inputType" class="control-label col-lg-1" style="padding-left: 0px;">고&nbsp;객&nbsp;명&nbsp;</label>
+	     <div class="col-md-2">
+	      <input type="text" class="form-control" id="detailcustomername" readonly="true" th:value="${invoicecustomerinfo.customerName}"/>
+	     </div>
+	     <label for="inputType" class="col-md-2 control-label phone">전화번호</label>
+	     <div class="col-md-3">
+	      <input type="text" class="form-control phone" id="inputType" readonly="true" th:value="${invoicecustomerinfo.phoneNumber}"/>
+	     </div>
+	     <label for="inputType" class="control-label col-lg-1">상품명</label>
+	     <div class="col-md-2">
+	      <input type="text" class="form-control" id="inputType" readonly="true" th:value="${invoicecustomerinfo.productName}"/>
+	     </div>
+	    </div>
+	    <div class="form-group">
+	     <label for="inputType" class="control-label col-lg-1" style="padding-left: 0px;">상품설명</label>
+	     <div class="col-md-10">
+	      <input type="text" class="form-control" id="inputType" readonly="true" th:value="${invoicecustomerinfo.productDescription}"/>
+	     </div>
+	    </div>
+	   </div>
+	  </div>
+ </div>
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="panel-title">
+				<strong>▶ 결제 상세 정보</strong>
+			</h4>
+		</div>
+		<div class="panel-body">
+			<div class="form-horizontal" role="form">
+				<div class="form-group">
+					<label for="inputType" class="control-label">결제요청일</label>
+					<div class="col-md-2">
+						<input type="text" class="form-control" id="inputType"
+							readonly="true" th:value="${invoicecustomerinfo.invoicedate}"/>
+					</div>
+					<label for="inputType" class="col-md-2 control-label">결제일</label>
+					<div class="col-md-3">
+						<input type="text" class="form-control" id="inputType"
+							readonly="true" th:value="${invoicecustomerinfo.paymentdate}"/>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="panel-body">
+			<table class="table table-hover table-bordered"
+				id="detailDialogTable">
+				<thead class="table-header-bg">
+					<tr>
+						<th>구분</th>
+						<th>항목</th>
+						<th>금액</th>
+						<th>조정금액</th>
+						<th>결제금액</th>
+						<th>금액</th>
+					</tr>
+				</thead>
+				<tbody class="table-body-row">
+					<tr th:each="idl: ${invoicedetaillist}">
+						<td th:text="${idl.invoiceClassificationCode}"></td>
+						<td th:text="${idl.revenueItemCode}"></td>
+						<td  style="text-align: right"
+							th:text="${#strings.length(idl.invoiceItemAmount)} > 3 ? ${#numbers.formatDecimal(idl.invoiceItemAmount, 0, 'COMMA', 0, 'POINT')} : ${idl.invoiceItemAmount}"></td>
+						<td  style="text-align: right"
+							th:text="${#strings.length(idl.adjustamt)} > 3 ? ${#numbers.formatDecimal(idl.adjustamt, 0, 'COMMA', 0, 'POINT')} : ${idl.adjustamt}"></td>
+						<td  style="text-align: right"
+							th:text="${#strings.length(idl.paymentAmount)} > 3 ? ${#numbers.formatDecimal(idl.paymentAmount, 0, 'COMMA', 0, 'POINT')} : ${idl.paymentAmount}"></td>
+						<td style="text-align: right"
+							th:text="${#strings.length(idl.collectionBalanceAmount)} > 3 ? ${#numbers.formatDecimal(idl.collectionBalanceAmount, 0, 'COMMA', 0, 'POINT')} : ${idl.collectionBalanceAmount}"></td>
+					</tr>
+				</tbody>
+				<tfoot>
+					<tr>
+						<th colspan="2"><span class="pull-right">계</span></th>
+						<th style="text-align: right" id="detailDialogTableinvtotalsum"></th>
+						<th style="text-align: right" id="detailDialogTableadjtotalsum"></th>
+						<th style="text-align: right" id="detailDialogTablepaytotalsum"></th>
+						<th style="text-align: right" id="detailDialogTablecoltotalsum"></th>
+					</tr>
+<!-- 					<tr>
+						<th colspan="5"><span class="pull-right">부가세</span></th>
+						<th id="detailDialogTabletax"></th>
+					</tr> -->
+<!-- 					<tr>
+						<th colspan="5"><span class="pull-right">Total</span></th>
+						<th id="detailDialogTablecoltaxtotalsum"></th>
+					</tr> -->
+				</tfoot>
+			</table>
+			<div class="form-group">
+			     <label for="inputType" class="control-label col-lg-2" style="padding-left: 0px;">&nbsp;&nbsp;상품구성안내</label>
+				     <div class="col-md-12">
+				       <span id="InvoiceProductInfoDiv" class="form-control" th:text="${productinfo}"></span>
+				     </div>
+		   </div>
+		</div>
+	</div>
+
+	<div class="modal" id="sendEmailPopupModal" role="dialog">
+		<div class="modal-dialog modal-dialog-center">
+			<div class="modal-content"></div>
+		</div>
+    </div>
+</div>
+<script type="text/javascript">
+$(document).ready(function() {
+	$(detailDialogTableSum);
+	inputFormatPhone();
+	
+	$('#btnPrint').click(function () {
+		
+        printByJquery({
+            printMode: 'popup', //팝업설정 popup = 팝업창 , iframe = iframe
+            overrideElementCSS: ['webPrint.css', { href: 'webPrint.css', media: 'print'}], //css경로
+            pageTitle: '인쇄 타이틀', //인쇄 타이틀
+            leaveOpen: false //false = 인쇄후 창닫기
+        });
+     });
+	function printByJquery(options) {
+        $("#customerinvoiceDetailDialog").printElement(options);
+    }
+	
+	
+	$('#invoicedetailclose').click(function(){
+		 $(this).closest('.modal').modal('hide');
+		 $('.modal-content').empty();
+	});
+	
+	$('#openinvoicepopup').click(function(){
+		debugger;
+		$.ajax({
+            url : '/billing/sendEmailPopup' ,
+            error: function(xhr, status, error){
+               alert(error);
+            },
+            success : function(data){
+             var customername =	$("#detailcustomername").val();
+         	 $('#sendEmailPopupModal .modal-content').html(data);
+         	 if($('#detailDialogTablecoltotalsum').text() == 0){
+         		$('#emailtitle').text('▶내역서발송');
+         	 }else {
+         		$('#emailtitle').text('▶청구서발송');
+         	 }
+         	 $('#sendEmailAddress').val($('#emailaddr').val());
+         	 
+         	 $("#sendEmailPopupModal").modal('show'); 
+         	 $("#sendEmailCustomer").val(customername); 
+            }
+		});
+	});
+});
+
+function detailDialogTableSum() {
+	 var coltotal = 0;
+	 var paytotal = 0;
+	 var invtotal = 0;
+	 var adjtotal = 0;
+	 $('#detailDialogTable tbody tr').each(function() {
+	  var colvalue = parseInt($('td', this).eq(5).text().replace(/,/g, ''));
+	  var payvalue = parseInt($('td', this).eq(4).text().replace(/,/g, ''));
+	  var adjvalue = parseInt($('td', this).eq(3).text().replace(/,/g, ''));
+	  var invvalue = parseInt($('td', this).eq(2).text().replace(/,/g, ''));
+	  coltotal += colvalue;
+	  paytotal += payvalue;
+	  invtotal += invvalue;
+	  adjtotal += adjvalue;
+	  debugger;
+	 });
+	 $('#detailDialogTableadjtotalsum').text(numberComma(adjtotal));
+	 $('#detailDialogTablecoltotalsum').text(numberComma(coltotal));
+	 $('#detailDialogTablepaytotalsum').text(numberComma(paytotal));
+	 $('#detailDialogTableinvtotalsum').text(numberComma(invtotal));
+	 $('#detailDialogTabletax').text(numberComma(Math.floor((invtotal+adjtotal)/11)));
+	 $('#detailDialogTablecoltaxtotalsum').text(numberComma((invtotal+adjtotal)));
+}
+
+</script>
+<!-- modal list END -->

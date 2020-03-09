@@ -1,0 +1,137 @@
+    <!--비밀번호 변경//-->
+	<div id="popup_changePassWord" class="trp popupfixed-wrap" th:fragment="changePasswordPop">
+	    <form id="changePassWordForm" name="changePassWordForm">
+	        <div class="popup-dim"></div>
+	        <div class="popup-align">
+	            <div class="popup-vertical">
+	                <div class="popup-layer option ws">
+	                    <a class="btn_close" href="#">X</a>
+	                    <div class="pop_tit">비밀번호변경</div>
+	                    <!-- 알림 mode0 -->
+	                    <section class="section">
+	                        <div class="table-wrap ">
+	                            <p class="tac mb30">
+	                                비밀번호를 변경 하시겠습니까?
+	                            </p>
+	                            <table class="form_table">
+	                                <colgroup>
+	                                    <col width="180px" />
+	                                    <col width="*" />
+	                                </colgroup>
+	                                <tbody>
+		                                <tr>
+		                                    <th>현재 비밀번호 <i>*</i></th>
+		                                    <td>
+		                                        <input type="password" placeholder="현재 비밀번호" id="changePassWord" name="passWord"/>
+		                                    </td>
+		                                </tr>
+		                                <tr>
+		                                    <th>새 비밀번호 <i>*</i></th>
+		                                    <td>
+		                                        <input type="password" placeholder="새 비밀번호" id="newPassWord" name="newPassWord"/>
+		                                    </td>
+		                                </tr>
+		                                <tr>
+		                                    <th>새 비밀번호 확인 <i>*</i></th>
+		                                    <td>
+		                                        <input type="password" placeholder="새 비밀번호 확인" id="newPassWordConfirm" name="newPassWordConfirm"/>
+		                                    </td>
+		                                </tr>
+	                                    
+	                                </tbody>
+	                            </table>
+	                        </div>
+	                        <div class="btn_set-center mt30">
+	                            <a class="btn btn_green btn_wm radius mr5" role="button" href="javascirpt:void(0)" id="changePassWordPopBtn">확인</a>
+	                            <a class="btn btn_default btn_wm radius btn_cancel" href="#none" role="button" id="popChangeCancelBtn">취소</a>
+	                        </div>
+	                    </section>
+	                </div>
+	            </div>
+	        </div>
+		</form>    	
+		<script type="text/javascript">
+		/*<![CDATA[*/
+			/***************************************************
+			비밀번호 변경 popup event
+			***************************************************/	
+			var changePopBtnEvent = function (){				
+				var bntId;
+				var popId ='popup_changePassWord';
+				$('.changePassWordBtn').each(function(index, item){
+					bntId = $(this).prop('id')
+					var popup_warp = $("#"+bntId).trpLayerFixedPopup("#"+popId);	
+					$("#"+bntId).on("click", function($e) {
+
+						//화면 초기화
+					    $("#adjustRequestReasonCode option:eq(0)").attr("selected", "selected");
+						$('#adjusTreasonMessage').val("");
+						
+						$e.preventDefault();
+						popup_warp.open(this);
+					});
+					$("body").on("click", "#"+popId+" .btn_close, #"+popId+" .btn_cancel", function($e) {
+						$e.preventDefault();
+						popup_warp.close();
+					});
+				})			
+			}
+		
+			//비밀번호 변경 버튼 event 설정
+			changePopBtnEvent();
+			
+			/***************************************************
+			비밀번호 변경 버튼 event
+			***************************************************/	
+		    $('#changePassWordPopBtn').click(function (){
+				
+		    	if (isEmpty($('#changePassWord').val())) {
+					showAlert("현재 비밀번호를 입력하십시오.", $('#changePassWord'));
+					return;
+				}
+						    	
+		    	//password 유효성 체크 8자 이상 영문, 숫자, 특수문자 조합을 사용
+				if (!checkPassword($('#newPassWord'), $('#loginId').val())){					
+					return false;
+				}
+		    	
+				//비밀번호 확인 정합성 체크				
+				if ($('#newPassWord').val() != $('#newPassWordConfirm').val()){
+					showAlert("새 비밀번호가 일치하지 않습니다.",$('#newPassWordConfirm'));
+					return false;
+				}
+				
+				//회원 정보 저장 호출
+				showConfirm('비밀번호를 변경 하시겠습니까?', changePasswordProc);
+			})
+			
+			/***************************************************
+			비밀번호 변경 버튼
+			***************************************************/				
+			var changePasswordProc = function (){						    	
+				var queryString = $("form[name=changePassWordForm]").serialize();			
+				queryString = queryString.replace(/-/g, '');
+				$.ajax({
+					method:'post',
+					url : '/business/changePasswordProc',
+					data: queryString,
+					error: function(xhr, status, error){
+						idDupFlag = false;
+					},
+					success : function(json){					
+						var msg = "";
+						if(json.errMsg == null || json.errMsg == ""){
+							msg = '비밀번호가 변경 되었습니다. ';
+							$('#popChangeCancelBtn').trigger('click');						
+							//form clear							
+						}else {
+							msg = json.errMsg;
+						}			
+				        showAlert(msg);
+				        return false;
+					}
+				});				
+			}
+		/*]]>*/
+		</script>    	
+	</div>

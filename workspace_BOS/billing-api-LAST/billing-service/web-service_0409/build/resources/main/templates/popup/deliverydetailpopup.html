@@ -1,0 +1,236 @@
+<script type="text/javascript">
+$(document).ready(function() {
+	
+	inputFormatPhone();
+	
+	getDataPopup(1);
+
+	function getDataPopup(page) {
+		var param = new Object();
+		param.page = page;
+		param.perPageNum = 5;
+		param.connumber = $("#connumberpopup").val();
+		
+		$.ajax({
+			method : 'get',
+
+			url : '/order/getcustomerdeliverylist',
+			data : param, //JSON.stringify(paramData) , /* queryString, */
+			dataType : 'json',
+			error : function(xhr, status, error) {
+				alert(error);
+			},
+			success : handleDataPopup
+		});
+	}
+
+	function handleDataPopup(data) {
+		json = data.lists; //hashmap의 list array데이타
+		pageMaker = data.pageMaker; //pageMaker 
+
+		$('#totalcountpopup').html('총 : ' + pageMaker.totalCount + '건');
+		
+		if (pageMaker.totalCount > 0){
+			$('#popuptable').attr('style','display:block; overflow-x:scroll; overflow-y:hidden; height:100%; white-space:nowrap;');
+		}
+		
+		$('#popuptbody').empty();
+		var trHTML = '';
+
+		$.each(json, function(i, item) {
+			 trHTML += '<tr>'    
+			 		+ '<td style="vertical-align: middle">' + ((pageMaker.cri.page-1) * 5 + i + 1) + '</td>'
+					+ '<td style="vertical-align: middle">' + (item.deliverydate.length==8?item.deliverydate.substring(0,4)+'-'+item.deliverydate.substring(4,6)+'-'+item.deliverydate.substring(6,8):item.deliverydate) + '</td>'
+					+ '<td style="vertical-align: middle">' + item.deliverycompanyname + '</td>'
+					+ '<td style="vertical-align: middle">' + item.customername + '</td>'
+					+ '<td class="phone" style="vertical-align: middle">' + item.customerphonenumber + '</td>'
+					+ '<td style="vertical-align: middle">' + item.deliveryaddress + '</td>'
+					+ '<td style="vertical-align: middle">' + item.deliverystatename + '</td>'
+					+ '<td style="vertical-align: middle">' + item.deliveryremark + '</td>'
+                    + '</tr>';
+		});
+		$('#popuptbody').append(trHTML);
+		formatPhone();
+		pagingPopupProc(pageMaker);
+	}
+
+ 	$("#closebutton").click(function(){
+		$('#closebutton').attr("disabled", "disabled");
+		$("#savedialog").modal('hide');
+ 	});
+ 	
+	function pagingPopupProc(pageMaker) {
+		//=============paginationpopup 시작=====================
+		$("#paginationpopup").empty();
+		if (pageMaker.totalCount != 0) {
+			$("#paginationpopup").empty();
+			if (pageMaker.prev == true) {
+				
+				/*<![CDATA[*/  //타임리프에서 부등호상용시 조심해야함 반드시 CDATA로 감싸야함
+				$("#paginationpopup").append('<li class="goBackPage"><a><<</a></li>'); //다음페이지로 가기 버튼 활성화
+				/*]]>*/
+			}
+
+			//아래는 타임리프사용시 조시매야한다. for하기와 같이 쓰지않음 에러발생함
+			/*<![CDATA[*/
+			for (var i = pageMaker.startPage; i <= pageMaker.endPage; i++) {
+				/*]]>*/
+
+				//alert(i);
+				if (pageMaker.cri.page == i) { 
+					$("#paginationpopup").append('<li class="disabled active" style="color: red;"><a>' + i + "</a></li>"); //버튼 비활성화
+
+				} else {
+
+					$("#paginationpopup").append('<li class="goPage" data-page="' + i + '"><a>' + i + "</a></li>"); //버튼 활성화
+
+				}
+			}
+
+			if (pageMaker.next == true) {
+				$("#paginationpopup").append('<li class="goNextPage"><a>>></a></li>'); //다음페이지로 가기 버튼 활성화
+			}
+		}
+	//=============paginationpopup 끝=====================
+	}
+
+	//===================페이지이벤트처리시작==========================
+	/* $(".goBackPage").click(function() { */
+    $(document).on("click", "#paginationpopup .goBackPage", function(){
+    	page = Number(pageMaker.startPage) - 1;
+
+		//pageFlag = 1;
+
+		//$("상단 ajax를 함수로 만들어 재귀호출");
+		getDataPopup(page);
+		//pageFlag = 0;
+    	
+    });
+
+
+	$(document).on("click", "#paginationpopup .goPage", function(){
+		page = $(this).attr("data-page");
+		//alert(page);
+		//pageFlag = 1;
+		getDataPopup(page);
+		//pageFlag = 0;
+
+	});
+
+    $(document).on("click", "#paginationpopup .goNextPage", function(){
+		page = Number(pageMaker.endPage) + 1;
+		//$("상단 ajax를 함수로 만들어 재귀호출");
+		getDataPopup(page);
+		//pageFlag = 0;
+
+	});
+}); 
+</script>
+<div class="modal-header modal-popup-header">
+	<h5 class="modal-title">
+		<strong>배송일정상세</strong>
+		<button type="button" class="close" data-dismiss="modal">&times;</button>
+	</h5>
+</div>
+<div class="modal-body">
+<!--팝업메인-->
+<div class="panel panel-default">
+	<div class="panel-heading">
+		<h4 class="panel-title">
+			<strong>주문정보</strong>
+		</h4>
+	</div>
+	<div class="panel-body">
+		<div class="modal-body" style="padding-bottom: 0px; padding-top: 0px;">
+			<div class="row">	
+				<label class="col-md-2">고객명 </label>
+				<label class="col-md-4">
+					<input type="text" class="form-control" id="customernamepopup"  readonly="true" th:value="${contract.customername}" name="customernamepopup" />
+					<input type="hidden" class="form-control" id="connumberpopup"  readonly="true" th:value="${contract.connumber}" name="connumberpopup" />
+				</label>	
+				<label class="col-md-2">이용개월수 </label>
+				<label class="col-md-4">
+					<input type="text" class="form-control" id="durationpopup" readonly="true" th:value="${contract.duration}" name="durationpopup" />
+				</label>
+	      	</div>
+			<div class="row">	
+				<label class="col-md-2">생년월일 </label>
+				<label class="col-md-4">
+					<input type="text" class="form-control" id="birthdaypopup" readonly="true" th:value="${contract.birthday}" name="birthdaypopup" />	
+				</label>	
+				<label class="col-md-2">배송주기 </label>
+				<label class="col-md-4">
+					<input type="text" class="form-control" id="deliverycyclenamepopup" readonly="true" th:value="${contract.deliverycyclename} " name="deliverycyclenamepopup" />									
+				</label>	
+			</div>
+			<div class="row">	
+				<label class="col-md-2">이동전화번호 </label>
+				<label class="col-md-4">
+					<input type="text" class="form-control phone" data-date-format="yyyy-mm-dd" id="customerphonenumberpopup" readonly="true" th:value="${contract.customerphonenumber}" name="customerphonenumberpopup" />	
+				</label>	
+				<label class="col-md-2">배송횟수 </label>
+				<label class="col-md-4">
+					<input type="text" class="form-control" id="deliverytimespopup" readonly="true" th:value="${contract.deliverytimes} " name="deliverytimespopup" />									
+				</label>	
+			</div>
+			<div class="row">	
+				<label class="col-md-2">상품명 </label>
+				<label class="col-md-4">
+					<input type="text" class="form-control" id="productnamepopup" readonly="true" th:value="${contract.productname}" name="productnamepopup" />	
+				</label>	
+				<label class="col-md-2">배송일 </label>
+				<label class="col-md-4">
+					<input type="text" class="form-control" id="deliverydaypopup" readonly="true" th:value="${contract.deliveryday} " name="deliverydaypopup" />									
+				</label>	
+			</div>
+			<div class="row">	
+				<label class="col-md-2">주문상태</label>
+				<label class="col-md-4">
+					<input type="text" class="form-control" id="contractstatepopup" readonly="true" th:value="${contract.contractstatename} " name="contractstatepopup" />									
+				</label>	
+				<label class="col-md-2">배송시작일 </label>
+				<label class="col-md-4">
+					<input type="text" class="form-control"  data-date-format="yyyy-mm-dd" id="deliverystartdatetimepopup" readonly="true" th:value="${contract.saveflag=='I'?'':(#strings.length(contract.deliverystartdatetime)==8?contract.deliverystartdatetime.substring(0,4)+'-'+contract.deliverystartdatetime.substring(4,6)+'-'+contract.deliverystartdatetime.substring(6,8):'')}" />									
+				</label>	
+			</div>
+		</div>
+	</div>
+	<div class="panel panel-default">
+	<!--팝업메인-->
+		<div class="panel-heading">
+			<h4 class="panel-title">
+				<strong>배송일정</strong>
+			</h4>
+		</div>
+		<div class="panel-body">
+			<div class="modal-body" style="padding-bottom: 0px; padding-top: 0px;">
+		   		<div class="table-responsive">
+					<div class="form-group">
+						<b><span id="totalcountpopup"></span></b>
+					</div>
+	     			<table class="table" id="popuptable">
+		      			<thead  class="table-header-bg">
+		       				<tr>
+		        				<th>번호</th>
+		        				<th>배송일자</th>
+		        				<th>배송업체</th>
+		        				<th>수취인명</th>
+		        				<th>이동전화번호</th>
+		        				<th>배송주소</th>
+		        				<th>배송여부</th>
+		        				<th>배송메모</th>
+							</tr>
+						</thead>
+						<tbody id="popuptbody" class="table-body-row">
+						</tbody>
+     				</table>
+	  			</div>
+			</div>
+			<div class="row" align="center">	
+				<ul id="paginationpopup" class="pagination"></ul>
+				<button id="closebutton" class="btn btn-primary pull-right"  role="button">닫기</button>
+			</div>
+		</div>
+	</div>
+</div>
+</div>

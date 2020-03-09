@@ -1,0 +1,113 @@
+package com.api.model.product;
+
+import com.api.model.Criteria;
+
+public class Product  extends Criteria {
+
+	private int priceAmount;
+	private int totalCount ;
+	private int providerNumber;
+	private String productId;
+	private String productType;
+	private String productTypeName;
+	private String productName;
+	private String packagePriceReferenceYn;
+	private String productState;
+	private String productStateName;
+	private String subscribeStartDateTime;
+	private String subscribeEndDateTime;
+	private String productDescription;
+	private String lastChangeDateTime;
+	private String pagingYn;
+
+	public int getProviderNumber() {
+		return providerNumber;
+	}
+	public void setProviderNumber(int providerNumber) {
+		this.providerNumber = providerNumber;
+	}
+	public int getPriceAmount() {
+		return priceAmount;
+	}
+	public void setPriceAmount(int priceAmount) {
+		this.priceAmount = priceAmount;
+	}
+	public int getTotalCount() {
+		return totalCount;
+	}
+	public void setTotalCount(int totalCount) {
+		this.totalCount = totalCount;
+	}
+	public String getProductId() {
+		return productId;
+	}
+	public void setProductId(String productId) {
+		this.productId = productId;
+	}
+	public String getProductType() {
+		return productType;
+	}
+	public void setProductType(String productType) {
+		this.productType = productType;
+	}
+	public String getProductTypeName() {
+		return productTypeName;
+	}
+	public void setProductTypeName(String productTypeName) {
+		this.productTypeName = productTypeName;
+	}
+	public String getProductName() {
+		return productName;
+	}
+	public void setProductName(String productName) {
+		this.productName = productName;
+	}
+	public String getPackagePriceReferenceYn() {
+		return packagePriceReferenceYn;
+	}
+	public void setPackagePriceReferenceYn(String packagePriceReferenceYn) {
+		this.packagePriceReferenceYn = packagePriceReferenceYn;
+	}
+	public String getProductState() {
+		return productState;
+	}
+	public void setProductState(String productState) {
+		this.productState = productState;
+	}
+	public String getProductStateName() {
+		return productStateName;
+	}
+	public void setProductStateName(String productStateName) {
+		this.productStateName = productStateName;
+	}
+	public String getSubscribeStartDateTime() {
+		return subscribeStartDateTime;
+	}
+	public void setSubscribeStartDateTime(String subscribeStartDateTime) {
+		this.subscribeStartDateTime = subscribeStartDateTime;
+	}
+	public String getSubscribeEndDateTime() {
+		return subscribeEndDateTime;
+	}
+	public void setSubscribeEndDateTime(String subscribeEndDateTime) {
+		this.subscribeEndDateTime = subscribeEndDateTime;
+	}
+	public String getProductDescription() {
+		return productDescription;
+	}
+	public void setProductDescription(String productDescription) {
+		this.productDescription = productDescription;
+	}
+	public String getLastChangeDateTime() {
+		return lastChangeDateTime;
+	}
+	public void setLastChangeDateTime(String lastChangeDateTime) {
+		this.lastChangeDateTime = lastChangeDateTime;
+	}
+	public String getPagingYn() {
+		return pagingYn;
+	}
+	public void setPagingYn(String pagingYn) {
+		this.pagingYn = pagingYn;
+	}
+}

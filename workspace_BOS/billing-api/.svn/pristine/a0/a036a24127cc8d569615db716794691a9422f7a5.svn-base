@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+        <div  th:fragment="footerFragment" id="footer">
+            <div class="inner">
+                <p class="copyright">COPYRIGHTⓒ2019 BY SK HOLDINGS CO., LTD. ALL RIGHTS RESERVED. </p>
+                <p class="footer-link">
+                    <a href="#none">개인정보처리방침</a>
+                    <a href="#none">이용약관</a>
+                </p>
+            </div>
+        </div>
+</html>    

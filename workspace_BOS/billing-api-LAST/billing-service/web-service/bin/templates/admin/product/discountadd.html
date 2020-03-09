@@ -1,0 +1,108 @@
+								<tr class="append" th:each="result : ${discountListResult}" th:id="${result.discountId}">
+									<td><input type="hidden" name="add" value="true"/><input type="checkbox" name="discountListBox" th:value="${result.discountId}"/>
+										<input type="hidden" placeholder="할인ID" class="form-control" name="discountId" th:value="${result.discountId}" readonly="true"/>
+									</td>
+									<td style="vertical-align: middle">
+										<input type="text" placeholder="할인명" class="form-control" name="discountName" style="border:0px; background-color:transparent;" />
+									</td>
+									<td style="vertical-align: middle">
+										<!-- <input type="text" placeholder="할인유형" style="width: 100%;" name="discountType"/> -->
+										<select name="discountType" class="form-control" style="border:0px; background-color:transparent;">
+											<option value="">할인분류</option>
+											<option value="RATE">정률할인</option>
+											<option value="AMOUNT">정액할인</option>
+										</select>
+									</td>
+									<td style="vertical-align: middle">
+										<input type="text" placeholder="할인율(%)/금액(원)" class="form-control" style="border:0px; background-color:transparent;" name="discountValue"/>
+									</td>	
+									<td style="vertical-align: middle">
+										<input type="text" value="적용가능" class="form-control" name="discountState"  style="border:0px; background-color:transparent;"/>
+									</td>								
+									<td style="vertical-align: middle">
+										<input type="text" id="fromDate" class="form-control date" placeholder="ex) 2018-08-01"  style="border:0px; background-color:transparent;" name="subscribeStartDateTime"/>
+									</td>
+									<td style="vertical-align: middle">
+										<input type="text" id="toDate" class="form-control date" value="9999-12-31"  style="border:0px; background-color:transparent;" name="subscribeEndDateTime"/>
+									</td>
+									<td style="vertical-align: middle">
+										<input type="text" placeholder="할인설명" class="form-control" style="border:0px; background-color:transparent;" name="discountDescription"/>
+									</td>
+									<td style="vertical-align: middle">
+									<button id="delStaff" class="btn btn-small btn-table-default" name="delStaff">삭제</button>
+									</td>
+								</tr>
+<script type="text/javascript">
+$(document).ready(function() {
+	$.fn.datepicker.defaults = {
+		    autoclose: true,
+		    beforeShowDay: $.noop,
+		    calendarWeeks: false,
+		    clearBtn: false,
+		    daysOfWeekDisabled: [],
+		    endDate: Infinity,
+		    forceParse: true,
+		    format: 'yyyy-mm-dd',
+		    keyboardNavigation: true,
+		    language: 'kr',
+		    minViewMode: 0,
+		    orientation: 'auto',
+		    rtl: false,
+		    startDate: -Infinity,
+		    startView: 3,
+		    todayBtn: false,
+		    todayHighlight: false,
+		    weekStart: 0
+	};
+		//debugger;
+	var discountId = 0;
+	var beforeDiscountId = 0;
+	//debugger;
+	var pkgPrdChk = function(obj) { //체크박스 활성화
+		$('input[name="discountListBox"]').not(obj).prop('checked', false);
+    	$(obj).parents('tbody').find('input[type="text"], select').prop('disabled', true);
+    	if(obj.checked) {
+    		$(obj).parents('tr').find('input[type="text"], select').prop('disabled', false);
+    		$(obj).parents('tr').find('[name="discountId"]').prop('disabled', true);
+    		$(obj).parents('tr').find('[name="discountType"]').prop('disabled', false);
+    		$(obj).parents('tr').find('[name="discountState"]').prop('disabled', true);
+    	}
+	}
+	$('#discountmaintable').on('click', 'input[name="discountListBox"]', function() {
+		pkgPrdChk(this);
+		discountId = $(this).val();
+    });
+  	
+  //삭제 버튼
+    $(document).on("click","button[name=delStaff]",function(){          
+        var trHtml = $(this).parent().parent();          
+        trHtml.remove(); //tr 테그 삭제
+    });     
+  	
+  	 //datepicker사용
+   	$('#fromDate').datepicker().on('click', function(ev){                 
+      	    $('#fromDate').datepicker('show');
+	});
+	$('#fromDate').datepicker().on('changeDate', function(ev){                 
+	    $('#fromDate').datepicker('hide');
+	});
+	$('#toDate').datepicker().on('click', function(ev){                 
+	    $('#toDate').datepicker('show');
+	});
+	$('#toDate').datepicker().on('changeDate', function(ev){                 
+	    $('#toDate').datepicker('hide');
+	});
+	$('#toDate').change(function() { 
+		if($('#fromDate').val().replace(/-/g, '') > $('#toDate').val().replace(/-/g, '')){
+	    	if($('#fromDate').val().replace(/-/g, '') != ""){
+	    		$('#toDate').val("");
+		    	Common.Dialog.alert({
+		    		title:''
+		            , content: '시작일자보다 클 수 없습니다.'
+		        });
+	    	}
+	    }
+	});
+  	
+});
+</script>

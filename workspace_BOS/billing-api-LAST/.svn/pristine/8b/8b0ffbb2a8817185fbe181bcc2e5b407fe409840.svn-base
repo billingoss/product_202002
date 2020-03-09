@@ -1,0 +1,198 @@
+<script	src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.7.7/xlsx.core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xls/0.7.4-a/xls.core.min.js"></script>
+<script type="text/javascript" src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+<script type="text/javascript">
+
+var totalcnt = 0;
+var successcnt = 0;
+var errorcnt = 0;
+var errormessage = "";
+
+function excelDisplay(inputid){
+	var itemlist = [];
+	$('#'+inputid.id.replace('btn','')+'table').css("stlye='display:block;'");
+	$('#'+inputid.id.replace('btn','')+'table tbody').empty();
+	$('#'+inputid.id.replace('btn','')+'table'+' thead tr th').each(function(){
+		itemlist.push($(this).text());
+	});
+	ExportToTableWithHeader(inputid.id.replace('btn',''), inputid.id.replace('btn','')+'table', itemlist);
+}
+
+function excelUploadDown(inputid){
+	var f = document.orderUploadForm;
+	f.method = "get";
+	f.action = '/order/orderuploadexceldown/'+inputid.id.replace('downbtn','');
+	f.submit();
+}
+
+$(document).ready(function() {
+	
+	/*
+	$('#dataupload').click(function() {
+		
+		$('#waitupload').css('display','block');
+		
+		totalcnt = 0;
+		successcnt = 0;
+		errorcnt = 0;
+		errormessage = "";
+		
+		$('#exceltable table').each(function(){
+			
+			var itemcode = [];
+			var channelid = "";
+			
+			itemcode.push("channelid");
+			$('#'+this.id+'item'+' thead tr th').each(function(){
+				itemcode.push($(this).text());
+			});
+			channelid = this.id.replace("table","");
+			
+			var tr = $(this).children().children();
+			var noheadtr = tr.slice(1);
+			
+			noheadtr.each(function(index) {
+				
+				var itemvalue = [];
+
+				var td = $(this).children();
+				
+				itemvalue.push(channelid);
+				td.each(function() {
+					itemvalue.push($(this).text());
+				});
+				
+				totalcnt = totalcnt + 1;
+				
+				jQuery.ajaxSettings.traditional = true;
+
+				$.ajax({
+			    	  method : 'post',
+				      url : '/order/uploadorder',
+				      data : { itemcodearray : itemcode, itemvaluearray : itemvalue},
+	    	          dataType:'json',
+				      async : false,
+				      error: function(xhr, status, error) {
+				    	  errorcnt = errorcnt + 1;
+				    	  errormessage = errormessage + channelid + ' ' + (index+1) + '행 (' + itemvalue[1]+'-'+itemvalue[2]+'-'+itemvalue[3] + ')<br/>';
+		              },
+		              success : function(json){
+		            	  successcnt = successcnt + 1;
+					  }
+				});
+			
+			});
+			
+			$('#'+this.id.replace('table','')).val('');
+			$('#'+this.id+' tbody').empty();
+			$('#'+this.id).attr('style','display:none; overflow-x:scroll; overflow-y:hidden; height:100%; white-space:nowrap;');
+		});
+
+		Common.Dialog.alert({
+    		  title: '저장완료'
+            , content: '총 '+totalcnt+'건중 성공 '+successcnt+'건, 실패 '+errorcnt+'건 처리됐습니다.<br/>실패내역 : <br/>'+errormessage  
+        });
+		
+		$('#waitupload').css('display','none');
+	});
+	*/
+
+	$('#dataupload').click(function() {
+		/*
+		var top = (screen.height-300)/2;
+		var left = (screen.width-500)/2;
+		var popup = window.open("", "popup_window", "width=500, height=300; top="+top+"; left="+left);
+		var f = document.orderUploadForm;
+		f.method = 'post';
+		f.action = '/order/uploadorder';
+		f.target = "popup_window";
+		f.submit();
+		*/
+		
+		var uploadCnt = 0;
+		var formData = new FormData();
+		$('#orderUploadForm input[type=file]').each(function(){
+			if ($('#'+this.id).val() != '') {
+				formData.append(this.id, $('#'+this.id)[0].files[0]);
+				uploadCnt = uploadCnt + 1;
+			}
+		});
+		
+		if (uploadCnt == 0){
+			alert('업로드할 파일을 선택하십시오.');
+			return;
+		}
+
+		$.ajax({
+			method : 'post',
+			url : '/order/uploadorder',
+			data : formData,
+			enctype : 'multipart/form-data',
+		    processData: false,
+		    contentType: false,
+			async : false,
+			error: function(xhr, status, error) {
+				alert(error);
+			},
+			success : function(json){
+       			alert(json.resultmessage);
+       			$('input[type=file]').each(function(){
+       				$(this).val('');
+       				$('#'+this.id+'table tbody').empty();
+       				$('#'+this.id+'table').attr('style','display:none; overflow-x:scroll; overflow-y:hidden; height:100%; white-space:nowrap;');
+       			});
+			}
+		});
+	});
+});
+</script>
+<form id="orderUploadForm" name="orderUploadForm" class="form-horizontal" onsubmit="return false;" enctype="multipart/form-data">
+<div class="row">
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h2 class="panel-title">
+					<strong>주문내역 등록</strong>
+				</h2>
+			</div>
+			<div class="panel-body">
+				<div class="form-group" th:each="result: ${channelList}" style="height:30px;">
+					<label class="col-sm-3 control-label" for="inputFile" th:text="${result.channelname}"></label>
+					<div class="col-sm-6">
+						<input type="file" value="파일찾기" th:id="${result.channelid}" th:name="${result.channelid}" style="width:400px;"></input>
+					</div>
+					<div class="col-md-3" style="text-align:center;">
+						<input type="button" class="btn btn-primary pull-right" style="margin: 3px;" th:id="${result.channelid}+btn" value="미리보기" onclick="excelDisplay(this)"></input>	
+						<input type="button" class="btn btn-primary pull-right" style="margin: 3px;" th:id="${result.channelid}+downbtn" value="양식다운로드" onclick="excelUploadDown(this)"></input>	
+					</div>
+				</div>
+			</div>
+			<div class="panel-footer" style="padding-bottom: 40px;">
+				<button class="btn btn-primary pull-right" style="margin: 3px;" id="dataupload" type="button" >일괄업로드</button>
+			</div>
+			<div class="table-responsive" id="exceltable">
+				<table class="table table-striped " th:each="result : ${channelList}" th:id="${result.channelid}+table" style="display:none; overflow-x:scroll; overflow-y:hidden; height:100%; white-space:nowrap;">
+					<thead  class="table-header-bg">
+						<tr>
+							<th th:each="resultitem: ${result.itemlist}" th:text="${resultitem.itemname}"></th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>					
+				</table>
+				<table class="table table-striped " th:each="result : ${channelList}" th:id="${result.channelid}+tableitem" style="display:none;">
+					<thead  class="table-header-bg">
+						<tr>
+							<th th:each="resultitem: ${result.itemlist}" th:text="${resultitem.itemcode}"></th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>					
+				</table>
+				<br/>
+			</div>
+		</div>
+	</div>
+</div>
+</form>
+<iframe id="excelDownCommFrame" name="excelDownCommFrame" style="display:none;"></iframe>

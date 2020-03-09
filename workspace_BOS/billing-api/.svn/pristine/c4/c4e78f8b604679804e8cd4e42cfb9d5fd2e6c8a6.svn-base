@@ -1,0 +1,112 @@
+<style>
+table td {
+	vertical-align: middle;
+}
+</style>
+<script type="text/javascript">
+	$(document).ready(function() {
+		$("#report").load("/report/main");
+		//$("#monthorderreport").load("/report/monthorderreport");
+		
+		$("#tabreport").click(function(){
+			$("#report").empty();
+			$("#monthorderreport").empty();
+			$("#dayorderreport").empty();
+			$("#productreport").empty();
+			$("#counselreport").empty();
+			$("#counsellist").empty();
+			$("#report").load("/report/main");
+		});
+
+		$("#tabmonthorderreport").click(function(){
+			$("#report").empty();
+			$("#monthorderreport").empty();
+			$("#dayorderreport").empty();
+			$("#productreport").empty();
+			$("#counselreport").empty();
+			$("#counsellist").empty();
+			$("#monthorderreport").load("/report/monthorderreport");
+		});
+
+		$("#tabdayorderreport").click(function(){
+			$("#report").empty();
+			$("#monthorderreport").empty();
+			$("#dayorderreport").empty();
+			$("#productreport").empty();
+			$("#counselreport").empty();
+			$("#counsellist").empty();
+			$("#dayorderreport").load("/report/dayorderreport");
+		});
+		$("#tabproductreport").click(function(){
+			$("#report").empty();
+			$("#monthorderreport").empty();
+			$("#dayorderreport").empty();
+			$("#productreport").empty();
+			$("#counselreport").empty();
+			$("#counsellist").empty();
+			$("#productreport").load("/report/productreport");
+		});
+		$("#tabcounselreport").click(function(){
+			$("#report").empty();
+			$("#monthorderreport").empty();
+			$("#dayorderreport").empty();
+			$("#productreport").empty();
+			$("#counselreport").empty();
+			$("#counsellist").empty();
+			$("#counselreport").load("/report/counselreport");
+		});
+		$("#tabcounsellist").click(function(){
+			$("#report").empty();
+			$("#monthorderreport").empty();
+			$("#dayorderreport").empty();
+			$("#productreport").empty();
+			$("#counselreport").empty();
+			$("#counsellist").empty();
+			$("#counsellist").load("/report/counsellist");
+		});
+	});
+	
+	function emptyElement(elementid){
+		$('.modal-content').empty();
+	}
+</script>
+<section class="page container">
+	<!-- tab line start -->
+	<div class="span16" id="reportmaintab">
+		<ul class="nav nav-tabs font-size18px">
+			<li class="active" id="tabreport">
+		  		<a data-toggle="tab" href="#report" onclick="emptyElement('report')">보고서</a>
+ 			</li>
+			<li id="tabmonthorderreport">
+				<a data-toggle="tab" href="#monthorderreport" onclick="emptyElement('monthorderreport')">월별 판매내역 조회</a>
+			</li>
+			<li id="tabdayorderreport">
+				<a data-toggle="tab" href="#dayorderreport" onclick="emptyElement('dayorderreport)">일별 판매내역 조회</a>
+			</li>
+			<li id="tabproductreport">
+				<a data-toggle="tab" href="#productreport" onclick="emptyElement('productreport')">상품별 판매내역 조회</a>
+			</li>
+			<li id="tabcounselreport">
+				<a data-toggle="tab" href="#counselreport" onclick="emptyElement('counselreport')">월별 고객상담 내역 조회</a>
+			</li>
+			<li id="tabcounsellist">
+				<a data-toggle="tab" href="#counsellist" onclick="emptyElement('counsellist')">고객상담 내역 조회</a>
+			</li>
+		</ul>
+		<div class="span16 tab-content">
+			<div id="report" class="tab-pane fade in active">
+			</div>
+			<div id="monthorderreport" class="tab-pane fade">
+			</div>
+			<div id="dayorderreport" class="tab-pane fade">
+			</div>
+			<div id="productreport" class="tab-pane fade">
+			</div>
+			<div id="counselreport" class="tab-pane fade">
+			</div>
+			<div id="counsellist" class="tab-pane fade">
+			</div>
+		</div>
+	</div>	
+	<!-- tab line start -->
+</section>

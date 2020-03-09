@@ -1,0 +1,211 @@
+<script type="text/javascript">
+$(document).ready(function() {
+	
+	getDataCustomer(1);
+	
+	$('#customersearchbutton').click(function(){
+		if ($('#customernamepopup').val() == ''){
+			alert("조회하실 고객명을 입력하십시오.");
+		} else {
+			getDataCustomer(1);
+		}
+	});
+	
+	function getDataCustomer(page) {
+		var param = new Object();
+		param.page = page;
+		param.perPageNum = 20; /*만약값을셋팅하지 않으면 기본 페이지당 row수 10*/
+		param.customername = $("#customernamepopup").val();
+		param.customerphonenumber = $("#customerphonenumberpopup").val().replace(/-/g, '');
+		
+		$.ajax({
+			method : 'get',
+
+			url : '/order/getcustomerlist',
+			data : param, //JSON.stringify(paramData) , /* queryString, */
+			dataType : 'json',
+			error : function(xhr, status, error) {
+				alert(error);
+			},
+			success : handleDataCustomer
+		});
+	}
+
+	function handleDataCustomer(data) {
+		debugger;
+
+		//PageMaker정보를 Json으로부터 분리한다.
+		json = data.lists; //hashmap의 list array데이타
+		pageMaker = data.pageMaker; //pageMaker 
+
+		//alert(json);
+		if (json.length == 0) {
+			Common.Dialog.alert({
+				title : '',
+				content : '데이터가 없습니다.'
+			});
+		}
+		$('#customertbody').empty();
+		var trHTML = '';
+
+		$.each(json, function(i, item) {
+			 trHTML += '<tr>'          
+			 		+ '<td style="vertical-align: middle"><input type="checkbox" value="'+ item.customernumber + '|' + item.customername + '|' + item.deliveryphonenumber1 + '"/></td>'
+			 		+ '<td style="vertical-align: middle">' + ((pageMaker.cri.page-1) * 20 + i + 1) + '</td>'
+					+ '<td style="vertical-align: middle">' + item.customername + '</td>'
+					+ '<td class="phone" style="vertical-align: middle">' + item.deliveryphonenumber1 + '</td>'
+					+ '<td class="phone" style="vertical-align: middle">' + item.deliveryphonenumber2 + '</td>'
+                    + '</tr>';
+		});
+		$('#customertbody').append(trHTML);
+		formatPhone();
+		pagingCusteomerProc(pageMaker);
+	}
+	
+ 	$("#confirmbutton").click(function(){
+		if (!$('#customertable input[type=checkbox]:checked').val()){
+			  alert("고객을 선택하십시오.");
+			  return;
+		}
+		
+		var customer = $('#customertable input[type=checkbox]:checked').val().split('|');
+		$('#customernumber').val(customer[0]);
+		$('#customername').val(customer[1]);
+		$('#customerphonenumber').val(customer[2]);
+		$('#searchcustomername').val(customer[1]);
+		$('#searchcustomerphonenumber').val(customer[2]);
+		inputFormatPhone();
+		
+		$('#confirmbutton').attr("disabled", "disabled");
+		$("#savedialog").modal('hide');
+
+		getDataContract(1);
+		getDataCounsel(1);
+ 	});
+
+ 	$("#cancelbutton").click(function(){
+		$('#cancelbutton').attr("disabled", "disabled");
+		$("#savedialog").modal('hide');
+ 	});
+ 	
+	$('#customertable').on('click', 'tr', function(){
+		$('#customertable input[type=checkbox]').prop('checked',false);
+		$('td input:checkbox',this).prop('checked',true);
+		$('#customertbody tr').attr('style','');
+		$(this).attr('style','background-color: #D9E5FF');
+	});
+	
+	function pagingCusteomerProc(pageMaker) {
+		//============= 시작=====================
+		$("#paginationcustomer").empty();
+		if (pageMaker.totalCount != 0) {
+			$("#paginationcustomer").empty();
+			if (pageMaker.prev == true) {
+				
+				/*<![CDATA[*/  //타임리프에서 부등호상용시 조심해야함 반드시 CDATA로 감싸야함
+				$("#paginationcustomer").append('<li class="goBackPage"><a><<</a></li>'); //다음페이지로 가기 버튼 활성화
+				/*]]>*/
+			}
+
+
+			//아래는 타임리프사용시 조시매야한다. for하기와 같이 쓰지않음 에러발생함
+			/*<![CDATA[*/
+			for (var i = pageMaker.startPage; i <= pageMaker.endPage; i++) {
+				/*]]>*/
+
+				if (pageMaker.cri.page == i) { 
+					$("#paginationcustomer").append('<li class="disabled active" style="color: red;"><a>' + i + "</a></li>"); //버튼 비활성화
+				} else {
+					$("#paginationcustomer").append('<li class="goPage" data-page="' + i + '"><a>' + i + "</a></li>"); //버튼 활성화
+				}
+			}
+
+			if (pageMaker.next == true) {
+				$("#paginationcustomer").append('<li class="goNextPage"><a>>></a></li>'); //다음페이지로 가기 버튼 활성화
+			}
+		}
+	//=============paginationcustomer 끝=====================
+	}
+
+	//===================페이지이벤트처리시작==========================
+    $(document).on("click", "#paginationcustomer .goBackPage", function(){
+    	page = Number(pageMaker.startPage) - 1;
+    	getDataDelivery(page);
+    });
+
+
+	$(document).on("click", "#paginationcustomer .goPage", function(){
+		page = $(this).attr("data-page");
+		getDataDelivery(page);
+	});
+
+    $(document).on("click", "#paginationcustomer .goNextPage", function(){
+		page = Number(pageMaker.endPage) + 1;
+		getDataDelivery(page);
+	});
+}); 
+</script>
+<div class="modal-header modal-popup-header">
+	<h5 class="modal-title">
+		<strong>고객목록</strong>
+		<button type="button" class="close" data-dismiss="modal">&times;</button>
+	</h5>
+</div>
+<div class="modal-body">
+	<div class="panel panel-default">
+		<div class="panel-body">
+			<div class="modal-body" style="padding-bottom: 0px; padding-top: 0px;">
+				<form role="form" name="CustomerSearchForm">
+					<div class="row">	
+						<label class="col-md-2">고객명 </label>
+						<label class="col-md-3">
+							<input type="text" class="form-control" id="customernamepopup" th:value="${customername}" name="customernamepopup" />
+						</label>	
+						<label class="col-md-2">전화번호</label>
+						<label class="col-md-3">
+							<input type="text" class="form-control" data-date-format="yyyy-mm-dd" id="customerphonenumberpopup" th:value="${customerphonenumber}" name="customerphonenumberpopup" />	
+						</label>
+						<label class="col-md-2">
+							<button id="customersearchbutton" type="button" class="btn btn-primary">조회</button>
+						</label>	
+			      	</div>
+			    </form>
+			</div>	    	
+		</div>
+	</div>
+	<div class="panel panel-default">
+	<!--팝업메인-->
+		<div class="panel-heading">
+			<h4 class="panel-title">
+				<strong>고객목록</strong>
+			</h4>
+		</div>
+		<div class="panel-body">
+			<div class="modal-body" style="padding-bottom: 0px; padding-top: 0px;">
+		   		<div class="table-responsive">
+					<div class="form-group">
+						<b><span id="totalcount"></span></b>
+					</div>
+	     			<table class="table" id="customertable"> 
+	      			<thead  class="table-header-bg">
+	       				<tr>
+	        				<th>선택</th>
+	        				<th>번호</th>
+	        				<th>고객명</th>
+	        				<th>전화번호1</th>
+	        				<th>전화번호2</th>
+						</tr>
+					</thead>
+					<tbody id="customertbody" class="table-body-row">
+					</tbody>
+	   				</table>
+	  			</div>
+			</div>
+			<div class="row">	
+				<ul id="paginationcustomer" class="pagination"></ul>
+				<button id="cancelbutton" class="btn btn-primary pull-right"  role="button">취소</button>
+				<button id="confirmbutton" class="btn btn-primary pull-right"  role="button">확인</button>
+			</div>
+		</div>
+	</div>
+</div>

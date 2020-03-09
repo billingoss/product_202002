@@ -1,0 +1,135 @@
+package com.api.controller;
+
+import java.net.URLEncoder;
+import java.security.Principal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.api.model.CodeGroupDetail;
+import com.api.model.Criteria;
+import com.api.model.PageMaker;
+import com.api.model.User;
+import com.api.model.product.Product;
+import com.api.service.CodeService;
+import com.api.service.ProductService;
+import com.api.service.UserService;
+import com.api.util.SXSSFExcelUtil;
+
+@RestController
+@RequestMapping("product")
+@Transactional(rollbackFor=Exception.class)
+public class ProductController {
+
+	
+	@Autowired 
+	UserService userService;
+		
+	@Autowired 
+	CodeService codeService;
+
+	@Autowired 
+	ProductService productService;
+
+	@RequestMapping(value = "/productlist", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+	public ModelAndView viewProductList(Model model, Principal principal) {
+		ModelAndView modelAndView = new ModelAndView();
+
+		//상품유형
+		List<CodeGroupDetail> productTypeList = codeService.finCodeGroupDetailByCodeGroupId("PRODUCTTYPE");
+		model.addAttribute("productTypeList",productTypeList);
+		
+		//상태
+		List<CodeGroupDetail> productStateList = codeService.finCodeGroupDetailByCodeGroupId("PRODUCTSTATE");
+		model.addAttribute("productStateList",productStateList);
+		
+		modelAndView.setViewName("online/product/productlist");
+		return modelAndView;
+	}	
+	
+	@RequestMapping(value = "/getproductlist", method = RequestMethod.GET)
+	public Map getCustomerList(@ModelAttribute Product product, Model model, Principal principal) {
+		Map map = new HashMap();
+		
+		User user = userService.readUser(principal.getName());
+		product.setProviderNumber(user.getProviderNumber());
+		
+		List<Product> list = productService.getProductList(product);
+		
+		Criteria cri = product;
+		PageMaker pageMaker = new PageMaker();
+		pageMaker.setCri(cri);
+		pageMaker.setTotalCount(list.size()>0?list.get(0).getTotalCount():0);
+		
+		map.put("lists", list); // 리스트fetch
+		map.put("pageMaker", pageMaker); 
+
+		return map;
+	}
+	
+	@RequestMapping(value = "/getproductlistexcel", method = RequestMethod.POST)
+	public void getProductListExcel(HttpServletRequest request, HttpServletResponse response, @ModelAttribute Product product, Principal principal)  throws Exception {
+		
+		User user = userService.readUser(principal.getName());
+		product.setProviderNumber(user.getProviderNumber());
+		
+		List<Product> list = productService.getProductList(product);
+		
+		//엑셀 다운로드
+		SXSSFExcelUtil excel = new SXSSFExcelUtil();
+		excel.createSheet("상품관리");
+
+		//헤더 생성
+		int j = 0;
+		excel.createRow();
+		excel.setCellValue("Y", j++, "번호");
+		excel.setCellValue("Y", j++, "상품유형");
+		excel.setCellValue("Y", j++, "상품명");
+		excel.setCellValue("Y", j++, "패키지유형");
+		excel.setCellValue("Y", j++, "상품가격");
+		excel.setCellValue("Y", j++, "상태");
+		excel.setCellValue("Y", j++, "판매시작일");
+		excel.setCellValue("Y", j++, "판매종료일");
+		excel.setCellValue("Y", j++, "상품설명");
+		excel.setCellValue("Y", j++, "등록일");
+	    
+	    //바디 생성
+	    Product productResult;
+	    for (int i=0; i<list.size(); i++) {
+	    	productResult = list.get(i);
+		    j = 0;
+		    excel.createRow();
+	    	excel.setCellValue("N", j++, String.valueOf(i+1));
+	    	excel.setCellValue("N", j++, productResult.getProductTypeName());
+	    	excel.setCellValue("N", j++, productResult.getProductName());
+	    	excel.setCellValue("N", j++, "Y".equals(productResult.getPackagePriceReferenceYn())?"종량형":"정액형");
+	    	excel.setCellValue("N", j++, String.valueOf(productResult.getPriceAmount()));
+	    	excel.setCellValue("N", j++, productResult.getProductStateName());
+	    	excel.setCellValue("N", j++, productResult.getSubscribeStartDateTime());
+	    	excel.setCellValue("N", j++, productResult.getSubscribeEndDateTime());
+	    	excel.setCellValue("N", j++, productResult.getProductDescription());
+	    	excel.setCellValue("N", j++, productResult.getLastChangeDateTime());
+	    }
+
+	    // 컨텐츠 타입과 파일명 지정
+		response.setContentType("application/vnd.ms-excel");
+		response.setHeader("Content-Disposition", "attachment;filename="+URLEncoder.encode("상품관리.xlsx", "UTF-8"));
+		//response.setHeader("Set-Cookie", "fileDownload=true; path=/");
+
+		// 엑셀 출력
+		excel.write(response.getOutputStream());
+    }
+}

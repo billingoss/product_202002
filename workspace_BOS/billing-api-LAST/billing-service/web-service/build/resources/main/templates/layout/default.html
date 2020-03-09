@@ -1,0 +1,48 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></meta>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"  ></script>
+    <script src="http://cdn.jsdelivr.net/webjars/bootstrap/3.3.4/js/bootstrap.min.js" ></script>
+    <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+    <link href="/css/custom.css" type="text/css" media="screen, projection" rel="stylesheet" />
+	<link href="/css/bootstrap.css" type="text/css" media="screen, projection" rel="stylesheet" />
+	<link href="/css/customize-template.css" type="text/css" media="screen, projection" rel="stylesheet" />
+	<!-- IE Promise -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/bluebird/3.3.5/bluebird.min.js"></script>
+</head>
+<body>
+<script type="text/javascript">
+$(document).ready(function() {
+		$("#divloading").load("/billing/loadinggif");
+	});
+</script>
+<div id="wrapper">
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0">
+      
+      <div class="navbar-default header" role="navigation" th:replace="fragments/header :: div">
+      </div>
+      <!-- /.navbar-static-side -->
+      
+    </nav>
+
+    <!-- Page Content -->
+    <div id="page-wrapper" layout:fragment="content">
+    
+    </div>
+    <!-- /#page-wrapper -->
+    
+</div>
+<div id="divloading">
+
+</div>
+<!-- /#wrapper -->
+<!-- 
+<div  th:replace="fragments/footer :: footer">
+    </div>
+ -->
+</body>
+</html>

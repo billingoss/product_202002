@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+
+<head>
+<!-- header -->
+<meta charset="UTF-8"/>
+<title>정기배송 | BTV</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="viewport" id="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,initial-scale=1.0"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="-1"/>
+<link rel="stylesheet" href="/mobileResources/css/library/csslibrary.css"/>
+<link rel="stylesheet" href="/mobileResources/css/screen.css"/>
+<!--[if lt IE 9]>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js" type="text/javascript" charset="utf-8"></script>
+<![endif]-->
+<script src="/mobileResources/js/library/jquery.min.js"></script>
+<script src="/mobileResources/js/library/jquerylibrary.min.js"></script>
+<script src="/mobileResources/js/screen.js"></script>
+<script src="/js/commonlib.js" type="text/javascript"></script>
+<!-- <script src="http://dmaps.daum.net/map_js_init/postcode.v2.js"></script> -->
+<script src="https://ssl.daumcdn.net/dmaps/map_js_init/postcode.v2.js"></script>
+<!-- //header -->
+
+<script type="text/javascript">
+
+//통합주소 daum api 
+function foldDaumPostcode() {
+	//우편번호 찾기 찾기 화면을 넣을 element
+	var element_wrap = document.getElementById('wrap');
+	// iframe을 넣은 element를 안보이게 한다.
+	element_wrap.style.display = 'none';
+}
+
+function execDaumPostcode(){
+	//우편번호 찾기 찾기 화면을 넣을 element
+	var element_wrap = document.getElementById('wrap');
+	// 현재 scroll 위치를 저장해놓는다.
+	var currentScroll = Math.max(document.body.scrollTop, document.documentElement.scrollTop);
+	new daum.Postcode({
+		oncomplete: function(data) {
+			// 검색결과 항목을 클릭했을때 실행할 코드를 작성하는 부분.
+			// 각 주소의 노출 규칙에 따라 주소를 조합한다.
+			// 내려오는 변수가 값이 없는 경우엔 공백('')값을 가지므로, 이를 참고하여 분기 한다.
+			var fullAddr = data.address; // 최종 주소 변수
+			var extraAddr = ''; // 조합형 주소 변수
+			// 기본 주소가 도로명 타입일때 조합한다.
+			if(data.addressType === 'R')
+			{
+				//법정동명이 있을 경우 추가한다.
+				if(data.bname !== ''){
+				    extraAddr += data.bname;
+				}
+				// 건물명이 있을 경우 추가한다.
+				if(data.buildingName !== ''){
+				    extraAddr += (extraAddr !== '' ? ', ' + data.buildingName : data.buildingName);
+				}
+				// 조합형주소의 유무에 따라 양쪽에 괄호를 추가하여 최종 주소를 만든다.
+				fullAddr += (extraAddr !== '' ? ' ('+ extraAddr +')' : '');
+			}
+			// 우편번호와 주소 정보를 해당 필드에 넣는다.
+			document.getElementById('zipCode').value = data.zonecode; //5자리 새우편번호 사용
+			document.getElementById('baseAddress').value = fullAddr;
+			// iframe을 넣은 element를 안보이게 한다.
+			// (autoClose:false 기능을 이용한다면, 아래 코드를 제거해야 화면에서 사라지지 않는다.)
+			element_wrap.style.display = 'none';
+			// 우편번호 찾기 화면이 보이기 이전으로 scroll 위치를 되돌린다.
+			document.body.scrollTop = currentScroll;
+		},
+		// 우편번호 찾기 화면 크기가 조정되었을때 실행할 코드를 작성하는 부분. iframe을 넣은 element의 높이값을 조정한다.
+		onresize : function(size) {
+		    element_wrap.style.height = (size.height)+'px';
+		},
+			width : '100%',
+			height : '100%'
+	}).embed(element_wrap);
+	// iframe을 넣은 element를 보이게 한다.
+	element_wrap.style.display = 'block';
+}
+//daum api end
+$(document).ready(function(){
+	/*<![CDATA[*/
+	var today = new Date();
+    var mm = today.getMonth()+1; //January is 0!
+	var dd = today.getDate();
+    
+    //계약항목 설정
+    setContractData();
+    
+	//계약항목 설정
+	function setContractData() {
+		$('#paymentDay').val("31");
+		if ($('#duration').val() == 1) {
+			$('#recurringDeliveryYn').val('N');
+			$('#recurringInvoiceYn').val('N');
+			$('#deliveryCycle').val('ONETIME');
+		} else {
+			$('#recurringDeliveryYn').val('Y');
+			$('#recurringInvoiceYn').val('Y');
+		}
+	}
+
+	$('#minusQuantity').click(function(){
+		var quantity = parseInt($('#productQuantity').val())-1;
+		if (quantity > 0){
+			$('#productQuantity').val(quantity);
+		}
+	});
+	
+	$('#plusQuantity').click(function(){
+		var quantity = parseInt($('#productQuantity').val())+1;
+		if (quantity <= 1000) {
+			$('#productQuantity').val(quantity);
+		} else {
+			alert("수량은 1000개까지만 가능합니다.");
+		}
+	});
+	
+	$('#saleButton').click(function(){
+		
+		if ($('#customerName').val() == '') {
+			alert('고객명을 입력하십시오.');
+			$('#customerName').focus();
+			return;
+		}
+		if (!isKorean($('#customerName').val())){
+			alert("고객명은 한글과 영문만 입력가능합니다.");
+			$('#customerName').focus();
+			return;
+		}
+		
+		if ($('#deliveryCustomerName').val() == '') {
+			alert('주문자 이름을 입력하십시오.');
+			$('#deliveryCustomerName').focus();
+			return;
+		}
+		if (!isKorean($('#deliveryCustomerName').val())){
+			alert("주문자 이름은 한글과 영문만 입력가능합니다.");
+			$('#deliveryCustomerName').focus();
+			return;
+		}
+		
+		if ($('#zipCode').val() == '') {
+			alert('주소를 입력하십시오.');
+			$('#zipButton').focus();
+			return;
+		}
+
+		if ($('#detailAddress').val() == '') {
+			alert('상세주소를 입력하십시오.');
+			$('#detailAddress').focus();
+			return;
+		}
+		if (!isKoreanNumber($('#detailAddress').val())){
+			alert("상세 주소는 한글,영문,숫자만 입력가능합니다.");
+			$('#detailAddress').focus();
+			return;
+		}
+		
+		if ($('#deliveryPhoneNumber').val() == '') {
+			alert('연락처를 입력하십시오.');
+			$('#deliveryPhoneNumber').focus();
+			return;
+		} else if (isNumber($('#deliveryPhoneNumber').val().replace(/-/g, '')) == false) {
+			alert('연락처는 숫자만 입력하십시오.');
+			$('#deliveryPhoneNumber').focus();
+			return;
+		} else if ($('#deliveryPhoneNumber').val().substring(0,2) != '01') {
+			alert('연락처는 핸드폰번호만 입력가능합니다.');
+			$('#deliveryPhoneNumber').focus();
+			return;
+		} else if ($('#deliveryPhoneNumber').val().length < 10 || $('#deliveryPhoneNumber').val().length > 11) {
+			alert('연락처를 다시 입력하십시오.');
+			$('#deliveryPhoneNumber').focus();
+			return;
+		} 
+		
+		if ($('#deliveryRemark').val() != '' && !isKoreanNumber($('#deliveryRemark').val())){
+			alert("배송요청사항은 한글,영문,숫자만 입력가능합니다.");
+			$('#deliveryRemark').focus();
+			return;
+		}
+		
+		if ($('#deliveryRemark').val().length > 50) {
+			alert('배송요청사항은 50자까지만 가능합니다.');
+			$('#deliveryRemark').focus();
+			return;
+		}
+
+		if ($('#paymentAgreementYn').prop('checked') == false) {
+			alert('이용약관 동의후 주문가능합니다.');
+			$('#paymentAgreementYn').focus();
+			return;
+		}
+		
+		if ($('#contractAgreementYn').prop('checked') == false) {
+			alert('개인정보처리방침 및 제3자 제공 동의후 주문가능합니다.');
+			$('#contractAgreementYn').focus();
+			return;
+		}
+		
+		$('#deliveryPhoneNumber').val($('#deliveryPhoneNumber').val().replace(/-/g, ''));
+		
+		var option = '&';
+		var queryString = $("form[name=saleForm]").serialize();
+		
+		$.ajax({
+			method:'post',
+			url: '/btv/productsalesave',
+			data: queryString,
+			success : function(json) {
+				$('#conNumber').val(json.conNumber);
+				
+				var f = document.conForm;
+				if ($('#contractAdditionYn').val() == 'Y') {
+					f.action = '/btv/contractaddition';
+				} else {
+					f.action = '/btv/productsaledone';
+				}
+				f.submit();
+			}
+		});
+	});
+	
+    $(".js_all-1").trpCheckBoxAllsImg(".js_all", ".js_item");
+
+    $('.trems-link').click(function() {
+        $(this).parent().toggleClass('on');
+        $(this).parent().find('.terms_box').slideToggle(300);
+
+        if ($(this).parent().hasClass('on')) {
+            $(this).parent().find('.trems-link').html("내용접기");
+        } else {
+            $(this).parent().find('.trems-link').html("내용보기");
+        }
+    });
+	/*]]>*/
+});
+</script>
+</head>
+
+<body id="saleBody">
+<form name="conForm" onsubmit="return false;">
+<input type="hidden" id="conFormProviderNumber" name="providerNumber" th:value="${contractInsert.providerNumber}"/>
+<input type="hidden" id="conNumber" name="conNumber"/>
+</form>
+<form name="saleForm" onsubmit="return false;">
+<input type="hidden" id="providerNumber" name="providerNumber" th:value="${contractInsert.providerNumber}"/>
+<input type="hidden" id="channelCustomerNumber" name="channelCustomerNumber" th:value="${contractInsert.channelCustomerNumber}"/>
+<input type="hidden" id="channelOrderNumber" name="channelOrderNumber" th:value="${contractInsert.channelOrderNumber}"/>
+<input type="hidden" id="productId" name="productId" th:value="${product.productId}"/>
+<input type="hidden" id="customerNumber" name="customerNumber" th:value="${customer.customerNumber}" />
+<input type="hidden" id="priceAmount" name="priceAmount" th:value="${product.priceAmount}"/>
+<input type="hidden" id="duration" name="duration" th:value="${product.duration}"/>
+<input type="hidden" id="optionYn" name="optionYn" th:value="${product.optionYn}"/>
+<input type="hidden" id="deliveryCompany" name="deliveryCompany" th:value="${contractInsert.deliveryCompany}"/>
+<input type="hidden" id="deliveryCycle" name="deliveryCycle" th:value="${contractInsert.deliveryCycle}"/>
+<input type="hidden" id="deliveryTimes" name="deliveryTimes" th:value="${contractInsert.deliveryTimes}"/>
+<input type="hidden" id="deliveryDate" name="deliveryDate" th:value="${contractInsert.deliveryDate1}"/>
+<input type="hidden" id="recurringInvoiceYn" name="recurringInvoiceYn"/>
+<input type="hidden" id="recurringDeliveryYn" name="recurringDeliveryYn"/>
+<input type="hidden" id="deliveryChargeAmount" name="deliveryChargeAmount" value="0" />
+<input type="hidden" id="paymentDay" name="paymentDay"/>
+<input type="hidden" id="deliveryDay" name="deliveryDay" th:value="${contractInsert.deliveryDate2.substring(6,8)}" />
+<input type="hidden" id="deliveryDate1" name="deliveryDate1" th:value="${contractInsert.deliveryDate1}" />
+<input type="hidden" id="deliveryDate2" name="deliveryDate2" th:value="${contractInsert.deliveryDate2}" />
+<input type="hidden" id="contractAdditionYn" name="contractAdditionYn" th:value="${contractAdditionYn}" />
+
+    <div class="wrapper">
+        <!-- container -->
+        <div id="container">
+            <div id="contents" class="cont">
+                <div class="title">
+					<h3>배송 신청</h3>
+				</div>
+
+                <!-- 업체정보//-->
+                <section class="section">
+                    <div class="inner">
+                        <div class="product_box" style="border-top:unset;padding:unset;">
+                            <div class="img_info">
+                                <p class="img">
+                                    <img th:src="${provider.optionValue1}"/>
+                                </p>
+                                <p class="info">
+                                    <em><th:block th:utext="${provider.value2}"/></em>
+                                    <span th:text="${provider.value1}"></span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 상품정보//-->
+                <section class="section">
+                    <div class="inner">
+                        <div class="tit_box">
+                            <h4 class="tit">상품정보</h4>
+                        </div>
+                        <div class="product_box">
+                            <div class="img_info">
+                                <p class="img">
+                                    <img th:src="${product.productImageUrl}"/>
+                                </p>
+                                <p class="info">
+                                    <span th:text="${product.productName}">
+									</span>
+                                    <em><th:block th:utext="${product.productDescription}"/></em>
+                                </p>
+                            </div>
+                            <th:block th:if="${saleProductQuantity=='Y'}">
+                            <ul class="product_info">
+                                <li>
+                                    <dl>
+                                        <dt style="width:20%;">수량</dt>
+                                        <dd>
+                                            <button class="btn_minus" id="minusQuantity">삭제</button>
+                                            <input type="text" class="num" title="수량" id="" name="productQuantity" th:value="${contractInsert.productQuantity}" readonly="readonly" style="background:white;"/>
+                                            <button class="btn_plus" id="plusQuantity">추가</button>
+                                        </dd>
+                                    </dl>
+                                </li>
+                            </ul>
+                            </th:block>
+                            <th:block th:if="${saleProductQuantity!='Y'}">
+                           		<input type="hidden" class="num" title="수량" id="" name="productQuantity" value="1"/>&nbsp;
+                            </th:block>
+                        </div>
+                        <div class="form_box">
+                            <dl>
+                                <dt>고객명</dt>
+                                <dd>
+                                    <input type="text" placeholder="고객명 이름 입력" id="customerName" name="customerName" th:value="${customer.customerName}"/>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 배송정보//-->
+                <section class="section">
+                    <div class="inner">
+                        <div class="tit_box">
+                            <h4 class="tit">배송정보</h4>
+                        </div>
+
+                        <div class="form_box">
+                            <dl>
+                                <dt>주문자</dt>
+                                <dd>
+                                    <input type="text" placeholder="주문자 이름 입력" id="deliveryCustomerName" name="deliveryCustomerName" th:value="${customer.customerName}"/>
+                                </dd>
+                                <dt>배송지</dt>
+                                <dd>
+                                    <div class="address-box mb10">
+                                        <span class="post_item"><input type="text" class="input_lg" readonly="readonly" placeholder="우편번호" id="zipCode" name="zipCode" th:value="${customer.zipCode}"/></span>
+                                        <span class="btn_item"><button class="btn btn_blue" role="button" onclick="execDaumPostcode()" id="zipButton" style="margin-top:0px;">주소검색</button></span>
+                                    </div>
+									<!-- <div id="wrap" style="display:none;border:1px solid;width:500px;height:300px;margin:5px 0;position:relative" > -->
+									<div id="wrap" class="address-area" style="display:none;">
+									<img src="//t1.daumcdn.net/localimg/localimages/07/postcode/320/close.png" id="btnFoldWrap" style="cursor:pointer;position:absolute;right:0px;top:-1px;z-index:1" onclick="foldDaumPostcode()" alt="접기 버튼" />
+									</div>
+                                    <div class="mb10">
+                                        <input type="text" class="input_lg" placeholder="기본 주소" id="baseAddress"  name="baseAddress" readonly="readonly" th:value="${customer.baseAddress}"/>
+                                    </div>
+                                    <div class="">
+                                        <input type="text" class="input_lg" placeholder="상세주소 입력" id="detailAddress" name="detailAddress" th:value="${customer.detailAddress}"/>
+                                    </div>
+                                </dd>
+                                <dt>연락처</dt>
+                                <dd>
+                                    <input type="text" placeholder="휴대전화 입력" id="deliveryPhoneNumber" name="deliveryPhoneNumber" th:value="${customer.phoneNumber}"/>
+                                </dd>
+                                <dt>이메일</dt>
+                                <dd>
+                                    <input type="text" placeholder="이메일 입력" id="deliveryEmail" name="deliveryEmail" th:value="${customer.email}"/>
+                                </dd>
+                                <dt>배송<br/>요청사항</dt>
+                                <dd>
+                                    <div class="textarea-box">
+                                        <textarea id="deliveryRemark" name="deliveryRemark" cols="30" rows="20" placeholder="배송 요청사항 입력 한글 50자"></textarea>
+                                    </div>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 정기배송정보//-->
+                <section class="section">
+                    <div class="inner">
+                        <div class="tit_box">
+                            <h4 class="tit">정기 배송 상품 안내</h4>
+                        </div>
+						<div>
+                            <ul class="mark_dot-list">
+                                <li th:text="${'오늘 주문하신 상품은 '+contractInsert.deliveryDate1.substring(4,6)+'월 '+contractInsert.deliveryDate1.substring(6,8)+'일  첫배송되며, '+contractInsert.description+' 정기배송됩니다.'}"></li>
+                                <li>배송일은 지역에 따라 영업일 기준 <b>1-2일</b> 정도 추가로 소요될 수 있습니다.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 정기결제약관동의//-->
+                <section class="section terms">
+                    <div class="inner">
+                        <div class="tit_box">
+                            <h4 class="tit">약관동의</h4>
+                        </div>
+                    </div>
+
+                    <ul class="check_all-wrap js_all-1">
+                        <li>
+                            <span class="trp checkbox-box">
+								<input class="js_all" type="checkbox" id="allAgreementYn" name="allAgreementYn"/>
+								<i></i>
+								<label for="allAgreementYn">전체동의</label>
+							</span>
+                        </li>
+                        <li>
+                            <span class="trp checkbox-box">
+								<input class="js_item" type="checkbox" id="paymentAgreementYn" name="paymentAgreementYn" value="Y"/>
+								<i></i>
+								<label for="paymentAgreementYn">이용약관 동의</label>
+							</span>
+                            <a href="#none" class="trems-link">내용보기</a>
+                            <div class="terms_box" th:utext="${terms.useAgreement}"></div>
+                        </li>
+                        <li>
+                            <span class="trp checkbox-box">
+								<input class="js_item" type="checkbox" id="contractAgreementYn" name="contractAgreementYn" value="Y"/>
+								<i></i>
+								<label for="contractAgreementYn">개인정보처리방침 및 제3자 제공 동의</label>
+							</span>
+                            <a href="#none" class="trems-link">내용보기</a>
+                            <div class="terms_box" th:utext="${terms.personalInformation}"></div>
+                        </li>
+                    </ul>
+                </section>
+
+                <!-- 하단버튼//-->
+                <div class="btn-area">
+                    <p>
+                        <a href="#none" id="saleButton">신청</a>
+                    </p>
+                </div>
+                <!--// 하단버튼-->
+
+            </div>
+        </div>
+        <!-- //container -->
+
+    </div>
+</form>    
+</body>
+
+</html>
+

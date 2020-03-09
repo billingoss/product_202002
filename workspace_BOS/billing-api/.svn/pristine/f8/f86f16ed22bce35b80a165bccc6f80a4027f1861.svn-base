@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.api.repository.ProviderRepository">
+
+<resultMap id="providerInformationByCode" type="com.api.model.ProviderInformation"> 
+	<result property="code" column="code"/> 
+	<result property="detailCode" column="detailCode"/> 
+	<result property="seq" column="seq"/>
+	<result property="value1" column="value1"/>
+	<result property="value2" column="value2"/>
+	<result property="optionCode" column="optionCode"/>
+	<result property="optionValue1" column="optionValue1"/>
+	<result property="optionValue2" column="optionValue2"/>
+	<result property="description" column="description"/>
+</resultMap>
+<select id="getProviderInformationByCode" resultMap="providerInformationByCode"  parameterType = "ProviderInformation">
+select a.code, a.detailcode, a.seq, a.value1, a.value2, a.optioncode, a.optionvalue1, a.optionvalue2, description
+from   providerinformation a
+where  a.providernumber = #{providerNumber}
+and    a.code = #{code}
+and    date_format(curdate(),'%Y%m%d') between a.effectstartdate and a.effectenddate
+order by a.detailcode, a.seq
+</select>
+
+<resultMap id="providerInformation" type="com.api.model.ProviderInformation"> 
+	<result property="code" column="code"/> 
+	<result property="detailCode" column="detailCode"/> 
+	<result property="seq" column="seq"/>
+	<result property="value1" column="value1"/>
+	<result property="value2" column="value2"/>
+	<result property="optionCode" column="optionCode"/>
+	<result property="optionValue1" column="optionValue1"/>
+	<result property="optionValue2" column="optionValue2"/>
+	<result property="description" column="description"/>
+</resultMap>
+<select id="getProviderInformation" resultMap="providerInformation"  parameterType = "ProviderInformation" >
+select a.code, a.detailcode, a.value1, a.value2, a.optioncode, a.optionvalue1, a.optionvalue2, a.description
+from   providerinformation a
+where  a.providernumber = #{providerNumber}
+and    a.code = #{code}
+and    a.detailcode = #{detailCode}
+<if test='!"N".equals(effectDateFlag)'>
+and    date_format(curdate(),'%Y%m%d') between a.effectstartdate and a.effectenddate
+</if>
+order by a.seq
+</select>
+
+</mapper>

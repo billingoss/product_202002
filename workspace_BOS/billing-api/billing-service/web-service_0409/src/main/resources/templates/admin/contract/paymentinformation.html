@@ -1,0 +1,57 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+	});
+</script>
+<div class="row">
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h2 class="panel-title">
+					<strong>결제 정보</strong>
+				</h2>
+			</div>
+			<div class="panel-body">
+				<div class="table-responsive">
+					<table class="table">
+						<thead class="table-header-bg">
+							<tr>												
+								<th style="width: 8%;">고객번호</th>
+								<th style="width: 8%;">계약번호</th>
+								<th style="width: 8%;">결제정보번호</th>
+								<th style="width: 8%;">결제방식</th>
+								<th style="width: 8%;">은행명</th>
+								<th style="width: 8%;">은행계좌번호</th>
+								<th style="width: 8%;">카드명</th>
+								<th style="width: 8%;">카드번호</th>
+							</tr>
+						</thead>
+						<tbody class="table-body-row">	
+							<tr th:each="result : ${paymentInformationResult}">
+								<td style="vertical-align: middle" th:text="${result.customerNumber}"></td>
+								<td style="vertical-align: middle" th:text="${result.conNumber}"></td>
+								<td style="vertical-align: middle" th:text="${result.paymentInformationNumber}"></td>
+								<td style="vertical-align: middle" th:text="${result.paymentMethod}"></td>
+								<td style="vertical-align: middle"></td>
+								<td style="vertical-align: middle"></td>
+								<td style="vertical-align: middle"></td>
+								<td style="vertical-align: middle"></td>
+							</tr>
+						</tbody>
+						<tfoot>
+							<tr>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+							</tr>
+						</tfoot>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

@@ -1,0 +1,163 @@
+    <!--결제//-->
+    <div id="popup_billingForwarding" class="trp popupfixed-wrap" th:fragment="billingForwardingPop">
+    <form id="billingForwardingForm" name ="billingForwardingForm" onsubmit="return false;">
+    	<input type="hidden1" id="billingForwardingSearchDate" name="searchDate"/>
+    	<input type="hidden1" id="billingForwardingChannelName" name="channelName"/>
+    	
+        <div class="popup-dim"></div>
+        <div class="popup-align">
+            <div class="popup-vertical">
+                <div class="popup-layer option ws">
+                    <a class="btn_close" href="#">X</a>
+                    <div class="pop_tit">청구내역전송관리</div>
+                    <!-- 알림 mode0 -->
+                    <section class="section">
+                        <div class="alert_txt mb20">
+                            엑셀 다운로드 된 청구 내역은 납부 완료 처리 됩니다.
+                        </div>
+                        <table class="form_table">
+                            <colgroup>
+                                <col width="130px"/>
+                                <col width="*"/>
+                            </colgroup>
+                            <tbody>
+                                <tr>
+                                    <th>채널</th>
+                                    <td>
+                                        <div class="select-box w_ss mb10">
+                                            <select class="select2Basic_pop" id="billForPopSearchChannelId" name="channelId">
+											</select>
+                                        </div>                                        
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>청구일</th>
+                                    <td>
+                                        <div class="select-box w_ss mb10">
+                                            <select class="select2Basic_pop" id="billForPopSearchInvoiceYear">
+											</select>
+                                        </div>
+                                        <div class="select-box w_ss mb10">
+                                            <select class="select2Basic_pop" id="billForPopSearchInvoiceMonth">
+											</select>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>청구내역</th>
+                                    <td>
+                                        <a class="btn btn_gray"  id="billForPopExcelDownBtn">엑셀다운로드</a>
+                                    </td>
+                                </tr>                                
+                            </tbody>
+                        </table>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </form>
+		<script type="text/javascript">
+		/*<![CDATA[*/
+			/***************************************************
+			청구내역 전송 popup event
+			***************************************************/	
+			var billingDownBtnEvent = function (){				
+				var bntId;
+				var popId ='popup_billingForwarding';
+				$('.billingDownBtn').each(function(index, item){
+					bntId = $(this).prop('id')
+					var popup_warp = $("#"+bntId).trpLayerFixedPopup("#"+popId);	
+					$("#"+bntId).on("click", function($e) {
+						
+						//청구년월 설정
+						var currentDate = new Date();                                     // 현재시간
+    					var currentYear = currentDate.getFullYear();
+    					var currentMonth = currentDate.getMonth()+1;
+    					var selectState = false;
+    					
+				 	 	for(defaultYear= 2019 ; defaultYear <= currentYear ; defaultYear++){				 		
+				 	 		if (defaultYear == currentYear){
+				 	 			selectState = true;
+				 	 		}
+				 	 		$("#billForPopSearchInvoiceYear").append($('<option/>', {
+								value: defaultYear
+								, text: defaultYear	+"년"
+								, selected : selectState
+							}));
+						}
+					 	for(defaultMonth= 1 ; defaultMonth < 13 ; defaultMonth++){
+					 		if (defaultMonth == currentMonth){
+					 			selectState = true;
+				 	 		}
+					 		$("#billForPopSearchInvoiceMonth").append($('<option/>', {
+								value: defaultMonth
+								, text: defaultMonth + "월"
+								, selected : selectState
+							}));
+						} 
+					 	
+					 	//파일전송가능 채널 조회
+						var param = new Object();
+						param.payableyn = 'N';						
+						param.invoiceFileCreateYn = 'Y';
+						
+						//청구 채널 조회
+						$.ajax({
+							method : 'get',				
+							url : '/channel/getInvoiceFileSendChannelList',
+							data : param, 
+							dataType : 'json',
+							success : function(data){
+								if (data != null ){									
+									$.each(data.channelList, function(i, item) {
+								 		$("#billForPopSearchChannelId").append($('<option/>', {
+											value: item.channelId
+											, text: item.channelName
+										}));								
+									});
+								}		
+							}
+						});
+					 	
+						$(".select2Basic").select2({            
+					        minimumResultsForSearch: Infinity
+					    }); 
+						$e.preventDefault();
+						popup_warp.open(this);
+					});
+					
+					$("body").on("click", "#"+popId+" .btn_close, #"+popId+" .btn_cancel", function($e) {
+						$e.preventDefault();
+						popup_warp.close();
+					});
+					
+					/***********************************************
+					청구내역 엑셀 다운로드 버튼 이벤트
+					***********************************************/
+					$("body").on("click", "#billForPopExcelDownBtn", function($e) {						
+						showConfirm('다운로드 된 내역은 납부 완료 처리 됩니다.<br/>저장 하시겠습니까?', getBillingFile);
+					});
+					
+				})			
+			};
+	
+			//청구내역 전송 버튼 event 설정
+			billingDownBtnEvent();
+			
+			/*****************************************
+			*****************************************/
+			var getBillingFile = function(){
+				var searchDate = $('#billForPopSearchInvoiceYear').val()+$('#billForPopSearchInvoiceMonth').val()+'01'; 
+				$('#billingForwardingSearchDate').val(searchDate);
+				$('#billingForwardingChannelName').val($('#billForPopSearchChannelId option:checked').text());
+		    	
+				var f = document.billingForwardingForm;
+				f.method = 'post';
+				f.action = '/billing/getSendBillListAndPayComplateExcel';
+				f.submit();
+			}
+			
+
+		/*]]>*/
+		</script>         
+    </div>

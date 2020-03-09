@@ -1,0 +1,1758 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.api.repository.InvoiceDetailRepository">
+
+<!-- 계약정보 및 상품정보 조회 -->
+<select id="getContractAndProduct" resultType="com.api.model.contract.ContractInsert" parameterType="com.api.model.contract.ContractInsert">
+	SELECT
+			cont.connumber					/*계약번호*/
+			, prod.productid					/*상품아이디*/
+			, prod.productname			/*상품이름*/
+			, cont.contractstate				/*계약상태*/
+			, cont.duration					/*가입기간 - 월단위*/ 
+			, cont.invoicecycle				/*청구주기*/
+			, cont.deliverycycle				/*배송주기*/
+			, cont.effectstartdatetime		/*유효시작일(서비스시작일)*/
+			, cont.effectenddatetime		/*유효종료일(서비스종료일)*/	
+			, prod.producttype				/*상품유형*/
+			, cont.recurringinvoiceyn		/*'Y:정기결제 N:선납(일괄결제)',*/
+			, cont.subscribedatetime		/*가입일자*/
+			, prod.providernumber			/*업체번호*/
+			, cont.subscribedatetime		/*계약일자*/
+			, cont.customernumber			/*고객번호*/
+			, CASE	WHEN prod.packageyn = 'N' 
+						THEN prod.priceamount
+						ELSE (CASE	WHEN prod.packagePriceReferenceYn = 'Y'
+										THEN
+											(SELECT 
+													SUM(prd.priceamount)
+												FROM productpackage prdPack
+													, product prd
+											  WHERE prdPack.mainproductid = prd.productid
+											    AND prdPack.packageid = contProd.packageid
+											)
+										ELSE
+											prod.priceamount
+										END
+								)
+						END AS priceamount
+			, contProd.quantity AS productQuantity
+			, cont.deliveryChargeAmount
+			, cont.deliverychargetype
+			, cont.paymentinformationnumber
+			, cont.providernumber
+			, cont.auditid
+		FROM  contract cont	/*계약정보*/
+				, contractproduct contProd	/*계약상품정보*/
+				, product prod	/*상품정보*/
+		WHERE cont.connumber = contProd.connumber
+		AND	contProd.productid = prod.productid
+		AND	cont.connumber = #{conNumber}
+		<if test='contractState != null and !"".equals(contractState)'>		 	
+			AND	cont.contractstate ='UNSETTLED'
+		</if>
+</select>
+
+<!-- 배송 정보에 청구번호, 청구일자 수정 -->
+<update id="updateDeliveryDetailByInvoiceNumber" parameterType = "com.api.model.contract.ContractInsert">
+	UPDATE deliverydetail deliv,
+			(SELECT
+					invo.providernumber
+					, invo.invoicenumber
+					, invo.invoicedate
+					, invo.connumber
+					, invo.invoicestartdate
+					, invo.invoiceenddate
+				FROM	invoicecalculation invo
+			  WHERE	invo.providernumber = #{providerNumber}
+			    AND	invo.connumber = #{conNumber}) invo_temp				
+		SET deliv.invoicenumber = invo_temp.invoicenumber
+			, deliv.invoicedate = invo_temp.invoicedate
+	 WHERE deliv.providernumber = invo_temp.providernumber
+	 	AND deliv.connumber = invo_temp.connumber
+	 	AND deliv.deliverydate BETWEEN invo_temp.invoicestartdate AND invo_temp.invoiceenddate
+	 	AND deliv.deliverystate = 'ORDERDONE'
+	 	AND deliv.invoicenumber = 0
+</update>
+
+<!-- 청구내역 건수 조회 -->
+<select id="getInvoiceCount" resultType="int" parameterType="com.api.model.billing.InvoiceCalculationInput">
+		SELECT
+				count(*) cnt
+		 FROM invoice invo
+		WHERE invo.providernumber = #{providerNumber}
+		   AND invo.connumber = #{conNumber}
+		   AND invo.invoicedate = #{invoiceDate}
+</select>
+
+<!-- 청구 금액 계산 내역 등록 -->
+<insert id="insertInvoiceCalculation" parameterType="com.api.model.billing.InvoiceCalculationInput">
+	INSERT INTO invoicecalculation
+	(
+		providernumber					/*업체번호*/     
+		, invoicenumber					/*청구번호*/     
+		, connumber						/*계약번호*/     
+		, paymentinformationnumber	/*청구번호*/     
+		, customernumber				/*고객번호*/
+		, prepayyn						/*선불여부*/		
+		, revenueitemcode				/*수익항목코드*/   
+		, invoiceclassificationcode		/*송장구분코드*/   
+		, invoicedate						/*청구일자*/     
+		, invoicestartdate				/*청구시작일자*/   
+		, invoiceenddate					/*청구종료일자*/   
+		, totinvoiceday					/*총청구일수*/    
+		, invoiceaplyday					/**/         
+		, invoiceamount					/*송장금액*/     
+		, collectionbalanceamount		/*미납금액*/     
+		, invoiceTurn						/*회차*/
+		, auditid							/*작성자ID*/    
+		, auditdatetime					/*작성일시*/     
+	)VALUES (
+		#{providerNumber}					/*업체번호*/     
+		, #{invoiceNumber}					/*청구번호*/     
+		, #{conNumber}						/*계약번호*/     
+		, #{paymentInformationNumber}	/*청구번호*/     
+		, #{customerNumber}				/*고객번호*/          
+		, #{prepayYn}							/*선불여부*/		
+		, #{revenueItemCode}				/*수익항목코드*/   
+		, #{invoiceClassificationCode}		/*송장구분코드*/   
+		, #{invoiceDate}						/*청구일자*/     
+		, #{invoiceStartDate}					/*청구시작일자*/   
+		, #{invoiceEndDate}					/*청구종료일자*/   
+		, #{totinvoiceDay}					/*총청구일수*/    
+		, #{invoiceAplyDay}					/**/         
+		, #{invoiceAmount}					/*송장금액*/     
+		, #{collectionBalanceAmount}		/*미납금액*/     
+		, #{invoiceTurn}						/*회차*/     
+		, #{userName}						/*작성자ID*/    
+		, NOW()					/*작성일시*/   	
+	)	
+</insert>
+
+<!-- 청구 내역 정률할인 계산 -->    
+<insert id="setInvoiceCalculationDiscountRate"  parameterType = "com.api.model.billing.InvoiceCalculationInput" useGeneratedKeys="true" keyProperty="connumber" >
+	insert into invoicecalculation (
+			providernumber
+			, invoicenumber
+			, connumber
+			, prepayyn
+			, paymentinformationnumber
+			, customernumber
+			, revenueitemcode
+			, invoiceclassificationcode
+			, invoicedate
+			, invoicestartdate
+			, invoiceenddate
+			, totinvoiceday
+			, invoiceaplyday
+			, invoiceamount
+			, collectionbalanceamount
+			, invoiceTurn
+			, auditid, auditdatetime)
+	select 
+			dis_cal.providernumber
+			, dis_cal.invoicenumber
+			, dis_cal.connumber
+			, #{prepayYn}
+			, dis_cal.paymentinformationnumber
+			, /*일반 할인 ver 2 ( rate, amount 두개 다 있을 경우 rate 먼저 할인 타도록 설정 - rate) => 할인 금액이랑 tax 부과 매출항목별 부가세 계산 : 정률할인 공급가액 할인금액 계산 */
+				dis_cal.customernumber
+	       , dis_cal.revenueitemcode 
+	       , dis_cal.invoiceclassificationcode
+	       , dis_cal.invoicedate
+	       , dis_cal.invoicestartdate
+	       , dis_cal.invoiceenddate
+	       , dis_cal.totinvoiceday
+	       , dis_cal.invoiceaplyday
+	       , sum(dis_cal.invoiceamount) * monthTerm as invoiceamount
+	       , sum(collectionbalanceamount) * monthTerm as collectionbalanceamount
+	       , dis_cal.invoiceTurn
+	       , dis_cal.auditid
+	       , dis_cal.auditdatetime 
+	from (
+		select
+			 inv.providernumber
+			, inv.invoicenumber
+			, inv.connumber
+			, inv.paymentinformationnumber
+			, /*일반 할인 ver 2 ( rate, amount 두개 다 있을 경우 rate 먼저 할인 타도록 설정 - rate) => 할인 금액이랑 tax 부과 매출항목별 부가세 계산 : 정률할인 공급가액 할인금액 계산 */
+		       inv.customernumber
+			, cd.discountid as revenueitemcode 
+			, '000' as invoiceclassificationcode
+			, inv.invoicedate
+			, inv.invoicestartdate
+			, inv.invoiceenddate
+			, inv.totinvoiceday
+			, datediff((case	when (str_to_date(inv.invoiceenddate, "%Y%m%d") <![CDATA[>=]]> str_to_date(cd.effectenddatetime, "%Y%m%d")) 
+								then str_to_date(cd.effectenddatetime, "%Y%m%d") 
+								else str_to_date(inv.invoiceenddate, "%Y%m%d") 
+								end),
+		      			(case	when (str_to_date(inv.invoicestartdate, "%Y%m%d") <![CDATA[>=]]> str_to_date(cd.effectstartdatetime, "%Y%m%d")) 
+		      					then str_to_date(inv.invoicestartdate, "%Y%m%d") 
+		      					else  str_to_date(cd.effectstartdatetime, "%Y%m%d")
+		      					end)
+		      			) as invoiceaplyday
+			, sum(truncate((inv.priceamount*cd.discountvalue/100),0)*(-1)) as invoiceamount
+			, sum(truncate((inv.priceamount*cd.discountvalue/100),0)*(-1)) as collectionbalanceamount
+			, #{userName} as auditid
+			, inv.invoiceTurn
+			, now() as auditdatetime 
+			, PERIOD_DIFF(substring(invoiceenddate,1,6),substring(invoicestartdate,1,6)) as monthTerm
+		from (
+			select 
+					ic.providernumber
+					, ic.invoicenumber
+					, ic.paymentinformationnumber
+					, ic.connumber
+					, ic.customernumber
+					, ic.revenueitemcode
+					, ic.invoicedate
+					, ic.invoicestartdate
+					, ic.invoiceenddate
+					, ic.totinvoiceday
+					, ic.invoiceamount
+					, p.taxobjectyn
+					, p.priceamount
+					, ic.invoiceTurn
+			   from 
+			   		invoicecalculation ic
+			   		, product p
+			where ic.connumber = #{conNumber}
+			  and ic.providernumber = #{providerNumber} /* 20180919 */
+			  and ic.invoiceclassificationcode = '000'			  
+			  and ic.collectionbalanceamount != 0
+			  and ic.revenueitemcode = p.productid
+			  and ic.invoicenumber = 0
+			  and ic.providernumber = p.providernumber
+			  and str_to_date(p.subscribeenddatetime, "%Y%m%d") <![CDATA[>=]]> str_to_date(ic.invoicestartdate, "%Y%m%d")
+			  and str_to_date(p.subscribestartdatetime, "%Y%m%d") <![CDATA[<=]]> str_to_date(ic.invoiceenddate, "%Y%m%d")   
+		   ) inv
+		   /*, discount d*/
+		   , contractdiscount cd
+		where inv.connumber = cd.connumber
+		and str_to_date(cd.effectenddatetime, "%Y%m%d") <![CDATA[>=]]> str_to_date(inv.invoicestartdate, "%Y%m%d")
+		and str_to_date(cd.effectstartdatetime, "%Y%m%d") <![CDATA[<=]]> str_to_date(inv.invoiceenddate, "%Y%m%d")
+		and cd.discounttype = 'RATE'
+		/*and cd.discountid = d.discountid
+		and cd.discounttype = d.discounttype
+		and inv.providernumber = d.providernumber*/
+		group by inv.providernumber, inv.invoicenumber, inv.connumber, inv.paymentinformationnumber,
+		       inv.customernumber, cd.discountid , '000',
+		     inv.invoicedate, inv.invoicestartdate, inv.invoiceenddate, inv.totinvoiceday,
+		     datediff((case	when (str_to_date(inv.invoiceenddate, "%Y%m%d") <![CDATA[>=]]> str_to_date(cd.effectenddatetime, "%Y%m%d")) 
+		     					then str_to_date(cd.effectenddatetime, "%Y%m%d") 
+		     					else str_to_date(inv.invoiceenddate, "%Y%m%d") 
+		     					end),
+		     			(case	when (str_to_date(inv.invoicestartdate, "%Y%m%d") <![CDATA[<=]]> str_to_date(cd.effectstartdatetime, "%Y%m%d")) 
+		     					then str_to_date(inv.invoicestartdate, "%Y%m%d") 
+		     					else  str_to_date(cd.effectstartdatetime, "%Y%m%d")
+		     				end)) ,     
+		#{userName}, now() 
+	 ) dis_cal
+	group by dis_cal.providernumber, dis_cal.invoicenumber, dis_cal.connumber, dis_cal.paymentinformationnumber, 
+	         dis_cal.customernumber, dis_cal.revenueitemcode , dis_cal.invoiceclassificationcode,
+	       dis_cal.invoicedate, dis_cal.invoicestartdate, dis_cal.invoiceenddate, dis_cal.totinvoiceday,
+	       dis_cal.invoiceaplyday, dis_cal.auditid, dis_cal.auditdatetime
+</insert> 
+
+<!-- 청구 내역 정액할인 계산 -->
+<insert id="setInvoiceCalculationDiscountAmount"  parameterType = "com.api.model.billing.InvoiceCalculationInput" useGeneratedKeys="true" keyProperty="connumber" >
+	insert into invoicecalculation (
+			providernumber
+			, invoicenumber
+			, connumber
+			, prepayyn
+			, paymentinformationnumber
+			, customernumber
+			, revenueitemcode
+			, invoiceclassificationcode
+			, invoicedate
+			, invoicestartdate
+			, invoiceenddate
+			, totinvoiceday
+			, invoiceaplyday
+			, invoiceamount
+			, collectionbalanceamount
+			, invoiceTurn
+			, auditid
+			, auditdatetime)
+	select 
+			dis_cal.providernumber
+			, dis_cal.invoicenumber
+			, dis_cal.connumber
+			, #{prepayYn}
+			, dis_cal.paymentinformationnumber
+			, /*일반 할인 ver 2 ( rate, amount 두개 다 있을 경우 rate 먼저 할인 타도록 설정 - rate) => 할인 금액이랑 tax 부과 매출항목별 부가세 계산 : 정률할인 공급가액 할인금액 계산 */
+	       		dis_cal.customernumber
+	       	, dis_cal.revenueitemcode 
+	       	, dis_cal.invoiceclassificationcode
+	       	, dis_cal.invoicedate
+	       	, dis_cal.invoicestartdate
+	       	, dis_cal.invoiceenddate
+	       	, dis_cal.totinvoiceday
+	       	, dis_cal.invoiceaplyday
+	       	, dis_cal.invoiceamount as invoiceamount
+	       	, collectionbalanceamount as collectionbalanceamount      
+	       	, dis_cal.invoiceTurn 	
+	       	, dis_cal.auditid
+	       	, dis_cal.auditdatetime 
+	from (
+		select 
+				inv.providernumber
+				, inv.invoicenumber
+				, inv.connumber
+				, inv.paymentinformationnumber
+				, /*일반 할인 ( rate, amount 두개 다 있을 경우 rate 먼저 할인 타도록 설정 - amount) : 정액할인 공급가액 할인금액 계산 */
+		      		inv.customernumber
+		      	, cd.discountid as revenueitemcode 
+		      	, '000' as invoiceclassificationcode
+		      	, inv.invoicedate
+		      	, inv.invoicestartdate
+		      	, inv.invoiceenddate
+		      	, inv.totinvoiceday
+		      	, datediff((case	when (str_to_date(inv.invoiceenddate, "%Y%m%d") <![CDATA[>=]]> str_to_date(cd.effectenddatetime, "%Y%m%d")) 
+		      						then str_to_date(cd.effectenddatetime, "%Y%m%d") 
+		      						else str_to_date(inv.invoiceenddate, "%Y%m%d") 
+		      						end),
+		         			(case	when (str_to_date(inv.invoicestartdate, "%Y%m%d") <![CDATA[>=]]> str_to_date(cd.effectstartdatetime, "%Y%m%d")) 
+		         					then str_to_date(inv.invoicestartdate, "%Y%m%d") 
+		         					else str_to_date(cd.effectstartdatetime, "%Y%m%d") 
+		         					end)
+		         			) as invoiceaplyday
+		        , (case	when (inv.sum_inv_amt >= cd.discountvalue) 
+		        		then (cd.discountvalue*(-1))
+		        		else (inv.sum_inv_amt*(-1)) 
+		        		end ) as invoiceamount
+		        , (case	when (inv.sum_inv_amt >= cd.discountvalue) 
+		        		then (cd.discountvalue*(-1)) 
+		        		else (inv.sum_inv_amt*(-1)) 
+		        		end ) as collectionbalanceamount
+		       , #{userName} as auditid
+		       , inv.invoiceTurn
+		       , now() as auditdatetime
+		       , PERIOD_DIFF(substring(invoiceenddate,1,6),substring(invoicestartdate,1,6)) as monthTerm
+		from (
+		    select 
+		    		ic.providernumber
+		    		, ic.invoicenumber
+		    		, ic.paymentinformationnumber
+		    		, ic.connumber
+		    		, ic.customernumber
+		    		, ic.invoicedate
+		    		, ic.invoicestartdate
+		    		, ic.invoiceenddate
+		    		, ic.totinvoiceday
+		    		, sum(ic.invoiceamount) as sum_inv_amt
+		    		, ic.invoiceTurn
+		   from invoicecalculation ic
+		   where  ic.connumber = #{conNumber}
+				and ic.providernumber = #{providerNumber}  /* 20180919 */
+		   		and ic.invoiceclassificationcode = '000'		   		
+		   		and ic.collectionbalanceamount != 0
+		   		and ic.invoicenumber = 0
+		   group by ic.providernumber, ic.invoicenumber, ic.paymentinformationnumber, ic.connumber, ic.customernumber, 
+		   ic.invoicedate, ic.invoicestartdate, ic.invoiceenddate, ic.totinvoiceday ) inv, contractdiscount cd
+		where inv.connumber = cd.connumber
+		and str_to_date(cd.effectenddatetime, "%Y%m%d") <![CDATA[>=]]> str_to_date(inv.invoicestartdate, "%Y%m%d")
+		and str_to_date(cd.effectstartdatetime, "%Y%m%d") <![CDATA[<=]]> str_to_date(inv.invoiceenddate, "%Y%m%d")
+		and cd.discounttype = 'AMOUNT'
+		 group by inv.providernumber, inv.invoicenumber, inv.connumber, inv.paymentinformationnumber,
+		        	inv.customernumber, cd.discountid , '000',
+		      		inv.invoicedate, inv.invoicestartdate, inv.invoiceenddate, inv.totinvoiceday,
+		      		datediff(	(case	when (str_to_date(inv.invoiceenddate, "%Y%m%d") <![CDATA[>=]]> str_to_date(cd.effectenddatetime, "%Y%m%d")) 
+		      							then str_to_date(cd.effectenddatetime, "%Y%m%d") 
+		      							else str_to_date(inv.invoiceenddate, "%Y%m%d") 
+		      							end),
+		          				(case	when (str_to_date(inv.invoicestartdate, "%Y%m%d") <![CDATA[<=]]> str_to_date(cd.effectstartdatetime, "%Y%m%d")) 
+		          						then str_to_date(inv.invoicestartdate, "%Y%m%d") 
+		          						else  str_to_date(cd.effectstartdatetime, "%Y%m%d")
+		          						end)) ,     
+		     #{userName}, now() 
+	)dis_cal
+	group by dis_cal.providernumber, dis_cal.invoicenumber, dis_cal.connumber, dis_cal.paymentinformationnumber, 
+	         dis_cal.customernumber, dis_cal.revenueitemcode , dis_cal.invoiceclassificationcode,
+	       dis_cal.invoicedate, dis_cal.invoicestartdate, dis_cal.invoiceenddate, dis_cal.totinvoiceday,
+	       dis_cal.invoiceaplyday, dis_cal.invoiceTurn, dis_cal.auditid, dis_cal.auditdatetime
+</insert>
+
+<!-- 청구 상세 내역 등록 -->   
+<insert id="setInvoiceDetail"  parameterType = "com.api.model.billing.InvoiceCalculationInput" useGeneratedKeys="true" keyProperty="connumber" >
+	insert into invoicedetail (
+			providernumber 
+			, invoicenumber
+			, invoicedate
+			, connumber
+			, prepayyn
+			, paymentinformationnumber
+			, customernumber
+			, revenueitemcode
+			, invoiceclassificationcode
+			, invoiceitemamount
+			, collectionbalanceamount
+			, invoiceTurn
+			, auditid,auditdatetime )
+	select 
+			ic.providernumber 
+			, 0
+			, ic.invoicedate
+			, ic.connumber
+			, #{prepayYn}
+			, ic.paymentinformationnumber
+			, ic.customernumber
+			, ic.revenueitemcode
+			, ic.invoiceclassificationcode
+			, sum(ic.invoiceamount) as invoiceitemamount
+			, sum(ic.collectionbalanceamount) as collectionbalanceamount
+			, ic.invoiceTurn		/*회차*/
+			, #{userName} as auditid
+			, now() as auditdatetime
+	from invoicecalculation ic
+	where ic.invoicedate not in (
+										select 
+											distinct i.invoicedate
+										from invoicedetail i 
+										where i.connumber = #{conNumber}  /*이미 invoicedetail에 insert시 동일 일자로 청구된 invoicedate들은 제외 처리 */
+										and i.providernumber = #{providerNumber} /* 20180919 */
+										and i.prepayyn = 'N' )
+	and ic.invoicenumber = 0 
+	and ic.prepayyn ='N'
+	and ic.providernumber = #{providerNumber} /* 20180919 */
+	and ic.connumber = #{conNumber} 
+	group by ic.providernumber , ic.invoicenumber, ic.invoicedate, ic.connumber, ic.paymentinformationnumber, ic.customernumber,
+	         ic.revenueitemcode, ic.invoiceclassificationcode,#{userName}, now()
+</insert>
+
+<!-- 청구 상세 정보 청구서 번호 수정 -->
+<update id="updateInvoiceDetail" parameterType = "com.api.model.billing.InvoiceCalculationInput">
+	update invoicedetail id2, 
+	  (select 
+			  nextval(invoicenumber_seq) as invoicenumber
+			  , create_inv_number.connumber
+			  , create_inv_number.providernumber
+			  , create_inv_number.invoicedate
+			  , create_inv_number.customernumber
+			  , create_inv_number.prepayyn
+		from (
+			        select 
+			        		id.providernumber
+			        		, id.connumber
+			        		, id.invoicedate
+			        		, id.paymentinformationnumber
+			        		, id.customernumber
+			        		, id.prepayyn
+						from invoicedetail id
+					  where id.connumber = #{conNumber}
+						and id.providernumber = #{providerNumber} /* 20180919 */
+						and id.invoicenumber = 0
+			        group by id.providernumber, id.connumber, id.invoicedate, id.paymentinformationnumber, id.customernumber, id.prepayyn
+	       )create_inv_number
+	    )inv_num  
+	set id2.invoicenumber = inv_num.invoicenumber 
+	where id2.providernumber = inv_num.providernumber
+	and id2.invoicedate = inv_num.invoicedate
+	and id2.invoicenumber = 0
+	and id2.connumber = inv_num.connumber
+	and id2.customernumber = inv_num.customernumber
+	and id2.prepayyn ='N'
+</update>
+ 
+<!-- 청구 계산 내역에 청구서번호 수정 -->
+<update id="updateInvoiceCalculation" parameterType = "com.api.model.billing.InvoiceCalculationInput">
+	update invoicecalculation ic
+			, invoicedetail id
+		set ic.invoicenumber = id.invoicenumber
+		where ic.providernumber = id.providernumber
+		and ic.connumber = id.connumber
+		and ic.invoicedate = id.invoicedate
+		and id.connumber = #{conNumber}
+		and id.providernumber = #{providerNumber} /* 위에 1000000 조건 삭제 20180919 */
+		and ic.customernumber = id.customernumber
+		and ic.invoicenumber = 0
+		and ic.paymentinformationnumber = id.paymentinformationnumber
+		/*and ic.prepayyn = 'N'
+		and id.prepayyn = 'N'*/
+</update>
+
+<!-- 청구내역 생성 _ 청구 확정 -->
+<insert id="setInvoice"  parameterType = "com.api.model.billing.InvoiceCalculationInput" useGeneratedKeys="true" keyProperty="connumber" >
+	insert into invoice (
+			providernumber
+			, invoicenumber
+			, invoicedate
+			, connumber
+			, paymentinformationnumber
+			, customernumber
+			, totalinvoiceamount
+			, adjustamount
+			, invoiceamount
+			, collectionbalanceamount
+			, collectioncloseyn
+			, paymentstatecode
+			, tid
+			, invoiceTurn
+			, auditid, auditdatetime)
+	select 
+			id.providernumber
+			, id.invoicenumber
+			, id.invoicedate
+			, id.connumber
+			, id.paymentinformationnumber
+			, id.customernumber
+			, (case	when (id.invoiceclassificationcode = '000') 
+					then sum(id.invoiceitemamount) 
+					else 0 
+					end) as totalinvoiceamount
+			, (case	when (id.invoiceclassificationcode = '001') 
+					then sum(id.invoiceitemamount) 
+					else 0 
+					end) as adjustamount
+			, sum(id.invoiceitemamount) as invoiceamount
+			, sum(id.collectionbalanceamount) as collectionbalanceamount
+			, (case	when (sum(id.collectionbalanceamount) = 0 ) 
+					then 'Y' 
+					else 'N' 
+					end) as collectioncloseyn
+			, '0000' as paymentstatecode
+			, ''
+			, id.invoiceTurn
+			, #{userName} as auditid
+			, now() as auditdatetime   
+	  from invoicedetail id
+	where id.invoicedate not in (
+										  select distinct i.invoicedate
+										  from invoice i 
+										  where i.connumber = #{conNumber}
+										  and i.providernumber = #{providerNumber}  /* 20180919 */
+										  and i.prepayyn = 'N'
+									  ) /*이미 invoice에 insert시 동일 일자로 청구된 connumber들은 제외 처리 */
+	  and id.connumber = #{conNumber}
+	  and id.providernumber = #{providerNumber}  /* 20180919 */
+	 /* and id.prepayyn = 'N'*/
+	group by providernumber, invoicenumber, invoicedate, connumber, paymentinformationnumber, customernumber, #{userName}, now()
+</insert>
+ 
+<!-- 청구번호 한건 조회 (미납 대상) -->
+<select id="getInvoiceNumberByOne" resultType="com.api.model.billing.InvoiceCalculationInput" parameterType="com.api.model.contract.ContractInsert">
+		SELECT
+			invo.invoicenumber					/*청구번호*/     
+			, invo.providernumber	     
+			, invo.connumber						/*계약번호*/     
+			, invo.paymentinformationnumber	/*청구번호*/     
+			, invo.customernumber				/*고객번호*/     
+			, invo.prepayyn						/*선불여부*/
+			, invo.invoicedate     
+			, invo.invoiceamount					/*송장금액*/     
+			, invo.collectionbalanceamount	/*미납금액*/
+			FROM invoice invo
+		  WHERE  invo.providernumber = #{providerNumber}
+		   AND invo.connumber = #{conNumber}
+		   AND invo.collectioncloseyn = 'N'
+	ORDER BY invo.invoicedate ASC		   
+		  LIMIT 1	 		
+</select>
+
+<!-- 청구내역 중 결제된 건 조회 -->
+<select id="getInvoicePaymentCloseCount" resultType="int" parameterType="com.api.model.contract.ContractInsert">
+	SELECT
+		COUNT(*) cnt
+		FROM invoice invo
+	  WHERE invo.providernumber =  #{providerNumber}
+	    AND invo.connumber =  #{conNumber}
+	    AND invo.collectioncloseyn = 'Y'
+	    AND invo.tid IS NOT NULL	    
+</select>
+
+<!-- 청구내역 상세 조회 -->
+<select id="getInvoiceDetail" resultType="com.api.model.billing.InvoiceDetail">
+	SELECT 
+		v0.invoiceNumber as invoiceNumber
+		, v0.invoiceClassificationCode as invoiceClassificationCode
+		, v0.revenueItemCode as revenueItemCode
+		, sum(v0.inv_amt) as invoiceItemAmount
+		, sum(v0.adj_amt) as adjustAmt
+		, sum(v0.paymentAmount) as paymentAmount
+		, sum(v0.collectionBalanceAmount) as collectionBalanceAmount
+		, v0.taxYn
+		, v0.orderNum
+	FROM ( 
+		SELECT
+			 id.invoicenumber as invoiceNumber
+			, gubun_list.gubun as invoiceClassificationCode
+			, gubun_list.revenueitemname as revenueItemCode
+			, id.invoiceclassificationcode as gubun
+			, case when ( id.invoiceclassificationcode = '000') then sum(id.invoiceItemamount) else 0 end as inv_amt
+			, case when ( id.invoiceclassificationcode = '006') then sum(id.invoiceItemamount) else 0 end as adj_amt
+			, case when (i.collectioncloseyn = 'N') then 0 else id.invoiceItemamount end as paymentAmount
+			, id.collectionbalanceamount as collectionBalanceAmount
+			, gubun_list.taxYn
+			, gubun_list.ordernum
+		FROM  
+		  invoicedetail id
+		  ,invoice i 
+		  ,(
+			SELECT 
+					case when (p.producttype = 'ETC') then 4 else 1 end as ordernum 
+					, case when (p.producttype = 'ETC') then '부가세' else '기본료' end as gubun 
+					, p.productid as revenueitemCode
+					, p.productname as revenueitemname 
+					, p.providernumber as providernumber
+					, ifnull(p.taxobjectyn, 'N') as taxYn
+					, p.subscribestartdatetime as subscribestartdatetime 
+					, p.subscribeenddatetime as subscribeenddatetime
+			FROM product p
+			WHERE p.providernumber = #{providerNumber}
+			UNION ALL
+			SELECT
+					case when (d.discounttype = 'ETC') then 5 else 3 end as ordernum
+					, case when (d.discounttype = 'ETC') then '부가세' else '할인' end as gubun 
+					, d.discountid as revenueitemcode
+					, d.discountname as revenueitemname 
+					, d.providernumber as providernumber
+					, 'N' as taxYn
+					, d.subscribestartdatetime as subscribestartdatetime 
+					, d.subscribeenddatetime as subscribeenddatetime
+			FROM discount d
+			WHERE d.providernumber = #{providerNumber}
+			UNION ALL
+			SELECT
+				2 as ordernum
+				, '일회성' as gubun 
+				, codeD.code as revenueitemcode 
+				, codeD.codename as revenueitemname
+				, #{providerNumber} as providernumber
+				, 'N' as taxYn				
+				, codeD.effectstartdatetime as subscribestartdatetime
+				, codeD.effectenddatetime as subscribeenddatetime
+			  FROM codegroupdetail codeD
+			 WHERE codeD.codegroupid = 'ONETIMEFEETYPE'			
+		   ) gubun_list 
+	WHERE id.invoicedate = replace(#{InvoiceDate},'-','')
+	AND  id.invoicenumber = #{InvoiceNumber}
+	AND  id.connumber = #{conNumber}
+	AND  id.revenueitemcode = gubun_list.revenueitemcode
+	AND  i.providernumber = id.providernumber
+	AND  i.invoicenumber = id.invoicenumber
+	AND  i.invoicedate = id.invoicedate
+	AND  i.connumber = id.connumber
+	AND  id.providernumber = #{providerNumber}
+	AND  id.providernumber = gubun_list.providernumber 
+	AND  id.providernumber = i.providernumber
+	/*AND  id.invoicedate between gubun_list.subscribestartdatetime and gubun_list.subscribeenddatetime*/
+	GROUP BY   
+	    id.invoicenumber 
+	   , gubun_list.gubun 
+	   , gubun_list.revenueitemname  
+	   , id.collectionbalanceamount 
+	   , gubun_list.ordernum
+	   , id.invoiceclassificationcode
+	   , gubun_list.taxYn
+	) v0
+	GROUP BY  v0.invoiceNumber
+		, v0.invoiceClassificationCode
+		, v0.revenueItemCode
+		, v0.taxYn
+		, v0.ordernum
+	ORDER BY v0.ordernum
+</select>
+
+<!-- 청구 상세내역 고객 정보 -->
+<select id="getInvoiceDetailCustomerInfo" resultType="com.api.model.billing.InvoiceDetailCustomerInfo">
+	SELECT
+		cu.customername
+		, cu.phonenumber
+		, p.productname
+		, ifnull(p.productdescription,'') as productdescription
+		, date_format(i.invoicedate, '%Y-%m-%d') as invoicedate
+		, cp.packageid
+		, p.productid
+		, c.connumber
+		, cu.email
+		, ifnull(date_format(substr((
+					SELECT paymentdatetime   
+					FROM paymenthistory ph 
+					WHERE ph.providernumber = cu.providernumber 
+					AND i.invoicenumber = ph.invoicenumber
+					AND ph.paymentdatetime = (SELECT max(paymentdatetime) 
+														FROM paymenthistory ph1 
+													WHERE ph.providernumber = ph1.providernumber 
+													AND ph.invoicenumber = ph1.invoicenumber
+                       								)
+					AND ph.paymenttypecode = 'PAYMENT') ,1,8), '%Y-%m-%d') ,'') paymentdate
+	FROM contract  c
+		, customer cu
+		, contractproduct cp
+		, product p
+		, invoice i
+	WHERE cu.providernumber = #{providerNumber}
+	AND c.providernumber = cu.providernumber
+	AND c.customernumber = cu.customernumber
+	AND c.providernumber = i.providernumber
+	AND c.connumber = cp.connumber
+	AND c.customernumber =i.customernumber
+	AND c.connumber = i.connumber
+	AND i.invoicenumber =  #{InvoiceNumber}  
+	AND i.invoicedate = replace(#{InvoiceDate},'-','')
+	AND c.providernumber =  p.providernumber
+	AND cp.productid = p.productid
+	AND (cp.producttype in ('NORMAL','COUPONCOUNT','COUPONPRICE') or p.packagepricereferenceyn ='N') 
+	
+	UNION ALL
+	SELECT   
+		cu.customername
+		, cu.phonenumber
+		, ifnull((select p1.productname from product p1 where p1.productid = pp.mainproductid),'') as productname
+		, ifnull((select p2.productdescription from product p2 where p2.productid = pp.mainproductid),'') as productdescription
+		, date_format(i.invoicedate, '%Y-%m-%d') as invoicedate
+		, cp.packageid
+		, p.productid
+		, c.connumber
+		, cu.email
+		, ifnull(date_format(substr((select paymentdatetime   
+		      from paymenthistory ph 
+		    where ph.providernumber = cu.providernumber 
+		    and i.invoicenumber = ph.invoicenumber
+		    and ph.paymentdatetime = (select max(paymentdatetime) from paymenthistory ph1 
+		                                                    where ph.providernumber = ph1.providernumber 
+		                    and ph.invoicenumber = ph1.invoicenumber
+		                     )
+		    and ph.paymenttypecode = 'PAYMENT'                 
+		    ) ,1,8) ,'%Y-%m-%d'),'') paydate
+	FROM contract  c
+		, customer cu
+		, contractproduct cp
+		, productpackage pp
+		, product p
+		, invoice i
+	WHERE cu.providernumber = #{providerNumber}
+	AND c.providernumber = cu.providernumber
+	AND c.customernumber = cu.customernumber
+	AND c.providernumber = i.providernumber
+	AND c.connumber = cp.connumber
+	AND cp.packageid = pp.packageid
+	AND p.productid = pp.compositionproductid
+	AND c.customernumber =i.customernumber
+	AND c.connumber = i.connumber
+	AND i.invoicenumber =  #{InvoiceNumber}    
+	AND i.invoicedate = replace(#{InvoiceDate},'-','')
+	AND cp.producttype = 'PACKAGE'
+	AND cp.packagepricereferenceyn ='Y'
+	AND c.providernumber = pp.providernumber
+	AND c.providernumber = p.providernumber
+	LIMIT 1
+</select>
+
+<!-- 청구 상세내역 상품 정보 -->
+<select id="getInvoiceDetailProductInfo" resultType="com.api.model.billing.InvoiceDetailProductInfo">
+	SELECT 
+		c.customername as customerName
+		, p.productid as mainProductId
+		, p.productname as mainProductName
+		, p.producttype as mainProductType
+		, pp.compositionproductid as compositionProductId
+		, p1.productname as compositionProductName
+		, concat("(",p1.priceamount,"원)") as compositionPriceAmount
+	FROM customer c
+		, contract ct
+		, invoice i
+		, contractproduct cp
+		, product p left outer join ( productpackage pp, product p1 ) on (p.providernumber  = pp.providernumber
+			    AND p.productid = pp.mainproductid
+			    AND p1.providernumber = p.providernumber
+			    AND pp.compositionproductid = p1.productid
+			    AND replace(#{InvoiceDate},'-','') between pp.effectstartdatetime and pp.effectenddatetime
+  		)
+	WHERE c.customernumber = ct.customernumber
+	AND c.providernumber = ct.providernumber
+	AND ct.connumber = cp.connumber
+	AND cp.producttype not in ('ETC')
+	AND p.providernumber = c.providernumber
+	AND c.providernumber = #{providerNumber} /* 20180919 */
+	AND c.providernumber = i.providernumber /* 20180919 */
+	AND p.productid = cp.productid 
+	AND i.invoicedate = replace(#{InvoiceDate},'-','')
+	AND i.invoicenumber = #{InvoiceNumber} 
+	AND i.connumber = ct.connumber
+</select>   
+
+<!-- 청구내역 부가세 정보 -->
+<select id="getInvoiceTaxItemAmount" resultType="com.api.model.billing.InvoiceTaxItemInfo" >
+	select 
+		(i.invoiceamount + i.adjustamount - truncate((i.invoiceamount + i.adjustamount)/11,0)) as invoiceItemAmount
+		,truncate((i.invoiceamount + i.adjustamount)/11,0) as vatAmount
+	 from invoice i 
+	 where i.invoicedate= replace(#{InvoiceDate},'-','')
+	 and i.invoicenumber =  #{InvoiceNumber} 
+	 and i.connumber = #{conNumber}
+	 and i.providernumber = #{providerNumber}
+</select> 
+
+<!-- 계약 정보 상세 조회 -->
+<select id="getContractInfoDetail" resultType="com.api.model.billing.ContractInfoDetail" parameterType="java.lang.Integer">
+	SELECT
+			cont.connumber				/*계약번호*/
+			, prod.productid				/*상품아이디*/
+			, prod.productname		/*상품이름*/
+			, cont.contractstate			/*계약상태*/
+			, cont.duration				/*가입기간 - 월단위*/ 
+			, cont.invoicecycle			/*청구주기*/
+			, cont.deliverycycle			/*배송주기*/
+			, cont.effectstartdatetime	/*유효시작일(서비스시작일)*/
+			, cont.effectenddatetime	/*유효종료일(서비스종료일)*/	
+			, prod.producttype			/*상품유형*/
+			, cont.recurringinvoiceyn	/*'Y:정기결제 N:선납(일괄결제)',*/
+			, cont.subscribedatetime	/*가입일자*/
+			, cont.paymentday			/*결제일자*/
+			, prod.providernumber		/*업체번호*/
+			, cont.subscribedatetime	/*계약일자*/
+			, cont.customernumber		/*고객번호*/
+			, CASE	WHEN prod.packageyn = 'N' 
+						THEN prod.priceamount
+						ELSE (CASE	WHEN prod.packagePriceReferenceYn = 'Y'
+										THEN
+											(SELECT 
+													SUM(prd.priceamount)
+												FROM productpackage prdPack
+													, product prd
+											  WHERE prdPack.mainproductid = prd.productid
+											    AND prdPack.packageid = contProd.packageid
+											)
+										ELSE
+											prod.priceamount
+										END
+								)
+						END AS priceamount 				/*상품가격*/
+			, CASE WHEN cont.recurringinvoiceyn = 'N' 
+					 THEN (SELECT SUM(totalinvoiceamount)
+									FROM invoice invo
+								  WHERE invo.connumber = cont.connumber
+								    AND invo.providernumber = cont.providernumber
+							)
+					 ELSE 0 END	AS bulkAmount		/*일괄 결제 금액*/			
+			, contProd.quantity AS productQuantity	/*상품수량*/
+			, cont.deliveryChargeAmount 				/*배송비*/
+			, cont.deliverychargetype 						/*배송유형*/
+			, cont.paymentinformationnumber			/*청구번호*/
+			, cust.customername							/*구매자명*/
+			, cust.cellphonenumber 						/*구매자 전화번호*/
+			, cust.email											/*구매자  email*/
+			, cont.channelcontractnumber
+			, cont.auditid										/*작성자*/
+			, invo.totalinvoiceamount						/*결제금액*/
+		FROM  contract cont					/*계약정보*/
+				, contractproduct contProd	/*계약상품정보*/
+				, product prod						/*상품정보*/
+				, customer cust					/*고객정보*/
+				, invoice invo						/*청구 정보*/
+		WHERE cont.connumber = contProd.connumber
+		AND	contProd.productid = prod.productid
+		AND 	cont.customernumber = cust.customernumber		
+		AND	cont.connumber = invo.connumber	
+		AND	cont.providernumber	= invo.providernumber
+		AND	cont.connumber = #{conNumber}
+		ORDER BY invo.invoicedate ASC
+		LIMIT 1
+</select>
+
+<!-- 결제정보  수정-->
+<update id="updatePaymentInformation" parameterType = "com.api.model.contract.PaymentInformation">
+	UPDATE paymentinformation
+			SET  billkey = #{billKey}		
+			, paymentmethod = #{paymentMethod}	
+			, cardcorporationcode = #{cardCorporationCode}		
+			,auditid = #{userName}
+			,auditdatetime = CURRENT_TIMESTAMP	  
+		 WHERE paymentinformationnumber = #{paymentInformationNumber}	
+</update>
+
+<!-- 결제 승인을 위한 정보 조회 -->
+<select id="getIniPayInfo" parameterType="com.api.model.billing.IniPayInfo" resultType="com.api.model.billing.IniPayInfo">
+	SELECT
+			cont.connumber									/*계약번호*/
+			, invo.invoicenumber			
+			, prod.productid									/*상품아이디*/
+			, prod.productname	AS goodName		/*상품이름*/
+			, 'WON'					AS currency			/*화폐단위*/
+			, invo.collectionbalanceamount AS price			/*결제대상 금액*/
+			, cust.customername	AS buyerName		/*구매자*/			
+			, cust.phonenumber	AS buyerTel			/*구매자이동전화*/
+			, cust.email			AS buyerEmail			/*구매자이메일*/
+			, payInfo.paymentmethod	AS paymethod	/*지불방법*/
+			, payInfo.billkey		AS billKey					/*빌링등록 키(빌키)*/
+			, payInfo.billkey		AS moid					/*빌링등록 키(빌키)*/
+			, '00' AS cardquota								/*할부개월 일시불*/
+			, '00' AS authentification						/*본인인증*/
+			, payInfo.cardcorporationcode				/*카드종류*/
+			, invo.invoicedate								/*청구일자*/
+			, cont.providernumber							/*제공자번호*/
+			, cont.auditid
+		FROM  contract cont	/*계약정보*/
+				, contractproduct contProd	/*계약상품정보*/
+				, product prod	/*상품정보*/
+				, invoice invo
+				, paymentinformation payInfo
+				, customer cust
+		WHERE cont.connumber = contProd.connumber
+		AND	contProd.productid = prod.productid
+		AND   cont.connumber = invo.connumber
+		AND	cont.paymentinformationnumber = payInfo.paymentinformationnumber
+		AND	cont.customernumber = cust.customernumber
+		AND	cont.connumber = #{conNumber}
+		AND	cont.providernumber = #{providerNumber} 
+		AND	invo.invoicenumber = #{invoiceNumber}
+</select>
+
+<!-- 결제 내역 저장 -->   
+<insert id="setPaymentHistory"  parameterType = "PaymentHistoryInput" useGeneratedKeys="true" keyProperty="connumber" >
+	insert IGNORE into paymenthistory
+	( providernumber
+		,invoicenumber
+		,connumber
+		,paymentdatetime
+		,paymenttypecode
+		,paymentamount
+		,paymentmethodcode
+		,refundyn
+		,cardcorporationcode
+		,cardapprovenumber
+		,recurringpaymentyn
+		,errorreasoncode
+		,refundreasoncode
+		,pgErrorCode
+		,pgErrorMsg
+		,etc
+		,tid
+		,auditid
+		,auditdatetime
+	 )values(
+		#{providerNumber} /* 실제 처리하는 providernumber */
+		,#{invoiceNumber} /* 실제 처리하는 invoicenumber */
+		,#{conNumber} /* 실제 처리하는 connumber */
+		,date_format(current_timestamp, '%Y%m%d%H%i%s')
+		,#{paymentTypeCode}
+		,#{paymentAmt}    /* 수납금액 : invoice의 미납금액으로 */
+		,#{paymentMethodCode}   /* 처리하는 수납 방법 공통코드 참조.   CARD BANK CASH 11PAY */
+		,'N'     
+		,#{cardCorporationCode}     /* card사 코드 공통코드 참고 */
+		, #{cardApproveNumber}   /* 승인번호 직접 key-in 해서 입력 */
+		, ifnull((select recurringpaymentyn from invoice i where i.providernumber = #{providerNumber} and i.invoicenumber = #{invoiceNumber}  and connumber = #{conNumber} limit 1),'N')
+		,#{errorReasonCode}     
+		,''
+		,#{pgErrorCode}
+		,#{pgErrorMsg}
+		,ifnull(#{memo},'')
+		,#{tid}
+		,#{userName}
+		, NOW()					/*작성일시*/   	
+	 )
+</insert>
+
+<!-- 청구 내역 결제 완료 처리 -->
+<update id="updateColInvoice" parameterType = "PaymentHistoryInput">
+	update invoice
+		set collectionbalanceamount = 0
+			,collectioncloseyn = 'Y'
+			,paymentstatecode = '1000' /*1000(결제완료), 0000(요금생성), 2000(환불처리), 9999(결제오류)*/
+			,tid = #{tid}
+			,auditid = #{userName}
+			,auditdatetime = CURRENT_TIMESTAMP
+	where 1=1
+	  and invoicenumber = #{invoiceNumber}
+	  and invoicedate =  replace(#{invoiceDate},'-','')
+	  and connumber = #{conNumber}
+</update>
+   
+<!-- 청구 상세 내역 결제 완료 처리 -->
+<update id="updateColInvoiceDetail" parameterType = "PaymentHistoryInput">
+	update invoicedetail
+		set collectionbalanceamount = 0
+			,auditid = #{userName}
+			,auditdatetime = CURRENT_TIMESTAMP
+	 where 1=1
+	   and invoicenumber = #{invoiceNumber}
+ 	   and invoicedate =  replace(#{invoiceDate},'-','')
+	   and connumber = #{conNumber}
+</update> 
+
+<!-- 배송 정보 상태 수정 -->
+<update id="updateDeliverydetailByDeliverystate" parameterType = "com.api.model.billing.PaymentHistoryInput">
+	UPDATE deliverydetail deliv
+		SET deliverystate = #{deliveryState}
+			,auditid = #{userName}
+			,auditdatetime = CURRENT_TIMESTAMP
+	 WHERE deliv.connumber = #{conNumber}
+	 	AND deliv.invoicenumber = #{invoiceNumber}
+	 	AND deliv.providernumber = #{providerNumber}
+	 	AND deliverystate != 'DONE'	/*배송이 완료된 상태에는 결제 업무중 상태를 변경 할 수 없다*/
+</update>
+
+<!-- 청구내역 선납여부  수정 -->
+<update id="updateInvoicePrepayYn" parameterType = "com.api.model.billing.InvoiceCalculationInput">
+	UPDATE invoice 
+		SET prepayyn = #{prepayYn}
+	 WHERE connumber = #{conNumber}
+	 	AND invoicenumber = #{invoiceNumber}
+	 	AND providernumber = #{providerNumber}
+</update>
+
+<!-- 청구 계산내역  선납여부  수정 -->
+<update id="updateInvoicecalculationPrepayYn" parameterType = "com.api.model.billing.InvoiceCalculationInput">
+	UPDATE invoicecalculation 
+		SET prepayyn = #{prepayYn}
+	 WHERE connumber = #{conNumber}
+	 	AND invoicenumber = #{invoiceNumber}
+	 	AND providernumber = #{providerNumber}
+</update>			
+			
+<!-- 청구상세내역 선납여부  수정 -->
+<update id="updateInvoicedetailPrepayYn" parameterType = "com.api.model.billing.InvoiceCalculationInput">
+	UPDATE invoicedetail 
+		SET prepayyn = #{prepayYn}
+	 WHERE connumber = #{conNumber}
+	 	AND invoicenumber = #{invoiceNumber}
+	 	AND providernumber = #{providerNumber}
+</update>
+
+<!-- 계약 상태  수정 -->
+<update id="updateContractContractstate" parameterType = "com.api.model.contract.ContractInsert">
+	UPDATE contract
+			SET  contractstate = #{contractState}
+			,auditid = #{userName}
+			,auditdatetime = CURRENT_TIMESTAMP
+		 WHERE connumber = #{conNumber}	
+		   AND contractstate != #{contractState}
+</update>
+
+<!-- 배송상태 기준 환불가능 건수 조회 -->
+<select id="getDelivaeryCntNotBefore" resultType="int" parameterType="com.api.model.billing.PaymentHistoryInput">
+	SELECT
+			count(*) cnt
+	FROM deliverydetail deli
+  WHERE deli.connumber = #{conNumber}
+	AND deli.providernumber = #{providerNumber}
+	AND deli.invoicenumber = #{invoiceNumber}
+	AND deli.deliverystate != 'BEFORE'
+</select>
+
+<!-- 청구내역정보 조회 -->
+<select id="getPaymentHistoryInfo" parameterType="com.api.model.billing.PaymentHistoryInput" resultType="com.api.model.billing.PaymentHistoryInput">
+		SELECT
+			ph.providernumber
+			, ph.invoicenumber
+			, ph.connumber
+			, ph.paymentdatetime
+			, ph.paymenttypecode
+			, ph.paymentownername
+			, ph.paymentamount AS paymentAmt
+			, ph.paymentmethodcode
+			, ph.refundyn
+			, ph.cardcorporationcode
+			, ph.cardapprovenumber
+			, ph.recurringpaymentyn
+			, ph.errorreasoncode
+			, ph.refundreasoncode
+			, ph.etc
+			, ph.tid
+			, invo.invoicedate
+			FROM paymenthistory ph			
+			, invoice invo			
+		  WHERE ph.invoicenumber = invo.invoicenumber
+		     AND ph.invoicenumber = #{invoiceNumber}
+		     AND ph.tid = #{tid}
+		     AND ph.paymenttypecode = 'PAYMENT'
+</select>
+
+<!-- 환불 이력 등록 -->
+<insert id="setRefundHistory"  parameterType = "PaymentHistoryInput" useGeneratedKeys="true" keyProperty="conNumber" >
+	insert into paymenthistory( 
+		providernumber
+		,invoicenumber
+		,connumber
+		,paymentdatetime
+		,paymenttypecode
+		,paymentamount
+		,paymentmethodcode
+		,refundyn
+		,cardcorporationcode
+		,cardapprovenumber
+		,recurringpaymentyn
+		,errorreasoncode
+		,refundreasoncode
+		,tid
+		,etc
+		,auditid
+	)values(
+		#{providerNumber} /* 실제 처리하는 providernumber */
+		,#{invoiceNumber} /* 실제 처리하는 invoicenumber */
+		,#{conNumber} /* 실제 처리하는 connumber */
+		,date_format(current_timestamp, '%Y%m%d%H%i%s')
+		,'REFUND'
+		,#{paymentAmt}    /* 수납금액 : invoice의 미납금액으로 */
+		,#{paymentMethodCode}   /* 처리하는 수납 방법 공통코드 참조.   CARD BANK CASH 11PAY */
+		,'N'     
+		,#{cardCorporationCode}     /* card사 코드 공통코드 참고 */
+		, #{cardApproveNumber}   /* 승인번호 직접 key-in 해서 입력 */
+		,'N' 
+		,'2000'     /* 실제 환불 사유코드로 */   
+		,''
+		,#{tid}
+		,ifnull(#{memo},'')
+		,#{userName}
+	)
+</insert>   
+
+<!-- 결제 금액 원상복귀 -->
+<update id="updaterefundColInvoice" parameterType = "PaymentHistoryInput">
+	 update invoice
+	   set collectionbalanceamount = #{paymentAmt}
+	     ,collectioncloseyn = 'N'
+	     ,paymentstatecode = '0000'
+	     , tid = ''
+	     ,auditid = #{userName}
+	     ,auditdatetime = CURRENT_TIMESTAMP
+	where 1=1
+	  and providernumber = #{providerNumber}
+	  and invoicenumber = #{invoiceNumber}
+	  and invoicedate = replace(#{invoiceDate},'-','')
+	  and connumber = #{conNumber}
+</update>   
+   
+<!-- 결제 금액 원상복귀 -->
+<update id="updaterefundColInvoiceDetail" parameterType = "PaymentHistoryInput">
+      update invoicedetail
+      set collectionbalanceamount = invoiceitemamount
+       ,auditid = #{userName}
+       ,auditdatetime = CURRENT_TIMESTAMP
+    where 1=1
+    and providernumber = #{providerNumber}
+    and invoicenumber = #{invoiceNumber}
+    and invoicedate = replace(#{invoiceDate},'-','')
+    and connumber = #{conNumber}
+</update>  
+
+<!-- 정기 결제 처리 대상 조회 후 배치 내역에 저장 -->
+<insert id="insertBatchReqularPayment" parameterType = "com.api.model.billing.BatchRegularPayment">
+	INSERT IGNORE INTO batchregularpayment(
+			connumber
+			, providernumber
+			, invoicenumber
+			, billkey
+			, paymentmethodcode
+	)
+	SELECT
+			invo.connumber
+			, invo.providernumber
+			, invo.invoicenumber
+			, payInfo.billkey
+			, payInfo.paymentmethod
+		FROM invoice invo
+			  , contract cont
+			  , paymentinformation payInfo
+	  WHERE invo.connumber =  cont.connumber
+	    AND invo.providernumber = cont.providernumber
+	    AND cont.paymentinformationnumber = payInfo.paymentinformationnumber
+	  	/*AND invo.invoicedate between '20190812' and '20190812'*/
+	  	AND invo.invoicedate = #{invoiceDate}
+	    AND invo.collectionbalanceamount <![CDATA[>]]> 0
+	    AND invo.collectioncloseyn = 'N'
+	    AND cont.contractstate = 'ACTIVATION'	/*계약이 유효한 것만 조회*/
+</insert>
+
+<!-- 배치 정기 결제 대상 조회 -->
+<select id="getBatchReqularPayment" resultType="com.api.model.billing.BatchRegularPayment" parameterType = "com.api.model.billing.BatchRegularPayment">
+	SELECT
+			batch.batchNumber				/*배치번호*/
+			, batch.connumber				/*계약번호*/
+			, batch.providernumber			/*업체번호*/
+			, batch.invoicenumber			/*청구번호*/
+			, batch.billkey						/*BillKey*/
+			, batch.paymentmethodcode	/*납부방법코드*/
+			, batch.tid							/*TID*/
+			, batch.resultCode				/*빌링요청결과*/
+			, batch.resultMsg					/*빌링요청결과설명*/
+			, batch.authCode					/*승인번호*/
+			, batch.pgAuthDate				/*승인날짜*/
+			, batch.pgAuthTime				/*승인시간*/
+		FROM batchregularpayment batch
+			, invoice invo
+	  WHERE batch.connumber = invo.connumber
+		 AND batch.providernumber = invo.providernumber
+		 AND batch.invoicenumber = invo.invoicenumber
+	    AND batch.resultCode IS NULL /*결제 미진행 건만 조회*/
+  		 AND invo.invoicedate = #{invoiceDate}
+	  	/* (batch.resultCode !='00' AND batch.resultCode != '0000')
+	    OR batch.resultCode IS NULL */	    
+</select>
+
+<!-- 배치 정기 결제 처리 후 결과 수정 -->
+<update id="updateBatchReqularPayment" parameterType="com.api.model.billing.BatchRegularPayment">
+	<![CDATA[
+		UPDATE batchregularpayment SET			
+				tid	= #{tid}	/*TID*/
+				,resultCode	= #{resultCode}					/*빌링요청결과*/
+				,resultMsg	= #{resultMsg}						/*빌링요청결과설명*/
+				,authCode	= #{authCode}						/*승인번호*/
+				,pgAuthDate	= #{pgAuthDate}				/*승인날짜*/
+				,pgAuthTime	= #{pgAuthTime}				/*승인시간*/		
+		  WHERE batchNumber = #{batchNumber}		/*배치번호*/ 
+		    AND connumber = #{conNumber}				/*계약번호*/
+			AND providernumber = #{providerNumber}	/*업체번호*/
+			AND invoicenumber = #{invoiceNumber}		/*청구번호*/
+			AND billkey = #{billKey}							/*BillKey*/
+		]]>
+</update>
+
+<!-- 조정을 위한 납부 대상 조회 -->
+<select id="getInvoiceAdjust" resultType="InvoiceAdjust">
+	SELECT  
+		 inv.invoiceNumber
+		 ,inv.invoiceClassificationCode
+		 ,inv.revenueItemCodnm
+		 ,inv.revenueItemCode
+		 ,sum(inv.000_inv_amt) as invoiceItemAmount
+		 ,case when (sum(inv.collectionBalanceAmount) > 0) then sum(inv.collectionBalanceAmount) else 0 end as adjustPossibleAmount
+		 ,ifnull(inv.taxyn,'N') as taxYn
+		 ,ifnull(inv.adjPossibleYn,'N') as adjPossibleYn
+		 ,inv.totalinvoiceamount
+	 FROM (
+		SELECT
+			 id.invoicenumber as invoiceNumber
+			,gubun_list.gubun as invoiceClassificationCode
+			,gubun_list.revenueitemcode as revenueItemCode
+			,gubun_list.revenueitemname as revenueItemCodnm
+			,case when ( id.invoiceclassificationcode = '000') then sum(id.invoiceItemamount) else 0 end as 000_inv_amt
+			,id.collectionbalanceamount as collectionBalanceAmount
+			,gubun_list.taxyn as taxyn
+			,gubun_list.adjPossibleYn
+			,gubun_list.ordernum
+			,case when ( gubun_list.gubun = '기본료') then sum(i.totalinvoiceamount) else 0 end as totalinvoiceamount
+		FROM  
+			  invoicedetail id
+			  ,invoice i 
+			  ,(SELECT 
+					case when (p.producttype = 'ETC') then 4 else 1 end as ordernum
+					, case when (p.producttype = 'ETC') then '부가세' else '기본료' end as gubun
+					, p.productid as revenueitemcode
+					, p.productname as revenueitemname
+					, p.providernumber as providernumber
+					, p.taxobjectyn as taxyn
+					, p.subscribestartdatetime as subscribestartdatetime
+					, p.subscribeenddatetime as subscribeenddatetime
+					, case when (p.producttype = 'ETC') then 'N' else 'Y' end as adjPossibleYn
+			   FROM product p
+			WHERE p.providernumber = #{providerNumber}  
+			UNION ALL
+			SELECT 
+					case when (d.discounttype = 'ETC') then 5 else 2 end as ordernum
+					,case when (d.discounttype = 'ETC') then '부가세' else '할인' end as gubun
+					,d.discountid as revenueitemcode
+					,d.discountname as revenueitemname 
+					,d.providernumber as providernumber
+					,NULL as taxyn
+					,d.subscribestartdatetime as subscribestartdatetime 
+					,d.subscribeenddatetime as subscribeenddatetime
+					, 'N' as adjPossibleYn
+			FROM discount d
+			WHERE d.providernumber = #{providerNumber}
+			UNION ALL
+			SELECT
+				2 as ordernum
+				, '일회성' as gubun 
+				, codeD.code as revenueitemcode 
+				, codeD.codename as revenueitemname
+				, #{providerNumber} as providernumber
+				, 'N' as taxYn				
+				, codeD.effectstartdatetime as subscribestartdatetime
+				, codeD.effectenddatetime as subscribeenddatetime
+				, 'Y' as adjPossibleYn
+			  FROM codegroupdetail codeD
+			 WHERE codeD.codegroupid = 'ONETIMEFEETYPE'			
+			   ) gubun_list 
+		WHERE id.invoicedate =  replace(#{InvoiceDate},'-','') /* 청구일자 셋팅 */ 
+		AND  id.invoicenumber = #{invoiceNumber}
+		AND  id.connumber = #{conNumber}
+		AND  id.revenueitemcode = gubun_list.revenueitemcode
+		AND  i.providernumber = id.providernumber
+		AND  i.invoicenumber = id.invoicenumber
+		AND  i.invoicedate = id.invoicedate
+		AND  i.connumber = id.connumber
+		AND  i.collectioncloseyn = 'N'
+		AND  i.providernumber = #{providerNumber}
+		/*AND  id.invoicedate between gubun_list.subscribestartdatetime and gubun_list.subscribeenddatetime*/
+		GROUP BY   
+			 id.invoicenumber 
+			,gubun_list.gubun 
+			,gubun_list.revenueitemname  
+			,id.collectionbalanceamount 
+			,gubun_list.ordernum
+			,gubun_list.taxyn
+			,gubun_list.adjPossibleYn
+			,gubun_list.revenueitemcode
+	 	)inv  
+	GROUP BY  
+		invoiceNumber
+		,invoiceClassificationCode
+		,revenueItemCode
+		,inv.taxyn
+		,inv.adjPossibleYn
+		,inv.revenueItemCodnm
+	ORDER BY inv.ordernum
+</select>
+
+<!-- 조정 내역 저장 -->
+<insert id="setInvoiceAdjust"  parameterType = "InvoiceAdjustInput" useGeneratedKeys="true" keyProperty="connumber" >
+	INSERT INTO invoiceadjust(
+		providernumber
+		, invoicenumber
+		, invoicedate
+		, connumber
+		, paymentinformationnumber
+		, customernumber
+		, revenueitemcode
+		, adjustdate
+		, adjustclassificationcode
+		, adjuststatecode
+		, adjustamount
+		, adjustrequestreasoncode
+		, adjustrequestcontent
+		, auditid
+		, auditdatetime
+	) 
+	SELECT 
+		inv_dtl.providernumber
+		, inv_dtl.invoicenumber
+		, inv_dtl.invoicedate
+		, inv_dtl.connumber
+		, inv_dtl.paymentinformationnumber
+		, inv_dtl.customernumber
+		, inv_dtl.revenueitemcode
+		, date_format(now(), '%Y%m%d%H%i%S') as adjustdate
+		, '006' as adjustclassificationcode
+		, 'REQUEST' as adjuststatecode
+		, #{adjustAmt} as adjustamount
+		, #{adjustRequestReasonCode} as adjustrequestreasoncode
+		, ifnull(#{adjusTreasonMessage}, '요청내용없음') as adjustrequestcontent
+		, #{userName} as auditid
+		, now() as auditdatetime 
+	FROM (
+		SELECT 
+			id.providernumber
+			, id.invoicenumber
+			, id.invoicedate
+			, id.connumber
+			, id.paymentinformationnumber
+			, id.customernumber
+			, id.revenueitemcode
+			, sum(id.collectionbalanceamount) as col_bamt
+			, 1000 as adj_req_amt
+		FROM invoicedetail id
+		WHERE id.invoicedate = replace(#{invoiceDate},'-','')
+		AND id.invoicenumber = #{invoiceNumber}
+		AND id.connumber = #{conNumber}
+		AND id.revenueitemcode = #{revenueItemCode}
+		AND id.providernumber = #{providerNumber} /* 20180919 */
+		GROUP BY 
+			id.providernumber
+			, id.invoicenumber
+			, id.invoicedate
+			, id.connumber
+			, id.paymentinformationnumber
+			, id.customernumber, id.revenueitemcode
+	 ) inv_dtl
+</insert>
+
+<!-- 조정 건수 조회 -->
+<select id="checkInvoiceAdjust" resultType="int">
+	SELECT 
+		count(id.invoicenumber) as count
+	FROM 
+		invoicedetail id 
+	WHERE id.invoiceclassificationcode = '006'
+	AND id.invoicenumber = #{invoiceNumber}
+	AND id.connumber = #{conNumber}
+	AND id.invoicedate = replace(#{invoiceDate},'-','') /* 청구일자 셋팅 */ 
+	AND id.revenueitemcode = #{revenueItemCode}
+	AND id.providernumber = #{providerNumber} /* 20180919 */
+</select>
+
+<!-- 조정 금액 청구 내역에 반영  -->
+<update id="updateInvoiceAdjust" parameterType = "InvoiceAdjustInput">
+	UPDATE 
+		invoicedetail idtl, invoiceadjust adj
+	SET 
+		idtl.invoiceItemamount = (idtl.invoiceItemamount + adj.adjustamount)
+		, idtl.collectionbalanceamount = (idtl.collectionbalanceamount + adj.adjustamount)
+		, idtl.auditid = #{userName}
+		, idtl.auditdatetime = now()
+	 WHERE adj.invoicenumber = idtl.invoicenumber
+	 AND adj.invoicedate = idtl.invoicedate 
+	 AND adj.connumber = idtl.connumber
+	 AND adj.paymentinformationnumber = idtl.paymentinformationnumber
+	 AND adj.customernumber = idtl.customernumber
+	 AND adj.revenueitemcode = idtl.revenueitemcode
+	 AND adj.adjuststatecode = 'REQUEST'
+	 AND idtl.invoiceclassificationcode = '006'
+	 AND adj.invoicenumber = #{invoiceNumber}
+	 AND adj.connumber = #{conNumber}
+	 AND adj.invoicedate = #{invoiceDate}
+	 AND adj.revenueitemcode = #{revenueItemCode}
+	 AND idtl.providernumber = adj.providernumber
+	 AND idtl.providernumber = #{providerNumber} /* 20180919 */
+</update>
+
+<!-- 조정 요청 내역을 청구 상세에 저장 -->
+<insert id="setInvoiceAdjustInvoiceDetail"  parameterType = "InvoiceAdjustInput" useGeneratedKeys="true" keyProperty="conNumber" >
+	INSERT INTO invoicedetail (
+		providernumber
+		, invoicenumber
+		, invoicedate
+		, connumber
+		, paymentinformationnumber
+		, customernumber
+		, revenueitemcode
+		, invoiceclassificationcode
+		, invoiceItemamount
+		, collectionbalanceamount
+		, auditid
+		, auditdatetime )
+	SELECT 
+		adj.providernumber
+		, adj.invoicenumber
+		, adj.invoicedate
+		, adj.connumber
+		, adj.paymentinformationnumber
+		, adj.customernumber
+		, adj.revenueitemcode
+		, adj.adjustclassificationcode as invoiceclassificationcode
+		, adj.adjustamount as invoiceItemamount
+		, adj.adjustamount as collectionbalanceamount
+		, #{userName} as auditid
+		, now() as auditdatetime
+	FROM invoiceadjust adj
+	WHERE adj.adjuststatecode = 'REQUEST'
+	AND adj.invoicenumber =  #{invoiceNumber}
+	AND adj.connumber = #{conNumber}
+	AND adj.invoicedate =  #{invoiceDate}
+	AND adj.revenueitemcode = #{revenueItemCode}
+	AND adj.providernumber = #{providerNumber} /* 20180919 */
+</insert>
+
+<!-- 조정 금액을 청구내역에 반영 -->
+<update id="updateInvoiceAdjustInvoiceDetail" parameterType = "InvoiceAdjustInput">
+	UPDATE invoice i ,
+		 (SELECT
+		  v.invoicenumber 
+		  ,v.invoicedate 
+		  ,v.connumber
+		  ,v.customernumber
+		  ,v.paymentinformationnumber
+		  ,sum(v.000_i) as tot_inv_amt
+		  ,sum(v.006_i) as adj_amt
+		  ,sum(v.collectionbalanceamount ) as col_bamt
+		  ,case when(sum(v.collectionbalanceamount) = 0) then 'Y' else 'N' end as closeYn
+		  ,case when(sum(v.collectionbalanceamount) = 0) then '1000' else '0000' end as paymentstatecode
+		 FROM (
+		  SELECT  
+				id.providernumber /* 20180919 */
+				,id.invoicenumber 
+				,id.invoicedate 
+				,id.connumber
+				,id.customernumber
+				,id.paymentinformationnumber
+				,id.revenueitemcode /* 매출항목 조건 꼭 있어야함 !! 안그러면 미납금액 안맞음 */ 
+				, case when (id.invoiceclassificationcode = '000') then sum(id.collectionbalanceamount) else 0 end as 000_i
+				, case when (id.invoiceclassificationcode = '006') then sum(id.invoiceItemamount) else 0 end as 006_i
+				,id.collectionbalanceamount 
+		  FROM invoicedetail id
+		  WHERE id.invoicedate = #{invoiceDate}
+		  AND id.invoicenumber =#{invoiceNumber}
+		  AND id.connumber =#{conNumber}
+		  AND id.providernumber = #{providerNumber} /* 20180919 */
+		  GROUP BY 
+			  id.providernumber /* 20180919 */
+			  ,id.invoicenumber
+			  ,id.invoicedate 
+			  ,id.connumber
+			  ,id.customernumber
+			  ,id.revenueitemcode
+			  ,id.collectionbalanceamount 
+			  ,id.paymentinformationnumber
+		 )v
+		GROUP BY   
+			v.providernumber /* 20180919 */
+			,v.invoicenumber 
+			,v.invoicedate 
+			,v.connumber
+			,v.customernumber
+			,v.paymentinformationnumber 
+		 ) adj_aply
+	SET 
+		i.adjustamount = adj_aply.adj_amt
+		,totalinvoiceamount = adj_aply.col_bamt
+		,i.collectionbalanceamount = adj_aply.col_bamt
+		,i.collectioncloseyn = adj_aply.closeYn
+		,i.paymentstatecode = adj_aply.paymentstatecode
+		,auditid = #{userName} 
+		,auditdatetime = now() 
+	WHERE i.invoicenumber = adj_aply.invoicenumber
+	AND i.invoicedate = adj_aply.invoicedate
+	AND i.connumber = adj_aply.connumber
+	AND i.paymentinformationnumber = adj_aply.paymentinformationnumber
+	AND i.customernumber = adj_aply.customernumber
+	AND i.invoicedate = #{invoiceDate}
+	AND i.connumber = #{conNumber}
+	AND i.invoicenumber = #{invoiceNumber}
+</update>
+
+<!-- 조정 요청을 조정 완료 상태로 변경 -->
+<update id="updateInvoiceAdjustAply" parameterType = "InvoiceAdjustInput">
+	UPDATE 
+		invoiceadjust adj
+	SET 
+		adj.adjuststatecode = 'APLY'
+	WHERE adj.invoicenumber = #{invoiceNumber}
+	AND adj.invoicedate =#{invoiceDate}
+	AND adj.connumber = #{conNumber}
+	AND adj.revenueitemcode = #{revenueItemCode}
+	AND adj.adjuststatecode = 'REQUEST'
+	AND adj.providernumber = #{providerNumber} /* 20180919 */
+</update>
+
+<!-- 청구 결제 목록 Query  -->
+<sql id="selectInvoicePaymentList">
+	SELECT
+			invo.invoicenumber 										AS invoiceNumber				/*청구번호*/
+			, date_format(invo.invoicedate, '%Y-%m-%d')	AS invoiceDate 					/*결제요청일*/
+			, cust.customernumber 								AS customerNumber			/*고객번호*/
+			, cust.customername 									AS customerName				/*고객명*/
+			, prod.productname 										AS productName					/*상풍명*/
+			, case when ( invo.recurringpaymentyn = 'Y') then '정기결제' else '일괄결제' end as paymentType /*결제방법*/
+			, invo.invoiceTurn 										AS invoiceTurn					/*회차*/
+			, ifnull(code1.value2,'')									AS invoiceCycle					/*결제주기*/
+			, invo.collectionbalanceamount						AS collectionBalanceAmount	/*결제금액*/			
+			, payHist.paymenttypecode							AS paymentTypeCode			/*결제유형코드*/
+			, ifnull(code2.codename,'')								AS paymentTypeCodeName	/*결제유형코드명*/
+			, invo.paymentstatecode								AS paymentStateCode			/*결제상태코드*/
+			, CASE WHEN code3.codename IS NULL THEN ''
+					WHEN invo.paymentstatecode = '0000' THEN '-'
+					ELSE code3.codename END AS paymentSatateCodeName					/*결제상태코드명*/			
+			, payHist.errorreasoncode								AS errorReasonCode				/*에러코드*/
+			, ifnull(payHist.pgErrorCode,'')						AS pgErrorCode					/*PG에러 코드*/
+			, ifnull(payHist.pgErrorMsg, '')						AS pgErrorMsg					/*PG에러 메세지*/
+			, cust.email													AS email							/*고객이메일*/
+			, cust.phonenumber										AS phoneNumber				/*고객핸드폰번호*/
+			, cont.connumber										AS conNumber					/*계약번호*/
+			, ifnull(payHist.paymentamount,'0')					AS paymentAmount				/*납부금액*/
+			, ifnull(payHist.paymentdatetime,'')					AS paymentDateTime			/*납부일시*/
+			, ifnull(date_format(payHist.paymentdatetime, '%Y-%m-%d'),'')  AS paymentDate	/*납부일자*/
+			, invo.totalinvoiceamount 								AS totalInvoiceAmount			/*총청구금액*/
+			, invo.adjustamount 										AS adjustAmount					/*조정금액*/
+			, invo.providernumber									AS providerNumber				/*업체번호*/
+			, invo.tid																								/*TID*/
+			, invo.collectioncloseyn									AS	collectionCloseYn				/*미납종료여부*/
+			, payInfo.billkey											AS billKey							/*BillKey*/
+			, payInfo.paymentmethod								AS paymentMethod				/*결제방법*/
+			, (SELECT codeName 
+				  FROM codegroupdetail 
+				 WHERE codegroupid = 'paymentmethodcode' 
+				 AND code = payInfo.paymentmethod) 		AS paymentMethodName		/*결제방법 명*/
+			, deliv.deliverystate										AS deliveryState					/*배송상태*/
+			, payHist.auditid											AS payProcId						/*결제처리자*/
+			, ifnull((SELECT emp.employeename
+						FROM login lo, employee emp 
+						WHERE lo.employeenumber = emp.employeenumber
+						AND lo.loginid = payHist.auditid), ifnull(payHist.auditid,'')) AS payProcName	/*결제처리자명*/
+			, ifnull(payHist.etc,'')										AS etc									/*메모*/
+			, payInfo.cardcorporationcode						AS cardCorporationCode			/*카드사코드*/
+			, ifnull(code4.codename,'카드')								AS cardCorporationCodeName	/*카드사코드명*/
+		FROM invoice invo LEFT OUTER JOIN paymenthistory AS payHist
+										ON (payHist.providernumber = invo.providernumber
+											AND payHist.connumber = invo.connumber
+											AND payHist.invoicenumber = invo.invoicenumber
+											AND payHist.paymentdatetime = (SELECT max(payHistSub.paymentdatetime)
+																						FROM paymenthistory payHistSub
+																					  WHERE payHistSub.providernumber = payHist.providernumber
+																						AND payHistSub.connumber = payHist.connumber
+																						AND payHistSub.invoicenumber = payHist.invoicenumber
+																						)
+											)	
+								 LEFT OUTER JOIN codegroupdetail AS code2
+										 ON  (code2.codegroupid = 'paymenttypecode'
+										 AND payHist.paymenttypecode = code2.code) 
+								 LEFT OUTER JOIN codegroupdetail AS code3
+										 ON  (code3.codegroupid = 'paymentstatecode'
+										 AND invo.paymentstatecode = code3.code) 											 
+			 , contract cont LEFT OUTER JOIN providerinformation AS code1
+										 ON  (code1.code = 'BILLING' 
+										 AND code1.detailcode = 'invoiceCycle'
+										 AND cont.providernumber = code1.providernumber)
+								LEFT OUTER JOIN paymentinformation AS payInfo
+										 ON  (cont.paymentinformationnumber = payInfo.paymentinformationnumber) 
+								LEFT OUTER JOIN codegroupdetail AS code4
+										 ON  (code4.codegroupid = 'cardCorporationCode'
+										 AND payInfo.cardCorporationCode = code4.code)
+			 , contractproduct contProd
+			 , product prod
+			 , customer cust
+			 , (SELECT providernumber
+			 			, connumber
+			 			, invoicenumber
+			 			, deliverystate 
+			 	from deliverydetail  
+			 	GROUP BY providernumber, connumber, invoicenumber, deliverystate) deliv
+	  WHERE invo.providernumber = cont.providernumber
+	    AND invo.connumber = cont.connumber    
+	    AND cont.connumber = contProd.connumber
+	    AND contProd.productid = prod.productid
+	    AND cont.customernumber = cust.customernumber	 
+	    AND invo.providernumber = deliv.providernumber
+	    AND invo.connumber = deliv.connumber
+	    AND invo.invoicenumber = deliv.invoicenumber
+</sql>
+<!-- 청구 결제 목록 조건  -->
+<sql id="selectInvoicePaymentListCondition">
+ 		AND invo.providernumber = #{providerNumber}								/*필수*/ 		
+		<if test='"ACTIVATION".equals(contractState) or "UNSETTLED".equals(contractState)'>
+			AND    cont.contractstate = #{contractState}
+		</if>
+		<if test='!("ACTIVATION".equals(contractState) or "UNSETTLED".equals(contractState))'>
+			AND    cont.contractstate not in ('ACTIVATION','UNSETTLED')
+		</if>		
+	    <if test='conNumber != null and conNumber != 0 and !"".equals(conNumber) and !"0".equals(conNumber)'>		 	
+		    AND invo.connumber = #{conNumber}									/*[option]*/
+		</if>
+	    <if test='invoiceDateFrom != null and !"".equals(invoiceDateFrom) and invoiceDateTo != null and !"".equals(invoiceDateTo)'>		 	
+			AND invo.invoicedate BETWEEN #{invoiceDateFrom} AND #{invoiceDateTo}	/*[option] 결제요청기간[option]*/
+		</if>
+	    <if test='recurringPaymentYn != null and !"".equals(recurringPaymentYn)'>		 	
+			AND invo.recurringpaymentyn = #{recurringPaymentYn}						/*[option] 결제방식[option, Y:정기결제, N:일괄결제]*/
+		</if>
+	    <if test='paymentStateCode != null and !"".equals(paymentStateCode)'>
+			AND invo.paymentstatecode = #{paymentStateCode}						/*[option] 결제 상태*/
+		</if>
+	    <if test='paymentTypeCode != null and !"".equals(paymentTypeCode) and !"FAILNONPAY".equals(paymentTypeCode)'>
+			AND IFNULL(payHist.paymenttypecode, 'NONPAYMENT') = #{paymentTypeCode}						/*[option] 결제 타입*/
+		</if>
+		<if test='paymentTypeCode != null and !"".equals(paymentTypeCode) and "FAILNONPAY".equals(paymentTypeCode)'>
+			AND (payHist.paymenttypecode IS NULL OR payHist.paymenttypecode = 'PAYMENTERROR')					/*[option] 결제 타입*/			
+		</if>				
+	    <if test='customerName != null and !"".equals(customerName)'>
+			AND cust.customername LIKE concat('%',#{customerName},'%')				/*[option] 고객명*/
+		</if>
+	    <if test='phoneNumber != null and !"".equals(phoneNumber)'>
+			AND cust.phoneNumber = #{phoneNumber}							/*[option] 전화번호*/
+		</if>
+	    <if test='paymentDateFrom != null and !"".equals(paymentDateFrom) and paymentDateTo != null and !"".equals(paymentDateTo)'>		 	
+			AND date_format(payHist.paymentdatetime, '%Y%m%d') BETWEEN #{paymentDateFrom} AND #{paymentDateTo}	/*[option] 결제기간*/
+		</if>
+ 		<if test='orderSql != null and !"".equals(orderSql)'>
+			ORDER BY ${orderSql}
+		</if> 
+<!-- 	ORDER BY invo.invoicedate DESC, invo.invoiceTurn DESC
+ <if test='invoicedateSort != null and !"N".equals(invoicedateSort)'>
+			, invo.invoicedate DESC													/*결제요청일 소팅*/
+		</if>
+		<if test='invoiceTurnSort != null and !"N".equals(invoiceTurnSort)'>
+			, invo.invoiceTurn DESC												/*회차 소팅*/
+		</if>
+		<if test='paymentStateSort != null and !"N"paymentStateSort'>
+			, 13 DESC																	/*결제상태*/
+		</if>
+		<if test='pgErrorMsgSort != null and !"N".equals(pgErrorMsgSort)'>
+			, payHist.pgErrorMsg DESC 											/*실패사유*/
+		</if>	 	
+ -->
+</sql>
+
+<!-- 청구 결제 목록 조회  -->
+<select id="getInvoicePaymentList" resultType="Invoice"  parameterType = "InvoiceSearch">
+		<include refid="selectInvoicePaymentList"></include>   
+		<include refid="selectInvoicePaymentListCondition"></include>
+	LIMIT #{pageStart}, #{perPageNum}
+</select>
+
+<!-- 청구 결제 목록 엑셀 조회  -->
+<select id="getInvoicePaymentListExcel" resultType="Invoice"  parameterType = "InvoiceSearch">
+		<include refid="selectInvoicePaymentList"></include>   
+		<include refid="selectInvoicePaymentListCondition"></include> 
+		 
+</select>
+
+<!-- 청구 결제 목록 전체 건수  -->
+<select id="getInvoicePaymentListTotalCnt" resultType="int"  parameterType = "InvoiceSearch">
+	SELECT 
+		count(*) AS CNT
+	FROM (
+		<include refid="selectInvoicePaymentList"></include>   
+		<include refid="selectInvoicePaymentListCondition"></include>
+	) AS CNT
+</select>
+
+<!-- 청구 결제 상세 내역 조회  -->
+<select id="getInvoicePaymentDetail" resultType="Invoice"  parameterType = "InvoiceSearch">
+		<include refid="selectInvoicePaymentList"></include>   
+ 		AND invo.providernumber = #{providerNumber}								/*필수*/
+	    <if test='conNumber != null and conNumber != 0 and !"".equals(conNumber) and !"0".equals(conNumber)'>		 	
+		    AND invo.connumber = #{conNumber}									/*[option]계약번호*/
+		</if>
+	    <if test='invoiceNumber != null and invoiceNumber != 0 and !"".equals(invoiceNumber) and !"0".equals(invoiceNumber)'>		 	
+		    AND invo.invoicenumber = #{invoiceNumber}									/*[option]청구번호*/
+		</if>
+	    <if test='invoiceDateFrom != null and !"".equals(invoiceDateFrom) and invoiceDateTo != null and !"".equals(invoiceDateTo)'>		 	
+			AND invo.invoicedate BETWEEN #{invoiceDateFrom} AND #{invoiceDateTo}	/*[option] 결제요청기간[option]*/
+		</if>
+	    <if test='recurringPaymentYn != null and !"".equals(recurringPaymentYn)'>		 	
+			AND invo.recurringpaymentyn = #{recurringPaymentYn}						/*[option] 결제방식[option, Y:정기결제, N:일괄결제]*/
+		</if>
+	    <if test='paymentStateCode != null and !"".equals(paymentStateCode)'>
+			AND invo.paymentstatecode = #{paymentStateCode}						/*[option] 결제 상태*/
+		</if>
+	    <if test='customerName != null and !"".equals(customerName)'>
+			AND cust.customername LIKE concat('%',#{customerName},'%')				/*[option] 고객명*/
+		</if>
+	    <if test='phoneNumber != null and !"".equals(phoneNumber)'>
+			AND cust.phoneNumber = #{phoneNumber}							/*[option] 전화번호*/
+		</if>
+	    <if test='paymentDateFrom != null and !"".equals(paymentDateFrom) and paymentDateTo != null and !"".equals(paymentDateTo)'>		 	
+			AND date_format(payHist.paymentdatetime, '%Y%m%d') BETWEEN #{paymentDateFrom} AND #{paymentDateTo}	/*[option] 결제기간*/
+		</if>	
+	LIMIT 1
+</select>
+
+<!-- 결제 이력 조회 -->
+<select id="getPaymentHistoryList" parameterType="com.api.model.billing.InvoiceSearch" resultType="com.api.model.billing.PaymentHistory">
+		SELECT
+				payHist.providernumber
+				, payHist.invoicenumber
+				, payHist.connumber
+				, payHist.paymentdatetime
+				, payHist.paymenttypecode
+				, payHist.paymentownername
+				, payHist.paymentamount
+				, payHist.paymentmethodcode
+				, ifnull(code1.codename, '') AS paymenttypecodename
+				, payHist.refundyn
+				, payHist.cardcorporationcode
+				, ifnull(code2.codename, '') AS paymentmethodcodename
+				, payHist.cardapprovenumber
+				, payHist.recurringpaymentyn
+				, ifnull(payHist.errorreasoncode, '') AS errorreasoncode
+				, ifnull(payHist.refundreasoncode, '') AS refundreasoncode
+				, ifnull(payHist.pgErrorCode, '') AS pgErrorCode
+				, ifnull(payHist.pgErrorMsg, '') AS pgErrorMsg
+				, payHist.etc
+				, payHist.tid
+				, payHist.auditid
+				, payHist.auditdatetime		
+		  FROM paymenthistory payHist
+		  						LEFT OUTER JOIN codegroupdetail AS code1
+									  ON  (code1.codegroupid = 'paymenttypecode'
+									 AND payHist.paymenttypecode = code1.code) 
+								LEFT OUTER JOIN codegroupdetail AS code2
+									  ON  (code2.codegroupid = 'paymentmethodcode'
+									 AND payHist.paymentmethodcode = code2.code) 					
+		 WHERE payHist.providernumber = #{providerNumber}
+		   AND payHist.connumber = #{conNumber}
+		   AND payHist.invoicenumber = #{invoiceNumber}
+		ORDER BY payHist.paymentdatetime DESC
+</select>
+</mapper>

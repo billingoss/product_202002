@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></meta>
+    <link rel="stylesheet" type="text/css" media="screen" href="http://cdn.jsdelivr.net/webjars/bootstrap/3.3.4/css/bootstrap.min.css" th:href="@{/webjars/bootstrap/3.3.4/css/bootstrap.min.css}" />
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js" th:src="@{/webjars/jquery/1.11.3/jquery.min.js}" ></script>
+    <script src="http://cdn.jsdelivr.net/webjars/bootstrap/3.3.4/js/bootstrap.min.js" th:src="@{/webjars/bootstrap/3.3.4/js/bootstrap.min.js}" ></script>
+    <script type="text/javascript" src="http://www.google.com/jsapi"></script>
+    <link href="/css/custom.css" type="text/css" media="screen, projection" rel="stylesheet" />
+	<link href="/css/bootstrap.css" type="text/css" media="screen, projection" rel="stylesheet" />
+	<link href="/css/customize-template.css" type="text/css" media="screen, projection" rel="stylesheet" />
+<title>Billing Service</title>
+</head>
+    <body>
+	<script type="text/javascript">
+			
+			google.load('visualization', '1', {'packages': ['corechart']});
+			google.setOnLoadCallback(drawVisualization);
+			
+			function drawVisualization() {
+				visualization_data = new google.visualization.DataTable();
+				visualization_data.addColumn('string', 'Sales');
+				visualization_data.addColumn('number', 'Sales product per Day');
+				visualization_data.addRow(['Product1', 11]);
+				visualization_data.addRow(['Product2', 1]);
+				visualization_data.addRow(['Product3', 2]);
+				visualization_data.addRow(['Product4', 3]);
+				visualization = new google.visualization.PieChart(document.getElementById('piechart'));     
+				visualization.draw(visualization_data, {title: 'Sales product', height: 300});       
+			}
+			
+			
+			google.load('visualization', '1', {'packages': ['corechart']});
+            google.setOnLoadCallback(bardrawVisualization);
+    
+			function bardrawVisualization() {
+				visualization_data = new google.visualization.DataTable();
+				visualization_data.addColumn('string', '가입통계');
+				visualization_data.addColumn('number', '월별 가입통계');
+				visualization_data.addRow(['2018-01', 11]);
+				visualization_data.addRow(['2018-02', 2]);
+				visualization_data.addRow(['2018-03', 2]);
+				visualization_data.addRow(['2018-04', 2]);
+				visualization_data.addRow(['2018-05', 7]);
+				visualization = new google.visualization.ColumnChart(document.getElementById('barchart'));
+                visualization.draw(visualization_data, {title: '월별 가입통계', height: 300});	
+			}
+     </script>
+        <div class="navbar navbar-fixed-top">
+            <div class="navbar-inner">
+                <div class="container">
+                    <button class="btn btn-navbar" data-toggle="collapse" data-target="#app-nav-top-bar">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a href="dashboard.html" class="brand"><i class="icon-leaf"> Billing Service</i></a>
+                    <div id="app-nav-top-bar" class="nav-collapse">
+                        <ul class="nav pull-right">
+                            <li>
+                                <a href="login.html">Logout</a>
+                            </li>
+                            
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+		<div class="body-nav body-nav-horizontal body-nav-fixed" style="border-bottom-width: 0px">
+          <div class="container">
+              <ul>
+                  <li>
+                      <a href="#">
+                          <i class="icon-dashboard icon-large"></i> Dashboard
+                      </a>
+                  </li>
+                  <li>
+                      <a href="#">
+                          <i class="icon-calendar icon-large"></i> Register
+                      </a>
+                  </li>
+                  <li>
+                      <a href="#">
+                          <i class="icon-map-marker icon-large"></i> Product
+                      </a>
+                  </li>
+                  <li>
+                      <a href="#">
+                          <i class="icon-tasks icon-large"></i> Billing
+                      </a>
+                  </li>
+                  <li>
+                      <a href="#">
+                          <i class="icon-bar-chart icon-large"></i> Charts
+                      </a>
+                  </li>
+              </ul>
+          </div>
+        </div>
+
+        <div id="body-container">
+            <div id="body-content">
+                
+                    
+
+    <section class="page container">
+	<div class="row">
+		<div class="span16">
+			<div class="bg-light tile_count">
+					<div class="col-md-3 col-sm-6 col-xs-6 tile_stats_count">
+					  <span class="count_top"><i class="fa fa-user"></i> Total Customer</span>
+					  <div class="count">2,500</div>
+					  <span class="count_bottom"><i class="green">4% </i> From last Week</span>
+					</div>
+					<div class="col-md-3 col-sm-6 col-xs-6 tile_stats_count">
+					  <span class="count_top"><i class="fa fa-user"></i> Total Contract</span>
+					  <div class="count">3,000</div>
+					  <span class="count_bottom"><i class="green"><i class="fa fa-sort-asc"></i>34% </i> From last Week</span>
+					</div>
+					<div class="col-md-3 col-sm-6 col-xs-6 tile_stats_count">
+					  <span class="count_top"><i class="fa fa-user"></i> Week Register</span>
+					  <div class="count">200</div>
+					  <span class="count_bottom"><i class="red"><i class="fa fa-sort-desc"></i>12% </i> From last Week</span>
+					</div>
+					<div class="col-md-3 col-sm-6 col-xs-6 tile_stats_count">
+					  <span class="count_top"><i class="fa fa-user"></i> Total Sales</span>
+					  <div class="count">7,325</div>
+					  <span class="count_bottom"><i class="green"><i class="fa fa-sort-asc"></i>34% </i> From last Week</span>
+					</div>
+			</div>
+		</div>
+	</div>
+	<div class="row">
+	<div class="span16">
+            <div class="col-md-6">
+              <div class="x_panel tile fixed_height_400">
+			     <div class="x_title">
+                   <h5>Product별 판매비율</h5>
+				   </div>
+				   <div class="box-content">
+					   <div id="piechart"></div>
+				   </div>
+			   </div>
+             </div>
+            <div class="col-md-6">
+              <div class="x_panel tile fixed_height_400">
+			     <div class="x_title">
+                   <h5>월별 가입통계</h5>
+                 </div>
+                <div class="box-content">
+                   <div id="barchart"></div>
+               </div>
+             </div>
+		  </div>
+	    </div>	  
+    </div>
+      <div class="row">
+            <div class="span16">
+			  <div class="col-md-12">
+                <div class="x_panel">
+                    <div class="x_title" >
+					<h5>최근가입고객 <button class="btn btn-small btn-info pull-right"><i class="btn-icon-only icon-edit"></i></button></h5>
+					</div>
+					<div class="clearfix"></div>
+                    <div class="x_content">
+                        <table id="sample-table" class="table table-hover table-bordered tablesorter">
+                                    <thead>
+                                        <tr>
+                                            <th>고객번호</th>
+                                            <th>고객명</th>
+											<th>가입일자</th>
+											<th>생년월일</th>
+											<th>Mobile</th>
+											<th>Email</th>
+                                            <th class="td-actions"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>600000</td>
+                                            <td>김강현</td>
+											<td>2018-07-06</td>
+											<td>840427</td>
+											<td>010-4939-6132</td>
+											<td>hardkkh@naver.com</td>
+                                            <td class="td-actions">
+                                                <a href="javascript:;" class="btn btn-small btn-info">
+                                                    <i class="btn-icon-only icon-ok"></i>
+                                                </a>
+
+                                                <a href="javascript:;" class="btn btn-small btn-danger">
+                                                    <i class="btn-icon-only icon-remove"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+										<tr>
+                                            <td>600001</td>
+                                            <td>염정훈</td>
+											<td>2018-07-06</td>
+											<td>880427</td>
+											<td>010-4939-6132</td>
+											<td>hardkkh@naver.com</td>
+                                            <td class="td-actions">
+                                                <a href="javascript:;" class="btn btn-small btn-info">
+                                                    <i class="btn-icon-only icon-ok"></i>
+                                                </a>
+
+                                                <a href="javascript:;" class="btn btn-small btn-danger">
+                                                    <i class="btn-icon-only icon-remove"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+										<tr>
+                                            <td>600002</td>
+                                            <td>강현구</td>
+											<td>2018-07-06</td>
+											<td>820427</td>
+											<td>010-4939-6132</td>
+											<td>hardkkh@naver.com</td>
+                                            <td class="td-actions">
+                                                <a href="javascript:;" class="btn btn-small btn-info">
+                                                    <i class="btn-icon-only icon-ok"></i>
+                                                </a>
+
+                                                <a href="javascript:;" class="btn btn-small btn-danger">
+                                                    <i class="btn-icon-only icon-remove"></i>
+                                                </a>
+                                            </td>
+                                        </tr>										
+                                    </tbody>
+                                </table>
+                    </div>
+                </div>
+            </div>
+		  </div>
+        </div>
+    </section>
+  </div>
+</div>
+
+        <footer class="application-footer">
+            <div class="container">
+                <p>Application Footer</p>
+                <div class="disclaimer">
+                    <p>This is an example disclaimer. All right reserved.</p>
+                    <p>Copyright © keaplogik 2011-2012</p>
+                </div>
+            </div>
+        </footer>
+        
+        <script src="/js/bootstrap/bootstrap-transition.js" type="text/javascript" ></script>
+        <script src="/js/bootstrap/bootstrap-alert.js" type="text/javascript" ></script>
+        <script src="/js/bootstrap/bootstrap-modal.js" type="text/javascript" ></script>
+        <script src="/js/bootstrap/bootstrap-dropdown.js" type="text/javascript" ></script>
+        <script src="/js/bootstrap/bootstrap-scrollspy.js" type="text/javascript" ></script>
+        <script src="/js/bootstrap/bootstrap-tab.js" type="text/javascript" ></script>
+        <script src="/js/bootstrap/bootstrap-tooltip.js" type="text/javascript" ></script>
+        <script src="/js/bootstrap/bootstrap-popover.js" type="text/javascript" ></script>
+        <script src="/js/bootstrap/bootstrap-button.js" type="text/javascript" ></script>
+        <script src="/js/bootstrap/bootstrap-collapse.js" type="text/javascript" ></script>
+        <script src="/js/bootstrap/bootstrap-carousel.js" type="text/javascript" ></script>
+        <script src="/js/bootstrap/bootstrap-typeahead.js" type="text/javascript" ></script>
+        <script src="/js/bootstrap/bootstrap-affix.js" type="text/javascript" ></script>
+        <script src="/js/bootstrap/bootstrap-datepicker.js" type="text/javascript" ></script>
+        <script src="/js/jquery/jquery-tablesorter.js" type="text/javascript" ></script>
+        <script src="/js/jquery/jquery-chosen.js" type="text/javascript" ></script>
+        <script src="/js/jquery/virtual-tour.js" type="text/javascript" ></script>
+        
+	</body>
+</html>

@@ -1,0 +1,65 @@
+<style>
+table td {
+	vertical-align: middle;
+}
+</style>
+<script type="text/javascript">
+	$(document).ready(function() {
+		$("#billing-invoice-status").load("billing-invoice-status");
+		$("#billing-customer-paymentlist").load("billing-customer-paymentlist");
+		//$("#billing-calculation").load("billing-calculation");
+		//$("#billing-recurringpayment").load("billing-recurringpayment");
+		
+		//$("#deliverylist").load("deliverylist");
+		//$("#adjust-payment").load("adjust-payment");
+		//$("#refund").load("refund");
+		//$("#exceltest").load("exceltest");
+	});
+	
+	function emptyElement(elementid){		
+		$('.modal-content').empty();
+	}
+
+</script>
+
+<section class="page container">
+
+	<!-- tab line start -->
+		<div class="span16">
+		
+			<div id="billingmaintab">
+				<ul class="nav nav-tabs font-size18px" >
+				    <li class="active"><a data-toggle="tab" href="#billing-invoice-status" onclick="emptyElement('billing-invoice-status')" >결제대상조회</a></li>
+				    <li><a data-toggle="tab" href="#billing-customer-paymentlist" onclick="emptyElement('billing-customer-paymentlist')">고객결제내역</a></li>
+				    
+					<!-- <li><a data-toggle="tab" href="#billing-calculation" onclick="emptyElement('billing-calculation')">결제대상생성</a></li>					
+					<li><a data-toggle="tab" href="#deliverylist" onclick="emptyElement('deliverylist')">배송대상조회</a></li> -->
+					<!-- <li><a data-toggle="tab" href="#billing-recurringpayment" onclick="emptyElement('billing-payment')">일괄결제</a></li> -->
+					<!--  <li><a data-toggle="tab" href="#adjust-payment"  onclick="emptyElement('adjust-payment')">요금조정/수납처리</a></li>-->
+					<!--  <li><a data-toggle="tab" href="#refund"  onclick="emptyElement('refund')">환불처리</a></li>-->
+					<!--  <li><a data-toggle="tab" href="#exceltest"  onclick="emptyElement('exceltest')">엑셀로드 테스트</a></li>-->
+				</ul>
+			</div>	
+		
+
+		<div class="span16 tab-content">
+		    <div id="billing-invoice-status" class="tab-pane fade in active">
+			</div>
+			<div id="billing-customer-paymentlist" class="tab-pane fade">
+			</div>
+			<!-- <div id="refund" class="tab-pane fade">
+			</div>
+			<div id="billing-calculation" class="tab-pane fade">
+			</div>
+			<div id="billing-recurringpayment" class="tab-pane fade">
+			</div>
+			<div id="adjust-payment" class="tab-pane fade">
+			</div>
+			<div id="exceltest" class="tab-pane fade">
+			</div>
+			<div id="deliverylist" class="tab-pane fade">
+			</div> -->
+		</div>	
+		</div>
+	   <!-- tab line start -->
+</section>

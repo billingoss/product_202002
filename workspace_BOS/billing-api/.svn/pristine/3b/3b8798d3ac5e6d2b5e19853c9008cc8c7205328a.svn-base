@@ -1,0 +1,33 @@
+package com.api.repository;
+
+import java.util.List;
+
+import org.apache.ibatis.annotations.Mapper;
+import org.springframework.stereotype.Repository;
+
+import com.api.model.contract.ContractList;
+
+@Mapper
+@Repository
+public interface ContractListRepository {
+	List<ContractList> getContractList(ContractList contractList); 
+	ContractList getContract(ContractList contractList);
+	int upateContractTermination(ContractList contractList); 
+	int upateContractSuspend(ContractList contractList);
+	List<ContractList> getAddressId(ContractList contractList);
+	int insertAddress(ContractList contractList);
+	int insertDeliveryDetail(ContractList contractList); 
+	List<ContractList> getContractDeliveryList(ContractList contractList); 
+	ContractList getConctractAddress(ContractList contractList);
+	ContractList getDeliveryAddress(ContractList contractList);
+	List<ContractList> getDeliveryList(ContractList contractList); 
+	List<ContractList> getDeliveryDate(ContractList contractList); 
+	List<ContractList> getDeliveryDetailExcel(ContractList contractList); 
+	int updateDeliveryDetailDate(ContractList contractList);
+	int updateDeliveryDetail(ContractList contractList);
+	int updateDeliveryDetailState(ContractList contractList);
+	int updateContractState(ContractList contractList);
+	List<ContractList> getContractSearch(ContractList contractList);
+	int updateContractDelivery(ContractList contractList);
+	int updateContractDeliveryDetail(ContractList contractList);
+}

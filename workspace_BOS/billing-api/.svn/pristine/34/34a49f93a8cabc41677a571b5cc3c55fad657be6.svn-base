@@ -1,0 +1,50 @@
+
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+       <!-- header -->
+        <div id="header" th:fragment="leftFragment" >
+            <div class="inner">
+                <h1><a href="/main"><img src="/resources/images/common/h1_logo.png" alt="billing OSS"/></a></h1>
+                <div id="gnb-area">
+                    <div class="date-time">
+                        <em id="nowDay">2019년 6월 18일</em>
+                        <span id="nowClock">18:00</span>
+                    </div>
+
+                    <!--menu//-->
+                    <div id="gnb">
+                        <ul>
+                            <li class="active">
+                                <a href="/main"><span>대시보드</span></a>
+                            </li>
+                            <li class="">
+                                <a href="javascript:movePage('/contractlist/contractlist',1,1);"><span>판매관리</span></a>
+                            </li> 
+                        </ul>
+                    </div>
+                    <!--//menu-->
+					<br/><br/><br/><br/><br/><br/><br/><br/>
+                    <!--utill//-->
+                    <div class="user-box">
+                        <p class="user-name">
+                            <span class="name" th:inline="text">
+								[[${session.businessName}]] <em>([[${session.loginName}]])</em>
+							</span>
+                            <!-- <span class="date">최종접속일 2019.16.18</span> -->
+                        </p>
+                        <p class="user-set">
+                            <!-- <a href="javascript:void(0)" class="setting" onClick="alert('준비중입니다.^^')">내정보 수정</a> -->
+                            <a href="/logout" class="logout">로그아웃</a>
+                        </p>
+                    </div>
+                    <!--//utill-->
+                </div>
+
+            </div>
+	        <form id="movePageFrm" style="display : none;">
+	        	<input name="mainIndex" id="mainIndex"/>
+	        	<input name="subIndex" id="subIndex"/>
+	        </form>
+        </div>
+        <!-- //header -->
+</html>

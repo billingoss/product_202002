@@ -1,0 +1,226 @@
+    <!--환불//-->
+    <div id="popup_refund" class="trp popupfixed-wrap" th:fragment="refundPop">
+    	<form action="" name="refundForm" onsubmit="return false;">
+			<input type="hidden" id="refundInvoiceNumber" name="invoiceNumber"/>
+    		<input type="hidden" id="refundConNumber" name="conNumber"/>    		
+    		<input type="hidden" id="refundInvoiceDate" name="invoiceDate"/>    		
+    		<input type="hidden" id="refundTid" name="tid"/>    		
+    		<input type="hidden" id="refundUserName" name="userName" th:value="${session.loginId}"/>    		
+    		
+	        <div class="popup-dim"></div>
+	        <div class="popup-align">
+	            <div class="popup-vertical">
+	                <div class="popup-layer option wm">
+	                    <a class="btn_close" href="#">X</a>
+	                    <div class="pop_tit">환불</div>
+	                    <!-- 알림 mode0 -->
+	                    <section class="section">
+	                        <div class="table-wrap">
+	                            <div class="con_title ">
+	                                <h3 class="h3">주문/결제정보</h3>
+	                            </div>
+	                            <table class="form_table">
+	                                <colgroup>
+	                                    <col width="130px" />
+	                                    <col width="*" />
+	                                </colgroup>
+	                                <tbody>
+	                                    <tr>
+	                                        <th>고객명</th>
+	                                        <td id="refundCustomerName"></td>
+	                                    </tr>
+	                                    <tr>
+	                                        <th>상품명</th>
+	                                        <td id="refundProductName"></td>
+	                                    </tr>
+	                                    <tr>
+	                                        <th>환불일</th>
+	                                        <td id="refundDate"></td>
+	                                    </tr>
+	                                    <tr>
+	                                        <th>환불금액</th>
+	                                        <td id="refundTotalAmt"></td>
+	                                    </tr>
+	                                </tbody>
+	                            </table>
+	                        </div>
+	
+	                        <div class="table-wrap mt40">
+	                            <div class="con_title ">
+	                                <h3 class="h3">환불수단선택</h3>
+	                            </div>
+	                            <table class="form_table">
+	                                <colgroup>
+	                                    <col width="130px" />
+	                                    <col width="*" />
+	                                </colgroup>
+	                                <tbody>
+	                                    <tr>
+	                                        <th>환불수단</th>
+	                                        <td>
+	                                            <span class="trp radio-box">
+													<input type="radio" id="trp-radio1" name="radio1" checked="checked"/>
+													<i></i>
+													<label for="trp-radio1">카드</label>
+												</span>
+<!-- 			                                    <span class="trp radio-box">
+													<input id="radio1-2" type="radio" name="radio1"/>
+													<i></i>
+													<label for="radio1-2">계좌</label>
+												</span>
+			                                    <span class="trp radio-box">
+													<input id="radio1-3" type="radio" name="radio1"/>
+													<i></i>
+													<label for="radio1-3">현금</label>
+												</span> -->
+	                                        </td>
+	                                    </tr>
+	                                    <tr>
+	                                        <th>비고</th>
+	                                        <td>
+	                                            <input type="text" class="" value="" placeholder="" id="refunMemo" name="memo" />
+	                                        </td>
+	                                    </tr>
+	                                </tbody>
+	                            </table>
+	                        </div>	
+	                        <div class="btn_set-center bottom_set mt30">
+	                            <a class="btn btn_green btn_wm radius mr5" role="button" href="#none" id="refundPopBtn">환불</a>
+	                            <a class="btn btn_default btn_wm radius btn_cancel" href="#none" role="button" id="popRefundCancelBtn">취소</a>
+	                        </div>	
+	                    </section>
+	                </div>
+	            </div>
+	        </div>
+    	</form>		
+    	
+		<script type="text/javascript">
+		/*<![CDATA[*/
+			/***************************************************
+			환불 popup event
+			***************************************************/	
+			var refundPopBtnEvent = function (){				
+				var bntId;
+				var popId ='popup_refund';
+				$('.refoundBtn').each(function(index, item){			
+						
+					bntId = $(this).prop('id')
+					var popup_warp = $("#"+bntId).trpLayerFixedPopup("#"+popId);	
+					$("#"+bntId).on("click", function($e) {
+						
+						var stringArray  = $(this).prop('value').split('|');
+						
+						//화면 초기화
+						$('#refunMemo').val("");
+						
+						
+						if (stringArray.length == 2){
+							$('#refundConNumber').val(stringArray[0]);
+							$('#refundInvoiceNumber').val(stringArray[1]);
+						}
+	
+						//환불 대상 조회 조건
+						var queryString = $("form[name=refundForm]").serialize();			
+						queryString = queryString.replace(/-/g, '');
+						
+						//청구 결제 상세 내역 조회
+						$.ajax({
+							method : 'post',				
+							url : '/billing/getInvoicePaymentDetail',
+							data : queryString, 
+							dataType : 'json',
+							success : function(data){
+								if (data != null && data.invoDetail != null){		
+									var invoDetail = data.invoDetail;
+									//TODO 배송이 진행 되었을 경우는 환불은 진행 할지 여부를 확인 해야 한다.																		
+									if(invoDetail.deliveryState == "DONE"){
+										var result = confirm('배송이 완료된 상태입니다. 계속 진행 하시겠습니까?');
+										if(!result){											
+											return false;
+										}
+									}else if(invoDetail.deliveryState == "BEFORE"){
+										var result = confirm('환불 진행 시 배송대상에서 제외됩니다. 계속 진행 하시겠습니까?');
+										if(!result){											
+											return false;
+										}
+									}									
+									$('#refundInvoiceDate').val(invoDetail.invoiceDate);
+									$('#refundTid').val(invoDetail.tid);
+									$('#refundCustomerName').text(invoDetail.customerName);
+									$('#refundProductName').text(invoDetail.productName);
+									$('#refundDate').text(getTodayType('.'));
+									$('#refundTotalAmt').text(numberComma(invoDetail.paymentAmount)+"원");
+									$e.preventDefault();
+									popup_warp.open(this);
+								}else {										
+									showAlert('결제정보가 없습니다.');									
+			              			$('#popRefundCancelBtn').trigger('click');
+								}
+							}
+						});
+					});
+					$("body").on("click", "#"+popId+" .btn_close, #"+popId+" .btn_cancel", function($e) {
+						$e.preventDefault();
+						popup_warp.close();
+					});
+				})				
+			}	
+			
+			/***************************************************
+			환불 버튼 event
+			***************************************************/	
+		    $('#refundPopBtn').click(function (){
+		    	//환불사유 필수 입력
+		    	if (isEmpty($('#refunMemo').val())) {
+		    		showAlert("환불 사유를 입력 하세요.", $('#refunMemo'));
+			        $('#refunMemo').focus();
+					return false;
+				} 
+		    	
+		    	if (isOverByte($('#refunMemo').val(), 2000)){
+		    		showAlert("환불 사유는 최대 2000byte 입니다.", $('#refunMemo'));
+			        $('#refunMemo').focus();
+			    	return false;
+		    	}
+		    	
+		    	//HTML tag 포함
+		    	if (isHtmlTag($('#refunMemo').val())){
+		    		showAlert("입력 불가한 내용을 삭제 했습니다.\n내용을 확인 하세요.", $('#refunMemo'));
+					$('#refunMemo').val(removeHtmlTag($('#refunMemo').val()));
+					return false;
+				}
+		    	
+				var queryString = $("form[name=refundForm]").serialize();			
+				queryString = queryString.replace(/-/g, '');
+				
+				var okFlag = confirm('환불처리 하시겠습니까?');
+				if (okFlag){
+					$.ajax({
+						   method : 'post',
+			               url : '/payment/payCancleProc',
+			               data : queryString,
+			               dataType : 'json',
+			               success : function(json){				       			
+			            	   var promise = Promise.resolve(true);              	 
+				              	 promise = new Promise(function (resolve, reject) {             		
+				              		if (json.resultCode == "00"){
+										showAlert('정상처리 되었습니다.');
+				              		}else {
+				              			showAlert(json.resultMsg);
+				              		}
+				              		 return resolve();
+				              	 });
+				              	 promise = promise.then(function(res) {
+				              		if (json.resultCode == "00"){				              			
+										//성공일 경우 창 닫기
+				              			$('#popRefundCancelBtn').trigger('click');	
+				              		}
+				              		getPagingData(currPage);
+				              	 });    
+			               }
+					});	
+				}										    	
+			})
+		/*]]>*/
+		</script>    	
+    </div>

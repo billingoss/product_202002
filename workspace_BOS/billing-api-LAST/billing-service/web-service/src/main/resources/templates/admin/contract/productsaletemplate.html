@@ -1,0 +1,161 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+		debugger;
+		//alert("ready");
+		$("#contractsearchbar").load("/contract/searchbar");
+  	//alert("contractsearchbar");
+  	
+  	$("input:checkbox[name=contractListBox]").click(function() {
+  		var conNumber = $(this).val();
+  		//alert(conNumber);
+  			
+  		alert("checkbox click");
+			$("input:checked[name=contractListBox]").each(function() {
+				if (conNumber != $(this).val()) {
+					$(this).attr("checked", false); // uncheck all checkboxes
+					//alert("checked checkbox false");
+				}
+			});
+  	});
+  	
+		$('input:checked[name=contractListBox]').click(function() {
+			//alert("$(document).click ALERT 경고창");
+				  				
+			var conNumber = 0;
+				
+			$("input[name=contractListBox]:checked").each(function() {
+				conNumber = $(this).val();
+				console.log(conNumber);
+				//alert(customerNumber);
+			});
+		});
+	});
+</script>
+<div class="row">
+	<div id="contractsearchbar"></div>
+</div>
+
+<div class="row">
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h2 class="panel-title">
+					<strong>고객 정보</strong>
+				</h2>
+			</div>
+			<div class="panel-body">
+				<div class="table-responsive">
+					<table class="table">
+						<thead class="table-header-bg">
+							<tr>												
+        						<th style="display:none;">고객번호</th>
+		        				<th style="width: 10%;">고객명</th>
+						        <th style="width: 15%;">전화번호</th>
+						        <th style="width: 20%;">E-mail</th>
+						        <th style="width: 10%;">우편번호</th>
+						        <th style="width: 25%;">기본주소</th>
+						        <th style="width: 20%;">상세주소</th>
+							</tr>
+						</thead>
+						<tbody class="table-body-row">	
+							<tr th:each="result : ${customerResult}">
+							  <td style="vertical-align: middle; display:none;" th:text="${result.customerNumber}"></td>
+								<td style="vertical-align: middle" th:text="${result.customerName}"></td>
+								<td class="phone" style="vertical-align: middle" th:text="${result.phoneNumber}"></td>
+								<td style="vertical-align: middle" th:text="${result.email}"></td>
+								<td style="vertical-align: middle" th:text="${result.zipcode}"></td>
+								<td style="vertical-align: middle" th:text="${result.baseAddress}"></td>
+								<td style="vertical-align: middle" th:text="${result.detailAddress}"></td>
+							</tr>
+						</tbody>
+						<tfoot>
+							<tr>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+							</tr>
+						</tfoot>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h2 class="panel-title">
+					<strong>상품 이용 내역</strong>
+				</h2>
+			</div>
+			<div class="panel-body">
+				<div class="table-responsive">
+					<table class="table">
+						<thead class="table-header-bg">
+							<tr>
+								<th style="width: 5%;"></th>
+								<th style="display:none;">계약번호</th>
+								<th style="width: 15%;">상품명</th>
+								<th style="width: 8%;">상태</th>
+								<th style="width: 12%;">가입일자</th>
+								<th style="width: 12%;">종료일자</th>
+								<th style="width: 10%;">기간(월)</th>
+								<th style="width: 10%;">상품가격</th>
+								<th style="width: 8%;">결제구분</th>
+								<th style="width: 10%;">배송주기</th>
+								<th style="width: 14%;">결제주기</th>
+								<th style="width: 8%;"></th>
+							</tr>
+						</thead>
+						<tbody class="table-body-row">	
+							<tr th:each="result : ${contractListResult}">
+								<td><input type="checkbox" name="contractListBox" th:value="${result.conNumber}"/></td>
+								<td style="vertical-align: middle; display:none;" th:text="${result.conNumber}"></td>
+								<td style="vertical-align: middle" th:text="${result.contractState}"></td>
+								<td style="vertical-align: middle" th:text="${result.productName}"></td>
+								<td style="vertical-align: middle" th:text="${result.effectStartDateTime}"></td>
+								<td style="vertical-align: middle" th:text="${result.effectEndDateTime}"></td>
+								<td style="vertical-align: middle" th:text="${result.duration}"></td>
+								<td style="vertical-align: middle" th:text="${result.priceAmount}"></td>
+								<td style="vertical-align: middle" th:text="${result.recurringInvoiceYn}"></td>
+								<td style="vertical-align: middle" th:text="${result.deliveryCycle}"></td>
+								<td style="vertical-align: middle" th:text="${result.invoiceCycle}"></td>
+								<td style="vertical-align: middle"></td>
+							</tr>
+						</tbody>
+						<tfoot>
+							<tr>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+							</tr>
+						</tfoot>
+					</table>
+				</div>
+			</div>
+			<div class="panel-footer" style="padding-bottom: 40px;">
+	   		<div>
+	   			<button class="btn btn-primary pull-right" style="margin: 3px;" id="customerUpdate">상품 정보 변경</button>
+	   		</div>
+	   		<div>
+	   			<button class="btn btn-primary pull-right" style="margin: 3px;" id="customerUpdate">신규 상품 가입</button>
+	   		</div>
+			</div>
+		</div>
+	</div>
+</div>

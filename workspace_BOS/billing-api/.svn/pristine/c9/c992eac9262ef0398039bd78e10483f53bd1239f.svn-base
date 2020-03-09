@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.api.repository.DiscountRepository">	
+	<!-- 할인 목록 조회 -->
+	<select id="selectDiscountList" resultType="com.api.model.product.Discount"  parameterType = "com.api.model.product.Discount" >
+		SELECT
+			disc.discountid
+			, disc.discountname
+			, disc.providernumber
+			, disc.discounttype
+			, ifnull(code1.codename,'') AS discountTypeName	
+			, disc.discountstate
+			, ifnull(code2.codename,'') AS discountStateName
+			, disc.subscribestartdatetime
+			, disc.subscribeenddatetime
+			, disc.discountvalue
+			, disc.discountorder
+			, disc.discountdescription
+			, disc.beforediscountid
+			, disc.exposureyn
+			, disc.lastchangedatetime
+			, disc.discounttype2
+			, disc.discounttype2value
+			, disc.auditid
+			, date_format(disc.auditdatetime,'%Y%m%d') AS auditdatetime
+			, (SELECT count(*) 
+			     FROM contractdiscount contDisc
+			    WHERE contDisc.discountid = disc.discountid) AS useContractCnt
+			, sum(1) over() as totalcount
+		  FROM discount disc
+								LEFT OUTER JOIN codegroupdetail AS code1
+												ON  (code1.codegroupid = 'discounttype'
+												AND disc.discounttype = code1.code) 
+								LEFT OUTER JOIN codegroupdetail AS code2
+												ON  (code2.codegroupid = 'discountstate'
+												AND disc.discountstate = code2.code) 	
+		 WHERE disc.providernumber = #{providerNumber}
+		 AND		disc.deletedatetime IS NULL 		 
+		<if test='discountId != null and !"".equals(discountId)'>
+		AND    disc.discountid = #{discountId}
+		</if>
+		<if test='discountType != null and !"".equals(discountType)'>
+		AND    disc.discounttype = #{discountType}
+		</if>
+		<if test='discountState != null and !"".equals(discountState)'>
+		AND    disc.discountstate = #{discountState}
+		</if>
+		<if test='discountName != null and !"".equals(discountName)'>
+		AND    disc.discountName like concat('%',#{discountName},'%')
+		</if>
+		<if test='subscribeStartDateTime != null and !"".equals(subscribeStartDateTime) and subscribeEndDateTime != null and !"".equals(subscribeEndDateTime)'>
+			AND str_to_date(disc.subscribeenddatetime, "%Y%m%d") <![CDATA[>=]]> str_to_date(replace(#{subscribeStartDateTime},'-',''), "%Y%m%d")
+			AND str_to_date(disc.subscribestartdatetime, "%Y%m%d") <![CDATA[<=]]> str_to_date(replace(#{subscribeEndDateTime},'-',''), "%Y%m%d")
+		</if>				
+		ORDER BY disc.auditdatetime DESC, disc.discounttype, disc.discountName
+		<if test='pagingYn != null and "Y".equals(pagingYn)'>
+		LIMIT #{pageStart}, #{perPageNum}
+		</if>
+	</select>
+	
+	<!-- 신규 할인 ID 조회 -->
+	<select id="selectNewDiscountId" resultType="java.lang.String" >
+ 		SELECT CONCAT('DIS',NEXTVAL(discountid_seq)) as discountid
+ 	</select> 	
+ 	
+ 	<!-- 할인 정보 저장 -->
+ 	<insert id="insertDiscount" parameterType = "com.api.model.product.Discount" >
+		INSERT 
+		INTO  discount
+			 (
+				 discountid
+				, discountname
+				, providernumber
+				, discounttype
+				, discountstate
+				, subscribestartdatetime
+				, subscribeenddatetime
+				, discountvalue
+				, discountorder
+				, discountdescription
+				, beforediscountid
+				, exposureyn				
+				, lastchangedatetime
+				, discounttype2
+				, discounttype2value				
+				, auditid
+				, auditdatetime			 
+			 )
+		VALUES(
+				#{discountId}
+				, #{discountName}
+				, #{providerNumber} 		<!-- #{providerNumber} -->
+				, #{discountType}
+				, 'OPERATION'				<!-- #{productstate} 기간과 노출 여부로 대체  -->
+				, replace(#{subscribeStartDateTime},'-','')
+				, replace(#{subscribeEndDateTime},'-','')
+				, #{discountValue} 	
+				, ifnull(#{discountOrder}, 1)	
+				, REPLACE(REPLACE(#{discountDescription},'\r\n',<![CDATA['<br/>']]>),'\r','')
+				, #{beforeDiscountId}
+				, 'N'							<!-- #{exposureYn} 노출여부 -->
+				, NOW()
+				, #{discountType2}
+				, #{discountType2Value}
+				, #{auditId}
+				, NOW()
+			)
+	</insert>
+	
+	<!-- 할인 정보 수정 -->
+ 	<update id="updateDiscount" parameterType = "com.api.model.product.Discount" >
+ 		UPDATE discount SET
+ 				discountname = #{discountName}				
+				, discounttype	= #{discountType}
+				<!-- , discountstate	= #{discountState}  기간과 노출 여부로 대체-->
+				, subscribestartdatetime	= replace(#{subscribeStartDateTime},'-','')
+				, subscribeenddatetime	=  replace(#{subscribeEndDateTime},'-','')
+				, discountvalue	= #{discountValue}
+				<!-- , discountorder	= #{discountOrder} 상품에 할인은 1개 이상 적용 할 수 없으므로 사용하지 않음-->
+				, discountdescription	=  REPLACE(REPLACE(#{discountDescription},'\r\n',<![CDATA['<br/>']]>),'\r','')
+				<!-- , beforediscountid -->
+				, exposureyn	= #{exposureYn} <!-- 노출여부 -->				
+				, lastchangedatetime	= NOW()
+				<!-- , discounttype2	= #{} -->
+				<!-- , discounttype2value	= #{} -->				
+				, auditid	= #{auditId}			 
+ 		WHERE discountId = #{discountId}
+ 		   AND providernumber = #{providerNumber}
+ 	</update>
+ 		
+</mapper> 

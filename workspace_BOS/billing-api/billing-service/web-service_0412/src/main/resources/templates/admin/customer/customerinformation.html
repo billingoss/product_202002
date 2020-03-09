@@ -1,0 +1,68 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+		//alert("$(document).ready ALERT 경고창");
+		$('#buttonCustomerUpdate').click(function() {
+			$('#tabCustomerSearch').removeClass('active');
+			$('#tabCustomerUpdate').addClass('active');
+
+			var customerNumber = $(this).val();
+			//alert("customerNumber = " + customerNumber);
+			$('#customerupdate').load("customerupdate" + "/" + customerNumber);
+		});
+	});
+</script>
+
+				<div class="row">
+					<div class="col-md-12">
+						<div class="panel panel-default">
+							<div class="panel-heading">
+								<h2 class="panel-title">
+									<strong>고객 정보</strong>
+								</h2>
+							</div>
+							<div class="panel-body">
+								<div class="table-responsive">
+									<table class="table">
+										<thead  class="table-header-bg">
+											<tr>												
+												<th style="width: 8%;">고객명</th>
+												<th style="width: 8%;">성별</th>
+												<th style="width: 8%;">고객유형</th>
+												<th style="width: 8%;">기본주소</th>
+												<th style="width: 8%;">상세주소</th>
+												<th style="width: 8%;">이메일</th>
+											</tr>
+										</thead>
+										<tbody class="table-body-row">	
+											<tr>
+												<td style="vertical-align: middle" th:text="${customerResult.customerName}"></td>
+												<td style="vertical-align: middle" th:text="${customerResult.sex}"></td>
+												<td style="vertical-align: middle" th:text="${customerResult.customerType}"></td>
+												<td style="vertical-align: middle" th:text="${customerResult.baseAddress}"></td>
+												<td style="vertical-align: middle" th:text="${customerResult.detailAddress}"></td>
+												<td style="vertical-align: middle" th:text="${customerResult.email}"></td>
+											</tr>
+										</tbody>
+										<tfoot>
+											<tr>
+												<td class="no-line"></td>
+												<td class="no-line"></td>
+												<td class="no-line"></td>
+												<td class="no-line"></td>
+												<td class="no-line"></td>
+												<td class="no-line"></td>
+											</tr>
+										</tfoot>
+									</table>
+								</div>
+							</div>
+							<div class="panel-footer" style="padding-bottom: 40px;">
+				   			<div>
+				   				<a data-toggle="tab" href="#customerupdate">
+				   					<button class="btn btn-primary pull-right" style="margin: 3px;" id="buttonCustomerUpdate" th:value="${customerResult.customerNumber}">고객 정보 변경</button>
+                  </a>	
+				   			</div>
+				   		</div>
+						</div>
+					</div>
+				</div>

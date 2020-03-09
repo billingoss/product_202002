@@ -1,0 +1,752 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.api.repository.OrderRepository">
+
+<select id="setAutoCommitOff">
+set autocommit = 0
+</select>
+
+<select id="dbCommit">
+commit
+</select>
+
+<select id="dbRollback">
+rollback
+</select>
+
+<select id="setAutoCommitOn">
+set autocommit = 1
+</select>
+
+<select id="getCurDate" resultType="Order"  parameterType = "Order" >
+select date_format(now(),'%Y%m%d%H%i%s') as curdate
+</select>
+
+<select id="getCode" resultType="Order"  parameterType = "Order" >
+select a.code, a.codename
+from   codegroupdetail a
+where  a.codegroupid = #{codegroupid}
+and    date_format(curdate(),'%Y%m%d') between a.effectstartdatetime and a.effectenddatetime
+order by a.sortingorder
+</select>
+
+<select id="getChannelList" resultType="Order"  parameterType = "Order">
+select a.value1 as channelid, a.description as channelname, b.value1 as uploaditem
+from   providerinformation a, providerinformation b
+where  a.providernumber = #{providernumber}
+and    a.code = 'CHANNEL'
+and    date_format(curdate(),'%Y%m%d') between a.effectstartdate and a.effectenddate
+and    a.providernumber = b.providernumber
+and    b.code = 'UPLOADITEM'
+and    a.value1 = b.detailcode
+and    date_format(curdate(),'%Y%m%d') between b.effectstartdate and b.effectenddate
+order by a.seq
+</select>
+
+<select id="getChannelItemList" resultType="Order"  parameterType = "Order">
+select a.value1 as channelid, b.value1 as uploaditem, c.code as itemcode, c.codename as itemname, c.sortingorder as itemindex
+from   providerinformation a, providerinformation b, codegroupdetail c
+where  a.providernumber = #{providernumber}
+and    a.code = 'CHANNEL'
+<if test='channelid != null and !"".equals(channelid)'>
+and    a.value1 = #{channelid}
+</if>
+and    date_format(curdate(),'%Y%m%d') between a.effectstartdate and a.effectenddate
+and    a.providernumber = b.providernumber
+and    b.code = 'UPLOADITEM'
+and    a.value1 = b.detailcode
+and    date_format(curdate(),'%Y%m%d') between b.effectstartdate and b.effectenddate
+and    b.value1 = c.codegroupid
+and    date_format(curdate(),'%Y%m%d') between c.effectstartdatetime and c.effectenddatetime
+order by a.seq, c.sortingorder
+</select>
+
+<select id="getProviderInformationByCode" resultType="Order"  parameterType = "Order">
+select a.code, a.detailcode, a.seq, a.value1, a.value2, a.optioncode, a.optionvalue1, a.optionvalue2
+from   providerinformation a
+where  a.providernumber = #{providernumber}
+and    a.code = #{code}
+and    date_format(curdate(),'%Y%m%d') between a.effectstartdate and a.effectenddate
+order by a.detailcode, a.seq
+</select>
+
+<select id="getOrderNumber" resultType="Order"  parameterType = "Order">
+SELECT nextval(ordernumber_seq) as ordernumber
+</select>
+
+<select id="getChannelContractNumber" resultType="Order"  parameterType = "Order">
+select  nvl(max(channelcontractnumber),0)+1 as channelcontractnumber
+from    channelcontract a
+where   a.providernumber = #{providernumber}
+and     a.channelid = #{channelid}
+and     a.productordernumber = #{productordernumber}
+and     a.ordernumber = #{ordernumber}
+</select>
+
+<insert id="insertChannelContract">
+insert into channelcontract (providernumber,channelid,productordernumber,ordernumber,channelcontractnumber,registrationdatetime,
+                             processstate,customername,customeremail,customerid,customertype,sex,deliverycustomername,
+                             deliveryphonenumber1,deliveryphonenumber2,deliveryaddress,customerphonenumber,
+                             deliveryzipcode,orderstate,orderdetailstate,ordertype,orderaddinfo,
+                             orderdatetime,productnumber,productname,optioninfo,quantity,priceamount,
+                             totalamount,addproductname,productdescription1,productdescription2,productdescription3,productdescription4,productdescription5,
+                             bigissuequantity,paymentdate,paymentmethod,bankname,cardexpirationdate,paymentnumber,paymentname,discountamount,paymentamount,
+                             deliverymethod,deliverycompany,trackingnumber,deliverydate,deliverychargetype,deliverychargeamount,deliveryremark,
+                             enddate,contractterm,deliverycycle,deliverycount,deliveryday,deliverytype,totaldeliverycount,currentdeliverycount,remark,channelkind,
+                             etcitem1,etcitem2,etcitem3,etcitem4,etcitem5,etcitem6,etcitem7,etcitem8,etcitem9,etcitem10,
+                             etcitem11,etcitem12,etcitem13,etcitem14,etcitem15,etcitem16,etcitem17,etcitem18,etcitem19,etcitem20,
+                             etcitem21,etcitem22,etcitem23,etcitem24,etcitem25,etcitem26,etcitem27,etcitem28,etcitem29,etcitem30,
+                             etcitem31,etcitem32,etcitem33,etcitem34,etcitem35,etcitem36,etcitem37,etcitem38,etcitem39,etcitem40,
+                             etcitem41,etcitem42,etcitem43,etcitem44,etcitem45,etcitem46,etcitem47,etcitem48,etcitem49,etcitem50,
+                             auditid,auditdateitme)
+values (#{providernumber},#{channelid},#{productordernumber},#{ordernumber},#{channelcontractnumber},#{registrationdatetime},
+        #{processstate},#{customername},#{customeremail},#{customerid},#{customertype},#{sex},#{deliverycustomername},
+        #{deliveryphonenumber1},#{deliveryphonenumber2},#{deliveryaddress},#{customerphonenumber},
+        #{deliveryzipcode},#{orderstate},#{orderdetailstate},#{ordertype},#{orderaddinfo},#{orderdatetime},
+        #{productnumber},#{productname},#{optioninfo},#{quantity},#{priceamount},
+        #{totalamount},#{addproductname},#{productdescription1},#{productdescription2},#{productdescription3},#{productdescription4},#{productdescription5},
+        #{bigissuequantity},#{paymentdate},#{paymentmethod},#{bankname},#{cardexpirationdate},#{paymentnumber},#{paymentname},#{discountamount},#{paymentamount},
+        #{deliverymethod},#{deliverycompany},#{trackingnumber},
+        #{deliverydate},#{deliverychargetype},#{deliverychargeamount},#{deliveryremark},
+        #{enddate},#{contractterm},#{deliverycycle},#{deliverycount},#{deliveryday},#{deliverytype},#{totaldeliverycount},#{currentdeliverycount},#{remark},#{channelkind},
+        #{etcitem1},#{etcitem2},#{etcitem3},#{etcitem4},#{etcitem5},#{etcitem6},#{etcitem7},#{etcitem8},#{etcitem9},#{etcitem10},
+        #{etcitem11},#{etcitem12},#{etcitem13},#{etcitem14},#{etcitem15},#{etcitem16},#{etcitem17},#{etcitem18},#{etcitem19},#{etcitem20},
+        #{etcitem21},#{etcitem22},#{etcitem23},#{etcitem24},#{etcitem25},#{etcitem26},#{etcitem27},#{etcitem28},#{etcitem29},#{etcitem30},
+        #{etcitem31},#{etcitem32},#{etcitem33},#{etcitem34},#{etcitem35},#{etcitem36},#{etcitem37},#{etcitem38},#{etcitem39},#{etcitem40},
+        #{etcitem41},#{etcitem42},#{etcitem43},#{etcitem44},#{etcitem45},#{etcitem46},#{etcitem47},#{etcitem48},#{etcitem49},#{etcitem50},
+        #{auditid},now())
+</insert>
+
+<update id="updateChannelContractState">
+update channelcontract set processsate = 'PROGRESS', auditid = #{auditid}, auditdateitme = now()
+where  providernumber = #{providernumber}
+and    registrationdatetime between concat(date_format(curdate(),'%Y%m%d'),'000000') and concat(date_format(curdate(),'%Y%m%d'),'235959')
+and    processstate = 'UPLOAD'
+</update>
+
+<select id="getAddressid" resultType="Order"  parameterType = "Order">
+SELECT concat('ADD',nextval(addressid_seq)) as deliveryaddressid
+</select>
+
+<select id="getCustomerNumber" resultType="Order"  parameterType = "Order">
+select customernumber
+from   customer
+where  customername = #{deliverycustomername}
+and    cellphonenumber = #{deliveryphonenumber1} 
+and    phonenumber = #{deliveryphonenumber2}
+and    providernumber = #{providernumber}
+</select>
+
+<insert id="insertCustomer" useGeneratedKeys="true" keyProperty="customernumber">
+insert into customer (customername,providernumber,sex,birthday,email,phonenumber,addressid,
+                      deliveryaddressid,customertype,createdate,currentdate,deletedate,cellphonenumber,auditid,auditdatetime)
+values (#{customername},#{providernumber},#{sex},'',#{customeremail},#{customerphonenumber},#{deliveryaddressid},
+        #{deliveryaddressid},#{customertype},date_format(curdate(),'%Y%m%d'),date_format(curdate(),'%Y%m%d'),'',#{customerphonenumber},#{auditid},now())
+</insert>
+
+<insert id="insertAddress">
+insert into address (addressid,zipcode,baseaddress,detailaddress,auditid,auditdatetime)
+values (#{deliveryaddressid},#{deliveryzipcode},#{deliveryaddress},'',#{auditid}, now())
+</insert>
+
+<insert id="insertDeliveryCustomer" useGeneratedKeys="true" keyProperty="customernumber">
+insert into customer (customername,providernumber,sex,birthday,email,phonenumber,addressid,
+                      deliveryaddressid,customertype,createdate,currentdate,deletedate,cellphonenumber,auditid,auditdatetime)
+values (#{deliverycustomername},#{providernumber},'','','',#{deliveryphonenumber2},#{deliveryaddressid},
+        #{deliveryaddressid},'',date_format(curdate(),'%Y%m%d'),date_format(curdate(),'%Y%m%d'),'',#{deliveryphonenumber1},#{auditid},now())
+</insert>
+
+<insert id="insertContract" useGeneratedKeys="true" keyProperty="connumber">
+insert into contract (customernumber,providernumber,paymentinformationnumber,contractstate,duration,subscribedatetime,effectstartdatetime,effectenddatetime,
+                      terminationreason,suspenddatetime,suspendreason,recurringdeliveryyn,
+                      deliverycycle,deliverytimes,deliveryremark,deliverystartdatetime,deliverytotalcount,deliveryremaincount,deliverycurrentcount,
+                      recurringinvoiceyn,invoicecycle,lastinvoicedatetime,nextinvoicedatetime,lastchangedatetime,
+                      deliveryday,remark,channelid,channelordernumber,channelproductordernumber,channelcontractnumber,registrationdatetime,
+                      deliverycustomernumber,deliverytype,deliverycompany,deliverychargeamount,deliverychargetype,deliveryaddressid,customertype,channelkind,auditid,auditdatetime)
+values (#{customernumber},#{providernumber},#{paymentinformationnumber},#{contractstate},#{contractterm},#{subscribedatetime},#{deliverystartdatetime},#{effectenddatetime},
+        '','','',#{recurringdeliveryyn}, 
+        #{deliverycycle},#{deliverycount},#{deliveryremark},#{deliverystartdatetime},#{totaldeliverycount},#{totaldeliverycount}-#{currentdeliverycount},#{currentdeliverycount},
+        #{recurringinvoiceyn},'','','','',
+        #{deliveryday},#{remark},#{channelid},#{ordernumber},#{productordernumber},#{channelcontractnumber},#{registrationdatetime},
+        #{deliverycustomernumber},#{deliverytype},#{deliverycompany},if(#{deliverychargeamount}='',0,#{deliverychargeamount}),#{deliverychargetype},#{deliveryaddressid},#{customertype},#{channelkind},#{auditid},now())
+</insert>
+
+<insert id="insertContractProduct">
+insert into contractproduct (connumber,productid,producttype,packageid,packagepricereferenceyn,packagevarietyyn,quantity,effectstartdatetime,effectenddatetime,
+                             productname,productoption,addproductname,productdescription1,productdescription2,productdescription3,
+		                     productdescription4,productdescription5,bigissuequantity,auditid,auditdatetime)
+values (#{connumber},#{connumber},'','','','',#{quantity},#{deliverystartdatetime},#{effectenddatetime},
+        #{productname},#{optioninfo},#{addproductname},#{productdescription1},#{productdescription2},#{productdescription3},
+        #{productdescription4},#{productdescription5},#{bigissuequantity},#{auditid},now())
+</insert>        
+
+<select id="getDeliveryDate1" resultType="Order"  parameterType = "Order" >
+select deliverydate, deliverydate as deliverystartdatetime, date_format(str_to_date(deliverydate,'%Y%m%d') + interval (12-1) * 2 month,'%Y%m%d') as effectenddatetime
+from  (select if(date_format(curdate(),'%d')&gt;cast(#{deliveryday} as unsigned),concat(date_format(curdate()+interval 1 month,'%Y%m'),if(cast(#{deliveryday} as unsigned)>9,#{deliveryday},concat('0',#{deliveryday}))),
+                                                               concat(date_format(curdate(),'%Y%m'),if(cast(#{deliveryday} as unsigned)>9,#{deliveryday},concat('0',#{deliveryday})))) as deliverydate) a
+</select>        
+
+<select id="getDeliveryDate2" resultType="Order"  parameterType = "Order" >
+<![CDATA[
+select deliverydate1, deliverydate2, deliverydate as deliverystartdatetime,
+       date_format(if(today<cast(#{deliveryday1} as unsigned),date1,if(today=cast(#{deliveryday1} as unsigned),date2,if(today<cast(#{deliveryday2} as unsigned),date2,if(today=cast(#{deliveryday2} as unsigned),date3,date3)))),'%Y%m%d') as effectenddatetime
+from (select if(today<=cast(#{deliveryday1} as unsigned),date1,if(today<=cast(#{deliveryday2} as unsigned),date2,date3)) as deliverydate1,
+             if(today<=cast(#{deliveryday1} as unsigned),date2,if(today<=cast(#{deliveryday2} as unsigned),date3,date4)) as deliverydate2,
+             date_format(curdate(),'%Y%m%d') as deliverydate,
+             str_to_date(date1,'%Y%m%d') + interval (#{contractterm}-1) month as date1,
+             str_to_date(date2,'%Y%m%d') + interval (#{contractterm}-1) month as date2,
+             str_to_date(date3,'%Y%m%d') + interval (#{contractterm}-1) month as date3,
+             str_to_date(date4,'%Y%m%d') + interval (#{contractterm}-1) month as date4,
+             today
+      from  (select date_format(curdate(),'%d') as today, 
+                    concat(date_format(curdate(),'%Y%m'),if(cast(#{deliveryday1} as unsigned)>9,#{deliveryday1},concat('0',#{deliveryday1}))) as date1,
+                    concat(date_format(curdate(),'%Y%m'),if(cast(#{deliveryday2} as unsigned)>9,#{deliveryday2},concat('0',#{deliveryday2}))) as date2,
+                    concat(date_format(curdate()+interval 1 month,'%Y%m'),if(cast(#{deliveryday1} as unsigned)>9,#{deliveryday1},concat('0',#{deliveryday1}))) as date3,
+                    concat(date_format(curdate()+interval 1 month,'%Y%m'),if(cast(#{deliveryday2} as unsigned)>9,#{deliveryday2},concat('0',#{deliveryday2}))) as date4) a) a
+]]>
+</select>        
+
+<insert id="insertDeliveryDetail" useGeneratedKeys="true" keyProperty="deliverynumber">
+insert into deliverydetail (connumber,customernumber,providernumber,invoicenumber,invoicedate,deliverydate,deliverystate,
+                            deliverydatetime,deliveryremark,deliverycustomernumber,deliverycompany,deliverychargeamount,deliverychargetype,deliveryaddressid,auditid,auditdatetime)
+values (#{connumber},#{customernumber},#{providernumber},null,'',#{deliverydate},#{deliverystate},
+       null,#{deliveryremark},#{deliverycustomernumber},#{deliverycompany},if(#{deliverychargeamount}='',0,#{deliverychargeamount}),#{deliverychargetype},#{deliveryaddressid},#{auditid},now())
+</insert>
+
+<insert id="insertDeliveryDetail1" useGeneratedKeys="true" keyProperty="deliverynumber">
+insert into deliverydetail (connumber,customernumber,providernumber,invoicenumber,invoicedate,deliverydate,deliverystate,
+                            deliverydatetime,deliveryremark,deliverycustomernumber,deliverycompany,deliverychargeamount,deliverychargetype,deliveryaddressid,auditid,auditdatetime)
+select #{connumber},#{customernumber},#{providernumber},null,'',date_format(deliverydate,'%Y%m%d'),#{deliverystate},
+       null,#{deliveryremark},#{deliverycustomernumber},#{deliverycompany},if(#{deliverychargeamount}='',0,#{deliverychargeamount}),#{deliverychargetype},#{deliveryaddressid},#{auditid},now()
+from  (select str_to_date(#{deliverydate},'%Y%m%d') + interval (rownum-1)*#{deliverycount} month as deliverydate
+       from  (select @rownum := @rownum + 1 as rownum
+              from   codegroup a, (select @rownum := 0) b
+              limit  12) a) a
+</insert>
+
+<insert id="insertDeliveryDetail2">
+insert into deliverydetail (connumber,customernumber,providernumber,invoicenumber,invoicedate,deliverydate,deliverystate,
+                            deliverydatetime,deliveryremark,deliverycustomernumber,deliverycompany,deliverychargeamount,deliverychargetype,deliveryaddressid,auditid,auditdatetime)
+select #{connumber},#{customernumber},#{providernumber},null,'',date_format(deliverydate,'%Y%m%d'),#{deliverystate},
+       null,#{deliveryremark},#{deliverycustomernumber},#{deliverycompany},if(#{deliverychargeamount}='',0,#{deliverychargeamount}),#{deliverychargetype},#{deliveryaddressid},#{auditid},now()
+from  (select str_to_date(#{deliverydate1},'%Y%m%d') + interval (rownum-1) month as deliverydate
+       from  (select @rownum := @rownum + 1 as rownum
+              from   codegroup a, (select @rownum := 0) b
+              limit  #{intcontractterm}) a
+       union 
+       select str_to_date(#{deliverydate2},'%Y%m%d') + interval (rownum-cast(#{contractterm} as unsigned)-1) month as deliverydate
+       from  (select @rownum := @rownum + 1 as rownum
+              from   codegroup a, (select @rownum := 0) b
+              limit  #{intcontractterm}) a
+<if test='!"BASIC".equals(channelid)'>
+       union
+       select str_to_date(#{deliverystartdatetime},'%Y%m%d') as deliverydate       
+</if>              
+       order by deliverydate
+       limit  #{inttotaldeliverycount}) a
+</insert>
+
+<insert id="insertPaymentInformation" useGeneratedKeys="true" keyProperty="paymentinformationnumber">
+insert into paymentinformation (customernumber,paymentmethod,deliveryaddressid,invoicedeliverytype,invoiceemail,invoicephonenumber,invoiceaddressid,
+            paymentday,cardcorporationcode,cardexpirationdate,paymentamount,cardnumber,auditid,auditdatetime)
+values (#{customernumber},#{paymentmethod},#{deliveryaddressid},'','','','',
+        #{paymentdate},#{bankname},#{cardexpirationdate},#{paymentamount},#{paymentnumber},#{auditid},now())
+</insert> 
+
+<select id="getDeleteChannelContract" resultType="Order"  parameterType = "Order">
+select b.connumber
+from   channelcontract a, contract b
+where  a.providernumber = #{providernumber}
+<if test='!"".equals(channelid)'>
+and    a.channelid = #{channelid}
+</if>
+and    a.registrationdatetime like concat(#{registrationdatetime},'%')
+and    a.providernumber = b.providernumber
+and    a.channelid = b.channelid
+and    a.productordernumber = b.channelproductordernumber
+and    a.ordernumber = b.channelordernumber
+and    a.channelcontractnumber = b.channelcontractnumber
+</select>
+
+<select id="getDeleteContract" resultType="Order"  parameterType = "Order">
+select a.connumber, a.providernumber, a.channelid, a.channelproductordernumber as productordernumber, a.channelordernumber as ordernumber, a.channelcontractnumber, a.paymentinformationnumber, 
+       if(max(if(b.deliverystate='DONE',1,0))=1,'DONE','') as deliverystate    
+from   contract a left outer join deliverydetail b on (a.connumber = b.connumber)
+where  a.connumber = #{connumber}
+group by a.connumber, a.providernumber, a.channelid, a.channelproductordernumber, a.channelordernumber, a.channelcontractnumber, a.paymentinformationnumber
+</select>      
+
+<delete id="deleteChannelContract">
+delete from channelcontract
+where  providernumber = #{providernumber}
+and    channelid = #{channelid}
+and    productordernumber = #{productordernumber}
+and    ordernumber = #{ordernumber}
+and    channelcontractnumber = #{channelcontractnumber}
+</delete>
+
+<delete id="deleteContract">
+delete from contract
+where  connumber = #{connumber}
+</delete>
+
+<delete id="deleteContractProduct">
+delete from contractproduct
+where  connumber = #{connumber}
+</delete>
+
+<delete id="deleteDeliveryDetail">
+delete from deliverydetail
+where  connumber = #{connumber}
+</delete>
+
+<delete id="deletePaymentInformation">
+delete from paymentinformation
+where  paymentinformationnumber = #{paymentinformationnumber}
+</delete>
+
+<select id="getContractList" resultType="Order"  parameterType = "Order">
+select b.connumber, b.recurringdeliveryyn,
+       substr(b.registrationdatetime,1,8) AS registrationdatetime, substr(b.subscribedatetime,1,8) as subscribedatetime, 
+       b.channelid, (select codename from codegroupdetail z where z.codegroupid = 'CHANNEL' and z.code = b.channelid) as channelname,
+       b.channelproductordernumber as productordernumber, b.channelordernumber as ordernumber, b.channelcontractnumber,
+       b.deliverychargetype, nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYCHARGETYPE' and z.code = b.deliverychargetype),'') as deliverychargetypename,
+       b.deliverychargeamount, b.deliveryremark,
+       b.deliverystartdatetime, b.effectenddatetime, b.duration, 
+       b.deliverycycle, nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYCYCLE' and z.code = b.deliverycycle),'') as deliverycyclename,
+       b.deliverytimes, b.deliveryday, 
+       b.deliverytype, nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYTYPE' and z.code = b.deliverytype),'') as deliverytypename,
+       b.deliverytotalcount, 
+       (select count(*) from deliverydetail y where y.connumber = b.connumber and y.deliverydate &lt; date_format(now(),'%Y%m%d')) + b.deliverycurrentcount as currentdeliverycount,
+       c.productname, c.quantity, 
+       c.productoption, c.productdescription1, c.productdescription2, c.productdescription3, c.productdescription4, c.productdescription5, c.bigissuequantity,
+       d.customername, d.phonenumber as customerphonenumber, nvl(b.customertype,b.channelkind) as customertype,
+       e.customername as deliverycustomername, nvl(e.cellphonenumber, e.phonenumber) as deliveryphonenumber1,
+       f.zipcode as deliveryzipcode, f.baseaddress as deliveryaddress, 
+       g.paymentday, 
+       g.paymentmethod, nvl((select codename from codegroupdetail z where z.codegroupid = 'PAYMENTMETHODCODE' and z.code = g.paymentmethod),'') as paymentmethodname,
+       g.paymentamount, 
+      (select count(*) from deliverydetail y where y.connumber = b.connumber and y.deliverydate &lt; date_format(now(),'%Y%m%d')) as deliveryindex2,
+       sum(1) over() totalcount
+from   contract b, contractproduct c, customer d, customer e, address f, paymentinformation g
+where  b.providernumber = #{providernumber}
+and    b.registrationdatetime between concat(#{registrationdatetime},'000000') and concat(#{registrationdatetime},'235959')
+<if test='!"".equals(channelid)'>
+and    b.channelid = #{channelid}
+</if>
+and    b.connumber = c.connumber
+and    b.customernumber = d.customernumber
+and    b.deliverycustomernumber = e.customernumber
+and    b.deliveryaddressid = f.addressid
+and    b.paymentinformationnumber = g.paymentinformationnumber
+order by substr(b.registrationdatetime,1,8), b.recurringdeliveryyn desc, deliverytypename, channelname, d.customername
+limit #{pageStart}, #{perPageNum}
+</select>
+
+<select id="getDeliveryList" resultType="Order"  parameterType = "Order" >
+select a.connumber,
+       a.deliverynumber1, deliverynumber2, deliverynumber3, deliverynumber4, deliverynumber5, deliverynumber6,
+       a.deliverydate1, a.deliverydate2, a.deliverydate3, a.deliverydate4, a.deliverydate5, a.deliverydate6,
+      (select count(*) from deliverydetail x where x.connumber = a.connumber and x.deliverydate &lt; #{deliverydate}) as deliveryindex1,
+      (select count(*) from deliverydetail y where y.connumber = a.connumber and y.deliverydate &lt; date_format(now(),'%Y%m%d')) as deliveryindex2,
+       nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYSTATE' and z.code = a.deliverystate1),'') as deliverystate1, 
+       nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYSTATE' and z.code = a.deliverystate2),'') as deliverystate2, 
+       nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYSTATE' and z.code = a.deliverystate3),'') as deliverystate3, 
+       nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYSTATE' and z.code = a.deliverystate4),'') as deliverystate4, 
+       nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYSTATE' and z.code = a.deliverystate5),'') as deliverystate5, 
+       nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYSTATE' and z.code = a.deliverystate6),'') as deliverystate6, 
+       a.deliveryremark, 
+       substr(b.registrationdatetime,1,8) AS registrationdatetime, substr(b.subscribedatetime,1,8) as subscribedatetime, 
+       b.channelid, (select codename from codegroupdetail z where z.codegroupid = 'CHANNEL' and z.code = b.channelid) as channelname,
+       b.deliverychargetype, nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYCHARGETYPE' and z.code = b.deliverychargetype),'') as deliverychargetypename,
+       b.deliverychargeamount, b.recurringdeliveryyn,
+       b.deliverystartdatetime, b.effectenddatetime, b.duration, 
+       b.deliverycycle, nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYCYCLE' and z.code = b.deliverycycle),'') as deliverycyclename,
+       b.deliverytimes, b.deliveryday, 
+       b.deliverytype, nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYTYPE' and z.code = b.deliverytype),'') as deliverytypename,
+       b.deliverytotalcount, b.deliveryremaincount, b.deliverycurrentcount as currentdeliverycount,
+       c.productname, c.quantity, 
+       c.productoption, c.productdescription1, c.productdescription2, c.productdescription3, c.productdescription4, c.productdescription5, c.bigissuequantity,
+       d.customername, d.phonenumber as customerphonenumber, nvl(b.customertype,b.channelkind) as customertype, 
+       e.customername as deliverycustomername, nvl(e.cellphonenumber, e.phonenumber) as deliveryphonenumber1,
+       f.zipcode as deliveryzipcode, f.baseaddress as deliveryaddress, 
+       g.paymentday, 
+       g.paymentmethod, nvl((select codename from codegroupdetail z where z.codegroupid = 'PAYMENTMETHODCODE' and z.code = g.paymentmethod),'') as paymentmethodname,
+       g.paymentamount, 
+		 sum(1) over() totalcount
+from  (select a.connumber, 
+              max(if(no=1,deliveryremark,'')) as deliveryremark, max(if(no=1,deliveryaddressid,'')) as deliveryaddressid, 
+              max(if(no=1,deliverynumber,'')) as deliverynumber1, max(if(no=2,deliverynumber,'')) as deliverynumber2, max(if(no=3,deliverynumber,'')) as deliverynumber3,
+              max(if(no=4,deliverynumber,'')) as deliverynumber4, max(if(no=5,deliverynumber,'')) as deliverynumber5, max(if(no=6,deliverynumber,'')) as deliverynumber6,
+              max(if(no=1,deliverydate,'')) as deliverydate1, max(if(no=2,deliverydate,'')) as deliverydate2, max(if(no=3,deliverydate,'')) as deliverydate3,
+              max(if(no=4,deliverydate,'')) as deliverydate4, max(if(no=5,deliverydate,'')) as deliverydate5, max(if(no=6,deliverydate,'')) as deliverydate6,
+              max(if(no=1,deliverystate,'')) as deliverystate1, max(if(no=2,deliverystate,'')) as deliverystate2, 
+              max(if(no=3,deliverystate,'')) as deliverystate3, max(if(no=4,deliverystate,'')) as deliverystate4, 
+              max(if(no=5,deliverystate,'')) as deliverystate5, max(if(no=6,deliverystate,'')) as deliverystate6
+       from  (select a.deliverynumber, a.connumber, a.deliverydate, a.deliverystate, a.deliveryremark, a.deliveryaddressid, 
+                     rank() over (partition by a.connumber order by a.connumber, a.deliverydate, a.deliverynumber) as no
+              from   deliverydetail a
+              where  a.providernumber = #{providernumber}
+              and    a.deliverydate &gt;= #{deliverydate}) a
+       where  no &lt;= 6       
+       group by a.connumber) a, contract b, contractproduct c, customer d, customer e, address f, paymentinformation g
+where  a.connumber = b.connumber
+<if test='!"".equals(deliverytype)'>
+and    b.deliverytype = #{deliverytype}
+</if>
+<if test='!"".equals(recurringdeliveryyn)'>
+and    b.recurringdeliveryyn = #{recurringdeliveryyn}
+</if>
+and    b.contractstate = 'ACTIVATION'
+and    a.connumber = c.connumber
+and    b.customernumber = d.customernumber
+<if test='!"".equals(customername)'>
+and    d.customername like concat(#{customername},'%')
+</if>
+<if test='!"".equals(customerphonenumber)'>
+and   (d.phonenumber like concat(#{customerphonenumber},'%') 
+    or d.cellphonenumber like concat(#{customerphonenumber},'%'))
+</if>    
+and    b.deliverycustomernumber = e.customernumber
+<if test='!"".equals(customername)'>
+and    e.customername like concat(#{customername},'%')
+</if>
+<if test='!"".equals(customerphonenumber)'>
+and   (e.phonenumber like concat(#{customerphonenumber},'%')
+    or e.cellphonenumber like concat(#{customerphonenumber},'%'))
+</if>    
+and    a.deliveryaddressid = f.addressid
+and    b.paymentinformationnumber = g.paymentinformationnumber
+order by b.recurringdeliveryyn desc, substr(b.registrationdatetime,1,8), deliverytypename, channelname, d.customername
+<if test='"Y".equals(pagingyn)'>
+limit #{pageStart}, #{perPageNum}
+</if>
+</select>
+
+<select id="getContract" resultType="Order"  parameterType = "Order" >
+select a.connumber, a.duration, 
+       a.deliverycycle, (select codename from codegroupdetail z where z.codegroupid = 'DELIVERYCYCLE' and z.code = a.deliverycycle) as deliverycyclename,
+       a.deliverytimes, a.deliveryday, a.deliverystartdatetime, a.effectenddatetime,
+       a.contractstate, (select codename from codegroupdetail z where z.codegroupid = 'CONTRACTSTATE' and z.code = a.contractstate) as contractstatename,
+       b.productname,
+       c.customername, c.birthday, nvl(c.cellphonenumber,c.phonenumber) as customerphonenumber
+from   contract a, contractproduct b, customer c
+where  a.connumber = #{connumber}
+and    a.connumber = b.connumber
+and    a.customernumber = c.customernumber
+</select>
+
+<select id="getDeliveryDate" resultType="Order"  parameterType = "Order" >
+select substr(deliverydate,7,2) as deliverydate
+from   deliverydetail a
+where  a.providernumber = #{providernumber}
+and    a.deliverydate like concat(#{deliverydate},'%')
+group by substr(deliverydate,7,2)
+</select>
+
+<select id="getDeliveryCompany" resultType="Order"  parameterType = "Order" >
+select a.deliveryCompany as code, b.codename
+from   deliverychargestandarddata a, codegroupdetail b
+where  a.providerNumber = #{providernumber}
+and    b.codegroupid = 'DELIVERYCOMPANY'
+and    a.deliveryCompany = b.code
+order by b.sortingorder
+</select>
+
+<select id="getDeliveryDetailList" resultType="Order"  parameterType = "Order" >
+select a.deliverydate, 
+       a.deliverycompany, nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYCOMPANY' and z.code = a.deliverycompany),'') as deliverycompanyname,
+       a.deliverycustomernumber, 
+       a.deliverystate, nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYSTATE' and z.code = a.deliverystate),'') as deliverystatename, 
+       a.deliveryremark,
+       b.productname, b.quantity,
+	   c.customername, nvl(c.cellphonenumber,c.phonenumber) as customerphonenumber, d.zipcode, d.baseaddress as deliveryaddress, 
+       e.channelid, (select codename from codegroupdetail z where z.codegroupid = 'CHANNEL' and z.code = e.channelid) as channelname,
+       e.channelordernumber as ordernumber,
+       e.contractstate, (select codename from codegroupdetail z where z.codegroupid = 'CONTRACTSTATE' and z.code = e.contractstate) as contractstatename,
+       sum(1) over() totalcount
+from   deliverydetail a, contractproduct b, customer c, address d, contract e
+where  a.providernumber = #{providernumber}
+and    a.deliverydate between #{deliverydate1} and #{deliverydate2}
+<if test='!"".equals(deliverycompany)'>
+and    a.deliverycompany = #{deliverycompany}
+</if>
+and    a.connumber = b.connumber
+and    a.deliverycustomernumber = c.customernumber
+and    a.deliveryaddressid = d.addressid
+and    a.connumber = e.connumber
+<if test='!"".equals(recurringdeliveryyn)'>
+and    e.recurringdeliveryyn = #{recurringdeliveryyn}
+</if>
+and   (e.contractstate = 'ACTIVATION'
+    or a.deliverystate = 'DONE') 
+order by a.deliverydate, deliverycompanyname, c.customername
+<if test='"Y".equals(pagingyn)'>
+limit #{pageStart}, #{perPageNum}
+</if>
+</select>
+
+<select id="getDeliveryDetail" resultType="Order"  parameterType = "Order" >
+select a.deliverynumber, a.connumber, a.deliverydate, a.deliveryremark, a.deliverystate, a.deliverychargetype,
+       b.deliverycustomernumber, b.deliverycompany, b.deliverychargeamount, b.duration, b.customernumber, 
+       b.deliverycycle, nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYCYCLE' and z.code = b.deliverycycle),'') as deliverycyclename, 
+       b.deliverytimes, b.deliveryday, b.deliverystartdatetime,
+       c.customername, c.birthday, c.phonenumber as customerphonenumber, 
+       d.productname,
+       a.deliveryaddressid,
+       f.zipcode as deliveryzipcode, f.baseaddress as deliveryaddress
+from   deliverydetail a, contract b, customer c, contractproduct d, customer e, address f
+where  a.providernumber = #{providernumber}
+and    a.deliverynumber = #{deliverynumber}
+and    a.connumber = b.connumber
+and    b.customernumber = c.customernumber
+and    a.connumber = d.connumber
+and    a.deliverycustomernumber = e.customernumber
+and    a.deliveryaddressid = f.addressid
+</select>
+
+<update id="updateDeliveryDetailState">
+update deliverydetail a set a.deliverystate = 'DONE', a.deliverydatetime = now(), a.auditid = #{auditid}, a.auditdatetime = now()
+where  a.providernumber = #{providernumber}
+and    a.deliverydate = #{deliverydate}
+and    a.deliverycompany = #{deliverycompany}
+and    a.deliverystate = 'BEFORE'
+</update>
+
+<update id="updateContractState">
+update contract a set a.contractstate = 'DONE', a.effectenddatetime = date_format(curdate(),'%Y%m%d'), a.auditid = #{auditid}, a.auditdatetime = now()
+where  a.providernumber = #{providernumber}
+and    a.contractstate = 'ACTIVATION'
+and    a.connumber in (select a.connumber
+                       from  (select a.connumber, max(if(deliverystate='DONE',0,if(deliverystate='CANCEL',0,1))) as deliverydate
+                              from  (select b.connumber, max(b.deliverydate) as deliverydate
+                                     from   deliverydetail a, deliverydetail b
+                                     where  a.providernumber = #{providernumber}
+                                     and    a.deliverydate = #{deliverydate}
+                                     and    a.deliverycompany = #{deliverycompany}
+                                     and    a.connumber = b.connumber
+                                     group by b.connumber) a, deliverydetail b
+                              where  a.connumber = b.connumber 
+                              and    a.deliverydate = b.deliverydate
+                              group by a.connumber) a
+                       where  deliverydate = 0) 
+</update>
+
+<update id="updateDeliveryDetail">
+update deliverydetail a set a.deliverydate = #{deliverydate}, a.deliveryremark = #{deliveryremark}, a.deliverystate = #{deliverystate}, a.deliveryaddressid = #{deliveryaddressid}, 
+                      a.auditid = #{auditid}, a.auditdatetime = now()
+where  deliverynumber = #{deliverynumber}
+</update>
+
+<update id="updateAddress">
+update address a set a.zipcode = #{deliveryzipcode}, a.baseaddress = #{deliveryaddress}, a.auditid = #{auditid}, a.auditdatetime = now()
+where  a.addressid = #{deliveryaddressid}
+</update>
+
+<select id="getProviderInformation" resultType="Order"  parameterType = "Order" >
+select a.code, a.detailcode, a.value1, a.value2, a.optioncode, a.optionvalue1, a.optionvalue2, a.description
+from   providerinformation a
+where  a.providernumber = #{providernumber}
+and    a.code = #{code}
+and    a.detailcode = #{detailcode}
+<if test='!"N".equals(effectdateflag)'>
+and    date_format(curdate(),'%Y%m%d') between a.effectstartdate and a.effectenddate
+</if>
+order by a.seq
+</select>
+
+<select id="getDeliveryDetailExcel" resultType="Order"  parameterType = "Order" >
+select a.providernumber, a.deliverydate, 
+       a.deliverycompany, nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYCOMPANY' and z.code = a.deliverycompany),'') as deliverycompanyname,
+       a.deliverycustomernumber, 
+       a.deliverystate, nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYSTATE' and z.code = a.deliverystate),'') as deliverystatename, 
+       a.deliveryremark,
+       b.productname, 
+       nvl((select y.value2 from providerinformation y where y.providernumber = a.providernumber and y.code = 'DELIVERYPRODUCTNAME' and y.value1 = b.productname),b.productname) as etcitem1,
+       b.quantity,
+	   c.customername, nvl(c.cellphonenumber,c.phonenumber) as customerphonenumber, 
+       d.zipcode as deliveryzipcode, 
+       nvl(concat(f.postofficenumber,f.deliveryofficenumber,f.teamofficenumber,f.detailofficenumber),'') as deliverypostareacode,
+	   d.baseaddress as deliveryaddress, 
+       e.channelid, (select codename from codegroupdetail z where z.codegroupid = 'CHANNEL' and z.code = e.channelid) as channelname,
+       e.channelordernumber as ordernumber
+from   deliverydetail a, contractproduct b, customer c, 
+       address d left outer join postareacode as f on (f.deliverytype = 'POST' and f.zipcode = d.zipcode), 
+       contract e
+where  a.providernumber = #{providernumber}
+and    a.deliverydate = #{deliverydate}
+and    a.deliverycompany = #{deliverycompany}
+and    a.deliverystate = 'BEFORE'
+and    a.connumber = b.connumber
+and    a.deliverycustomernumber = c.customernumber
+and    a.deliveryaddressid = d.addressid
+and    a.connumber = e.connumber
+and    e.contractstate = 'ACTIVATION'
+order by c.customername
+</select>
+
+<select id="getCustomerList" resultType="Order"  parameterType = "Order" >
+select a.customernumber, customername, cellphonenumber as deliveryphonenumber1, phonenumber as deliveryphonenumber2
+from   customer a
+where  a.providernumber = #{providernumber}
+and    a.customername like concat(#{customername},'%')
+<if test='!"".equals(customerphonenumber)'>
+and   (a.phonenumber like concat(#{customerphonenumber},'%')
+    or a.cellphonenumber like concat(#{customerphonenumber},'%'))
+</if>
+limit #{pageStart}, #{perPageNum}
+</select>
+
+<select id="getCustomerContractList" resultType="Order"  parameterType = "Order" >
+select b.connumber, b.recurringdeliveryyn,
+       substr(b.registrationdatetime,1,8) AS registrationdatetime, substr(b.subscribedatetime,1,8) as subscribedatetime, 
+       b.channelid, (select codename from codegroupdetail z where z.codegroupid = 'CHANNEL' and z.code = b.channelid) as channelname,
+       b.deliverychargetype, nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYCHARGETYPE' and z.code = b.deliverychargetype),'') as deliverychargetypename,
+       b.deliverychargeamount, b.deliveryremark,
+       b.deliverystartdatetime, b.effectenddatetime, b.duration, 
+       b.deliverycycle, nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYCYCLE' and z.code = b.deliverycycle),'') as deliverycyclename,
+       b.deliverytimes, b.deliveryday, 
+       b.deliverytype, nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYTYPE' and z.code = b.deliverytype),'') as deliverytypename,
+       b.deliverytotalcount, 
+       (select count(*) from deliverydetail y where y.connumber = b.connumber and y.deliverydate &lt; date_format(now(),'%Y%m%d')) + b.deliverycurrentcount as currentdeliverycount,
+       b.contractstate, nvl((select codename from codegroupdetail z where z.codegroupid = 'CONTRACTSTATE' and z.code = b.contractstate),'') as contractstatename,
+       c.productname, c.quantity, 
+       c.productoption, c.productdescription1, c.productdescription2, c.productdescription3, c.productdescription4, c.productdescription5, c.bigissuequantity,
+       d.customername, d.phonenumber as customerphonenumber, nvl(b.customertype,b.channelkind) as customertype,
+       e.customername as deliverycustomername, nvl(e.cellphonenumber, e.phonenumber) as deliveryphonenumber1,
+       f.zipcode as deliveryzipcode, f.baseaddress as deliveryaddress, 
+       g.paymentday,  
+       g.paymentmethod, nvl((select codename from codegroupdetail z where z.codegroupid = 'PAYMENTMETHODCODE' and z.code = g.paymentmethod),'') as paymentmethodname,
+       g.paymentamount, 
+      (select count(*) from deliverydetail y where y.connumber = b.connumber and y.deliverydate &lt; date_format(now(),'%Y%m%d')) as deliveryindex2,
+       sum(1) over() totalcount
+from   contract b, contractproduct c, customer d, customer e, address f, paymentinformation g
+where  b.providernumber = #{providernumber}
+and   (b.customernumber = #{customernumber} 
+    or b.deliverycustomernumber = #{customernumber})
+and    b.connumber = c.connumber
+and    b.customernumber = d.customernumber
+and    b.deliverycustomernumber = e.customernumber
+and    b.deliveryaddressid = f.addressid
+and    b.paymentinformationnumber = g.paymentinformationnumber
+order by substr(b.registrationdatetime,1,8), b.recurringdeliveryyn desc, deliverytypename, channelname, d.customername
+limit #{pageStart}, #{perPageNum}
+</select>
+
+<select id="getCustomerDeliveryList" resultType="Order"  parameterType = "Order" >
+select a.deliverynumber, a.deliverydate, 
+       a.deliverycompany, nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYCOMPANY' and z.code = a.deliverycompany),'') as deliverycompanyname,
+       a.deliverycustomernumber, 
+       a.deliverystate, nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYSTATE' and z.code = a.deliverystate),'') as deliverystatename, 
+       a.deliveryremark,
+       b.productname, b.quantity,
+	   c.customername, nvl(c.cellphonenumber,c.phonenumber) as customerphonenumber, d.zipcode, d.baseaddress as deliveryaddress, 
+       e.channelid, (select codename from codegroupdetail z where z.codegroupid = 'CHANNEL' and z.code = e.channelid) as channelname,
+       e.channelordernumber as ordernumber, sum(1) over() totalcount
+from   deliverydetail a, contractproduct b, customer c, address d, contract e
+where  a.providernumber = #{providernumber}
+and    a.connumber = #{connumber}
+and    a.connumber = b.connumber
+and    a.deliverycustomernumber = c.customernumber
+and    a.deliveryaddressid = d.addressid
+and    a.connumber = e.connumber
+order by a.deliverydate
+limit #{pageStart}, #{perPageNum}
+</select>
+
+<select id="getCounselList" resultType="Order"  parameterType = "Order" >
+select a.customernumber, a.counsellingdate, a.counsellingtime,
+       a.category, nvl((select codename from codegroupdetail z where z.codegroupid = 'CATEGORY' and z.code = a.category),'') as categoryname,  
+       a.memo,
+       a.inboundpath, nvl((select codename from codegroupdetail z where z.codegroupid = 'INBOUNDPATH' and z.code = a.inboundpath),'') as inboundpathname,
+       a.answer,
+       a.state, nvl((select codename from codegroupdetail z where z.codegroupid = 'COUNSELSTATE' and z.code = a.state),'') as statename,
+       count(*) over() as totalcount
+from   counsellinghistory a
+where  a.customernumber = #{customernumber}
+order by a.counsellingdate desc, a.counsellingtime desc
+limit #{pageStart}, #{perPageNum}
+</select>
+
+<select id="getCounsel" resultType="Order"  parameterType = "Order" >
+select a.customernumber, a.counsellingdate, a.counsellingtime, a.category, a.memo, a.inboundpath, a.answer, a.state
+from   counsellinghistory a
+where  a.customernumber = #{customernumber}
+and    a.counsellingdate = #{counsellingdate}
+and    a.counsellingtime = #{counsellingtime}
+</select>
+
+<update id="updateCounsel">
+update counsellinghistory a set a.category = #{category}, a.inboundpath = #{inboundpath}, a.memo = #{memo}, a.answer = #{answer}, a.state = #{state}, a.auditid = #{auditid}, a.auditdatetime = now()
+where  a.customernumber = #{customernumber}
+and    a.counsellingdate = #{counsellingdate}
+and    a.counsellingtime = #{counsellingtime}
+</update>
+
+<insert id="insertCounsel">
+insert into counsellinghistory (customernumber, counsellingdate, counsellingtime, category, inboundpath, memo, 
+                                createuser, auditid, auditdatetime, invoicenumber, invoicedate, connumber, answer, state)
+values (#{customernumber},date_format(now(),'%Y%m%d'),date_format(now(),'%H%i%s'),#{category},#{inboundpath},#{memo},
+        #{auditid},#{auditid},now(),null,'',null,#{answer},#{state})
+</insert>
+
+<update id="upateContractTermination">
+update contract a set a.contractstate  = 'TERMINATION', a.effectenddatetime = date_format(curdate(),'%Y%m%d'), a.auditid = #{auditid}, a.auditdatetime = now()
+where  a.connumber = #{connumber}
+</update>
+
+<update id="upateContractSuspend">
+update contract a set a.contractstate = #{contractstate}, a.suspenddatetime = if(#{contractstate}='SUSPEND',date_format(curdate(),'%Y%m%s'),''), a.auditid = #{auditid}, a.auditdatetime = now()
+where  a.connumber = #{connumber}
+</update>
+
+<select id="getDoneContractList" resultType="Order"  parameterType = "Order">
+select b.connumber, b.recurringdeliveryyn,
+       substr(b.registrationdatetime,1,8) AS registrationdatetime, substr(b.subscribedatetime,1,8) as subscribedatetime, 
+       b.channelid, (select codename from codegroupdetail z where z.codegroupid = 'CHANNEL' and z.code = b.channelid) as channelname,
+       b.deliverychargetype, nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYCHARGETYPE' and z.code = b.deliverychargetype),'') as deliverychargetypename,
+       b.deliverychargeamount, b.deliveryremark,
+       b.deliverystartdatetime, b.effectenddatetime, b.duration, 
+       b.deliverycycle, nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYCYCLE' and z.code = b.deliverycycle),'') as deliverycyclename,
+       b.deliverytimes, b.deliveryday, 
+       b.deliverytype, nvl((select codename from codegroupdetail z where z.codegroupid = 'DELIVERYTYPE' and z.code = b.deliverytype),'') as deliverytypename,
+       b.deliverytotalcount, 
+       (select count(*) from deliverydetail y where y.connumber = b.connumber and y.deliverydate &lt; date_format(now(),'%Y%m%d')) + b.deliverycurrentcount as currentdeliverycount,
+       b.contractstate, nvl((select codename from codegroupdetail z where z.codegroupid = 'CONTRACTSTATE' and z.code = b.contractstate),'') as contractstatename,
+       c.productname, c.quantity, 
+       c.productoption, c.productdescription1, c.productdescription2, c.productdescription3, c.productdescription4, c.productdescription5, c.bigissuequantity,
+       d.customername, d.phonenumber as customerphonenumber, nvl(b.customertype,b.channelkind) as customertype,
+       e.customername as deliverycustomername, nvl(e.cellphonenumber, e.phonenumber) as deliveryphonenumber1,
+       f.zipcode as deliveryzipcode, f.baseaddress as deliveryaddress, 
+       g.paymentday, 
+       g.paymentmethod, nvl((select codename from codegroupdetail z where z.codegroupid = 'PAYMENTMETHODCODE' and z.code = g.paymentmethod),'') as paymentmethodname,
+       g.paymentamount, 
+      (select count(*) from deliverydetail y where y.connumber = b.connumber and y.deliverydate &lt; date_format(now(),'%Y%m%d')) as deliveryindex2,
+       sum(1) over() totalcount
+from   contract b, contractproduct c, customer d, customer e, address f, paymentinformation g
+where  b.providernumber = #{providernumber}
+<if test='"".equals(contractstate)'>
+and    b.contractstate != 'ACTIVATION'
+</if>
+<if test='!"".equals(contractstate)'>
+and    b.contractstate = #{contractstate}
+</if>
+<if test='!"".equals(recurringdeliveryyn)'>
+and    b.recurringdeliveryyn = #{recurringdeliveryyn}
+</if>
+<if test='!"".equals(effectenddatetime)'>
+and   (b.effectenddatetime like concat(#{effectenddatetime},'%') 
+   or  b.suspenddatetime like concat(#{effectenddatetime},'%')
+   or (b.registrationdatetime like concat(#{effectenddatetime},'%') and b.contractstate = 'UNSETTLED'))
+</if>
+and    b.connumber = c.connumber
+and    b.customernumber = d.customernumber
+and    b.deliverycustomernumber = e.customernumber
+and    b.deliveryaddressid = f.addressid
+and    b.paymentinformationnumber = g.paymentinformationnumber
+order by substr(b.registrationdatetime,1,8), b.recurringdeliveryyn desc, deliverytypename, channelname, d.customername
+<if test='"Y".equals(pagingyn)'>
+limit #{pageStart}, #{perPageNum}
+</if>
+</select>
+</mapper> 

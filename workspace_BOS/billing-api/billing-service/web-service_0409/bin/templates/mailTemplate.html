@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></meta>
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"  media="screen" rel="stylesheet" />
+<link href="/static/css/custom.css"  media="screen" rel="stylesheet" />
+<link href="/static/css/customize-template.css" media="screen" rel="stylesheet" />
+</head>
+<body>
+<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="panel-title">
+				<strong>▶ 기본정보</strong>
+			</h4>
+		</div>
+		<div class="panel-body">
+			<div class="form-horizontal" role="form">
+				<div class="form-group">
+					<label for="inputType" class="control-label col-lg-1" style="padding-left: 0px;">고&nbsp;객&nbsp;명&nbsp;</label>
+					<div class="col-md-2">
+						<input type="text" class="form-control" id="inputType" readonly="true" th:value="${invoicecustomerinfo.customerName}"/>
+					</div>
+					<label for="inputType" class="col-md-2 control-label">이동전화번호</label>
+					<div class="col-md-3">
+						<input type="text" class="form-control" id="inputType" readonly="true" th:value="${invoicecustomerinfo.phoneNumber}"/>
+					</div>
+					<label for="inputType" class="control-label col-lg-1">상품명</label>
+					<div class="col-md-2">
+						<input type="text" class="form-control" id="inputType" readonly="true" th:value="${invoicecustomerinfo.productName}"/>
+					</div>
+				</div>
+				<div class="form-group">
+					<label for="inputType" class="control-label col-lg-1" style="padding-left: 0px;">상품설명</label>
+					<div class="col-md-10">
+						<input type="text" class="form-control" id="inputType" readonly="true" th:value="${invoicecustomerinfo.productDescription}"/>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="panel-title">
+				<strong>▶ 요금 상세 정보</strong>
+			</h4>
+		</div>
+		<div class="panel-body">
+			<div class="form-horizontal" role="form">
+				<div class="form-group">
+					<label for="inputType" class="control-label">요금생성일</label>
+					<div class="col-md-2">
+						<input type="text" class="form-control" id="inputType"
+							readonly="true" th:value="${invoicecustomerinfo.invoicedate}"/>
+					</div>
+					<label for="inputType" class="col-md-2 control-label">결제일</label>
+					<div class="col-md-3">
+						<input type="text" class="form-control" id="inputType"
+							readonly="true" th:value="${invoicecustomerinfo.paymentdate}"/>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="panel-body">
+			<table class="table table-striped table-hover table-bordered"
+				id="detailDialogTable">
+				<thead>
+					<tr>
+						<th>구분</th>
+						<th>항목</th>
+						<th>청구금액</th>
+						<th>조정금액</th>
+						<th>수납금액</th>
+						<th>미납금액</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr th:each="idl: ${invoicedetaillist}">
+						<td th:text="${idl.invoiceClassificationCode}"></td>
+						<td th:text="${idl.revenueItemCode}"></td>
+						<td
+							th:text="${#strings.length(idl.invoiceItemAmount)} > 3 ? ${#numbers.formatDecimal(idl.invoiceItemAmount, 0, 'COMMA', 0, 'POINT')} : ${idl.invoiceItemAmount}"></td>
+						<td
+							th:text="${#strings.length(idl.adjustamt)} > 3 ? ${#numbers.formatDecimal(idl.adjustamt, 0, 'COMMA', 0, 'POINT')} : ${idl.adjustamt}"></td>
+						<td
+							th:text="${#strings.length(idl.paymentAmount)} > 3 ? ${#numbers.formatDecimal(idl.paymentAmount, 0, 'COMMA', 0, 'POINT')} : ${idl.paymentAmount}"></td>
+						<td
+							th:text="${#strings.length(idl.collectionBalanceAmount)} > 3 ? ${#numbers.formatDecimal(idl.collectionBalanceAmount, 0, 'COMMA', 0, 'POINT')} : ${idl.collectionBalanceAmount}"></td>
+					</tr>
+				</tbody>
+				<tfoot>
+					<tr>
+						<th colspan="2"><span class="pull-right">계</span></th>
+						<th id="detailDialogTableinvtotalsum"></th>
+						<th id="detailDialogTableadjtotalsum"></th>
+						<th id="detailDialogTablepaytotalsum"></th>
+						<th id="detailDialogTablecoltotalsum"></th>
+					</tr>
+					<tr>
+						<th colspan="5"><span class="pull-right">부가세</span></th>
+						<th id="detailDialogTabletax"></th>
+					</tr>
+					<tr>
+						<th colspan="5"><span class="pull-right">Total</span></th>
+						<th id="detailDialogTablecoltaxtotalsum"></th>
+					</tr>
+				</tfoot>
+			</table>
+		</div>
+	</div>
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="panel-title">
+				<strong>▶ 세금계산서</strong>
+			</h4>
+		</div>
+		<div class="panel-body">
+			<table class="table table-striped table-hover table-bordered">
+				<thead>
+					<tr>
+						<th>공급가</th>
+						<th>부가세</th>
+						<th>공급자명</th>
+						<th>공급사업자번호</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+					<!-- "${#strings.length(itii.vatAmount)} > 3 ? ${#numbers.formatDecimal(itii.vatAmount, 0, 'COMMA', 0, 'POINT')} : ${itii.vatAmount}" -->
+						<th th:text="${#strings.length(itii.invoiceItemAmount)} > 3 ? ${#numbers.formatDecimal(itii.invoiceItemAmount, 0, 'COMMA', 0, 'POINT')} : ${itii.invoiceItemAmount}"></th>
+						<th th:text="${#strings.length(itii.vatAmount)} > 3 ? ${#numbers.formatDecimal(itii.vatAmount, 0, 'COMMA', 0, 'POINT')} : ${itii.vatAmount}"></th>
+						<th>베베티움</th>
+						<th>1234567890</th>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</body>
+</html>

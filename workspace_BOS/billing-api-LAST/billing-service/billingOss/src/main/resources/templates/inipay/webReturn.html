@@ -1,0 +1,52 @@
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script th:inline="javascript">
+	var billKey;	
+	var resultCode;
+	var resultMsg;
+	/*<![CDATA[*/
+	billKey = /*[[${billKey}]]*/;	
+	resultCode = /*[[${resultCode}]]*/;
+	resultMsg = /*[[${resultMsg}]]*/;
+	/*]]>*/	
+
+	/**************************************************************
+	정산 처리 된 이후 부모창에 결과를 반영하기 위해 새로고침
+	**************************************************************/
+	var afterRefresh = function(){		
+		if (parent.document.getElementById("channelgubun") != "undifined"){			
+/* 			
+			
+			var channelgubun = $("#channelgubun", parent.document).val();
+			if( channelgubun =="A"){ 
+				//결제관리 > 결제대상조회 > 결제
+				var currPage = $("#pagination>li.disabled", parent.document).find('a').html();
+				if (currPage == '' || currPage == '0'){
+					currPage = 1;
+				}		
+				parent.getData(currPage);
+			}else if( channelgubun=="P"){
+				//상품판매 > 상품판매 > 판매버튼 click > 결제
+				//parent.document.getElementById("tabProductSale").trigger("click");
+				$("#tabProductSale", parent.document).trigger("click");
+			}else if( channelgubun =="C"){ 
+				//결제관리 > 고객결제내역 > 결제
+				var currPage = $("#paginationcustomer>li.disabled", parent.document).find('a').html();
+				if (currPage == '' || currPage == '0'){
+					currPage = 1;
+				}		
+				parent.getCustomerData(currPage);
+			} */
+			$("#iniPayDiv", parent.document).remove();			
+		}
+	}	
+	//결과 메세지 출력
+	showAlert(resultMsg);	
+	
+	if (resultCode == "00" || resultCode == "0000"){
+		parent.document.iniPayForm.billKey.value =billKey;
+		afterRefresh();
+	}else {		
+		$("#iniPayResult", parent.document).val(resultCode);
+	}
+</script>
+<script language="javascript" type="text/javascript" src="https://stgstdpay.inicis.com/stdjs/INIStdPay_close.js" charset="UTF-8"></script>

@@ -1,0 +1,160 @@
+<div id="popupContractDiv" class="trp popupfixed-wrap" th:fragment="contractDeliveryPop">
+<script type="text/javascript">
+/*<![CDATA[*/
+function setContractDeliveryData(conNumber) {
+	var param = new Object();
+	param.conNumber = conNumber;
+	$.ajax({
+		method : 'get',
+ 		url : '/contractlist/contractdelivery',
+ 		data : param,
+		success : function(data){
+			json = data.contractDelivery;
+			$('#popContractConNumber').val(json.conNumber);
+			$('#popContractAddressId').val(json.addressId);
+			$('#popContractOrgZipCode').val(json.zipCode);
+			$('#popContractOrgBaseAddress').val(json.baseAddress);
+			$('#popContractOrgDetailAddress').val(json.detailAddress);
+			$('#popContractZipCode').val(json.zipCode);
+			$('#popContractBaseAddress').val(json.baseAddress);
+			$('#popContractDetailAddress').val(json.detailAddress);
+			$('#popContractDeliveryRemark').val(json.deliveryRemark);
+			$('#popContractRemark').val(json.remark);
+			$('#popContractCustomerRemark').val(json.customerRemark);
+		}
+	});
+}
+	
+$(document).ready(function(){
+	
+	//저장버튼 클릭
+	$('#popContractSaveButton').click(function(){
+		
+		if ($('#popContractDetailAddress').val() == '') {
+			showAlert("상세 주소를 입력하십시오.",$('#popContractDetailAddress'));
+			return;
+		}		
+		if (!isKoreanNumber($('#popContractDetailAddress').val())){
+			showAlert("상세 주소는 한글,영문,숫자만 입력가능합니다.",$('#popContractDetailAddress'));
+			return;
+		}		
+		
+		if ($('#popContractRemark').val() != '' && !isKoreanNumber($('#popContractRemark').val())){
+			showAlert("비고는 한글,영문,숫자만 입력가능합니다.",$('#popContractRemark'));
+			return;
+		}		
+
+		if ($('#popContractCustomerRemark').val() != '' && !isKoreanNumber($('#popContractCustomerRemark').val())){
+			showAlert("고객메모는 한글,영문,숫자만 입력가능합니다.",$('#popContractCustomerRemark'));
+			return;
+		}		
+		
+		if ($('#popContractDeliveryRemark').val() != '' && !isKoreanNumber($('#popContractDeliveryRemark').val())){
+			showAlert("배송메모는 한글,영문,숫자만 입력가능합니다.",$('#popContractDeliveryRemark'));
+			return;
+		}		
+		
+		if ($('#popContractZipCode').val() != $('#popContractOrgZipCode').val() || $('#popContractDetailAddress').val() != $('#popContractOrgDetailAddress').val()){
+			$('#popContractSaveFlag').val('I');
+		} else {
+			$('#popContractSaveFlag').val('U');
+		}
+
+		var queryString = $("form[name=popContractDeliveryForm]").serialize();
+		
+		$.ajax({
+			method : 'post',
+			url : '/contractlist/savecontractdelivery',
+			data : queryString,
+			success : function(data) {
+				$('#popContractCancelButton').click();
+				getData(1);
+				$('#contractAddress').text($('#popContractBaseAddress').val() + ' ' + $('#popContractDetailAddress').val());
+				$('#contractCustomerRemark').text($('#popContractCustomerRemark').val());
+				$('#contractDeliveryRemark').text($('#popContractDeliveryRemark').val());
+				$('#contractRemark').text($('#popContractRemark').val());
+				showAlert("저장되었습니다.");
+			}
+		});
+	});
+});
+/*]]>*/
+</script>
+<form name="popContractDeliveryForm" onsubmit="return false;">
+<input type="hidden" id="popContractConNumber" name="conNumber"/>
+<input type="hidden" id="popContractAddressId" name="addressId" />
+<input type="hidden" id="popContractOrgZipCode" name="orgZipCode" />
+<input type="hidden" id="popContractOrgBaseAddress" name="orgBaseAddress"/>
+<input type="hidden" id="popContractOrgDetailAddress" name="orgDetailAddress"/>
+<input type="hidden" id="popContractSaveFlag" name="saveFlag"/>
+	<div class="popup-dim"></div>
+	<div class="popup-align">
+		<div class="popup-vertical">
+			<div class="popup-layer option wm">
+				<a class="btn_close" href="#">X</a>
+				<div class="pop_tit">주문정보</div>
+				<!-- 알림 mode0 -->
+				<section class="section">
+					<div class="alert_txt mb20">
+						미배송건의 주소/배송메모가 일괄변경됩니다.
+					</div>
+					<table class="form_table">
+						<colgroup>
+							<col width="140px" />
+							<col width="*" />
+						</colgroup>
+						<tbody>
+							<tr>
+								<th>배송지 주소</th>
+								<td>
+									<div class="address-box mb10">
+										<span class="post_item"><input type="text" class="w_mm mr5" placeholder="우편번호" id="popContractZipCode" name="zipCode" readonly="true" /></span>
+										<span class="btn_item"><button class="btn btn_gray " role="button" id="popContractAddressButton" onclick="execDaumPostcode('wrapContract', 'popContractZipCode', 'popContractBaseAddress')">주소검색</button></span>
+										<div id="wrapContract" style="display:none;border:1px solid;width:100%;height:250px;margin:5px 0;position:relative">
+											<img src="//t1.daumcdn.net/localimg/localimages/07/postcode/320/close.png" id="btnFoldWrap" style="cursor:pointer;position:absolute;right:0px;top:-1px;z-index:1" onclick="foldDaumPostcode('wrapContract')" alt="접기 버튼" />
+										</div>
+									</div>
+									<div class="">
+										<input type="text" class="mb10" placeholder="기본주소" id="popContractBaseAddress" name="baseAddress" readonly="true"/>
+										<input type="text" class="" placeholder="상세주소 입력" id="popContractDetailAddress" name="detailAddress" />
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<th>비고</th>
+								<td>
+									<div class="textarea-box">
+										<textarea name="remark" id="popContractRemark" cols="30" rows="20"></textarea>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<th>고객메모</th>
+								<td>
+									<div class="textarea-box">
+										<textarea name="customerRemark" id="popContractCustomerRemark" cols="30" rows="20"></textarea>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<th>배송메모</th>
+								<td>
+									<div class="textarea-box">
+										<textarea name="deliveryRemark" id="popContractDeliveryRemark" cols="30" rows="20" placeholder="예) 부재시 경비실에 보관 부탁 드립니다."></textarea>
+									</div>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+		
+					<div class="btn_set-center bottom_set mt30">
+						<a class="btn btn_green btn_wm radius mr5" role="button" href="#none" id="popContractSaveButton" >저장</a>
+						<a class="btn btn_default btn_wm radius btn_cancel" href="#none" role="button" id="popContractCancelButton">취소</a>
+					</div>
+		
+				</section>
+			</div>
+		</div>
+	</div>
+</form>
+</div>

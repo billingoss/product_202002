@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+
+<head th:fragment="configFragment">
+<!-- header -->
+<meta charset="UTF-8" />
+<title>Billing OSS</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" id="viewport"
+	content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,initial-scale=1.0" />
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="-1"/>
+<!-- 공통으로 쓰이는 css파일을넣는다.-->
+<link rel="stylesheet" href="/resources/css/library/csslibrary.css" />
+<link rel="stylesheet" href="/resources/css/screen.css" />
+<!--[if lt IE 9]>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js" type="text/javascript" charset="utf-8"></script>
+<![endif]-->
+
+<!-- 컨텐츠페이지의 CSS 영역이 들어감 -->
+<th:block layout:fragment="css"></th:block>
+
+<!-- 공통으로 쓰이는 스크립트 영역이 들어감 -->
+<script src="/resources/js/library/jquery.min.js"></script>
+<script src="/resources/js/library/jquerylibrary.min.js"></script>
+<script src="/resources/js/screen.js"></script>
+<!-- <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script> 구글 차트 필요시 각 페이지에서 선언-->
+<script src="/js/commonlib.js"></script>
+<!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script> -->
+<script language="javascript" type="text/javascript"
+	src="https://stgstdpay.inicis.com/stdjs/INIStdPay.js" charset="UTF-8"></script>
+
+<!-- 컨텐츠페이지의 스크립트 영역이 들어감 -->
+<th:block layout:fragment="script">
+</th:block>
+</head>
+
+</html>

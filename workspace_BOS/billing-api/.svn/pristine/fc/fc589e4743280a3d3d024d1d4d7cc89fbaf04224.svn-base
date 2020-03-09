@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.api.repository.ProductRepository">
+
+<resultMap id="productList" type="com.api.model.product.Product"> 
+	<result property="productId" column="productid"/> 
+	<result property="productType" column="producttype"/>
+	<result property="productTypeName" column="producttypename"/>
+	<result property="productName" column="productname"/> 
+	<result property="packagePriceReferenceYn" column="packagepricereferenceyn"/> 
+	<result property="priceAmount" column="priceamount"/>
+	<result property="productState" column="productstate"/>
+	<result property="productStateName" column="productstatename"/>
+	<result property="subscribeStartDateTime" column="subscribestartdatetime"/>
+	<result property="subscribeEndDateTime" column="subscribeenddatetime"/>
+	<result property="productDescription" column="productdescription"/>
+	<result property="lastChangeDateTime" column="lastchangedatetime"/>
+	<result property="totalCount" column="totalcount"/>
+</resultMap>
+<select id="getProductList" resultMap="productList"  parameterType = "Product" >
+select a.productid, 
+       a.producttype, (select codename from codegroupdetail z where z.codegroupid = 'PRODUCTTYPE' and z.code = a.producttype) as producttypename,
+       a.productname, a.packagepricereferenceyn, a.priceamount, 
+       a.productstate, (select codename from codegroupdetail z where z.codegroupid = 'PRODUCTSTATE' and z.code = a.productstate) as productstatename,
+       a.subscribestartdatetime, a.subscribeenddatetime, a.productdescription, 
+       date_format(a.lastchangedatetime,'%Y%m%d') as lastchangedatetime,
+       sum(1) over() as totalcount
+from   product a
+where  a.providernumber = #{providerNumber}
+<if test='!"".equals(productType)'>
+and    a.producttype = #{productType}
+</if>
+<if test='!"".equals(productState)'>
+and    a.productstate = #{productState}
+</if>
+<if test='!"".equals(productName)'>
+and    a.productname like concat('%',#{productName},'%')
+</if>
+order by a.producttype, a.productname
+<if test='"Y".equals(pagingYn)'>
+limit #{pageStart}, #{perPageNum}
+</if>
+</select>
+
+</mapper> 

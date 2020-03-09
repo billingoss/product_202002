@@ -1,0 +1,330 @@
+<div id="popCounsellingDiv" class="trp popupfixed-wrap" th:fragment="counsellingPopup">
+<script type="text/javascript">
+/*<![CDATA[*/
+	
+function insertCounselling(customerNumber, customerName, phoneNumber) {
+	
+    $('#popCounsellingSaveFlag').val('I');
+    $('#popCounsellingCustomerNumber').val(customerNumber);
+    $('#popCounsellingCounsellingDate').val('');
+    $('#popCounsellingTime').val('');
+    $('#popCounsellingRegistrationDateTime').val('');
+    $('#popCounsellingCustomerName').val(customerName);
+    $('#popCounsellingPhoneNumber').val(phoneNumber);
+    $('#popCounsellingConNumber').val('');
+    $('#popCounsellingCategory').val('');
+    $('#popCounsellingProductName').text('주문번호 검색시 주문일/상품명이 자동 입력됩니다.');
+    $('#popCounsellingInboundPath').val('');
+    $('#popCounsellingState').val('');
+    $('#popCounsellingTitle').val('');
+    $('#popCounsellingMemo').val('');
+    $('#popCounsellingAnswer').val('');
+    if (customerNumber == '') {
+        $('#popCounsellingCustomerButton').attr('style','');
+    } else {
+        $('#popCounsellingCustomerButton').attr('style','visibility:hidden;');
+    }
+    $('#popCounsellingContractButton').text('검색');
+    
+    // 팝업 선택박스 index 높이기
+    $(".select2Basic_pop").select2({   
+        dropdownCssClass : 'increasedzindexclass_pop',
+        minimumResultsForSearch: Infinity,
+        width:"100%"
+    });    
+}
+	
+function updateCounselling(customerNumber, counsellingDate, counsellingTime) {
+	var param = new Object();
+	param.customerNumber = customerNumber;
+	param.counsellingDate = counsellingDate;
+	param.counsellingTime = counsellingTime;
+	
+	$.ajax({
+		method : 'get',
+	 		url : '/counselling/getcounselling',
+	 		data : param,
+		error: function(xhr, status, error){ 	
+			$('#popCounsellingDiv .btn_close').click();
+		},
+		success : function(data){
+	        json = data.counselling;
+	        $('#popCounsellingSaveFlag').val('U');
+	        $('#popCounsellingCustomerNumber').val(json.customerNumber);
+	        $('#popCounsellingCounsellingDate').val(json.counsellingDate);
+	        $('#popCounsellingCounsellingTime').val(json.counsellingTime);
+	        $('#popCounsellingRegistrationDateTime').val(json.registrationDateTime);
+	        $('#popCounsellingCustomerName').val(json.customerName);
+	        $('#popCounsellingPhoneNumber').val(json.phoneNumber);
+	        $('#popCounsellingConNumber').val(json.conNumber==0?'':json.conNumber);
+	        $('#popCounsellingCategory').val(json.category);
+	        $('#popCounsellingProductName').text(formatDate(json.registrationDateTime) + ' / ' + json.productName);
+	        $('#popCounsellingInboundPath').val(json.inboundPath);
+	        $('#popCounsellingState').val(json.state);
+	        $('#popCounsellingTitle').val(json.title);
+	        $('#popCounsellingMemo').val(json.memo);
+	        $('#popCounsellingAnswer').val(json.answer);
+	        $('#popCounsellingCustomerButton').attr('style','visibility:hidden;');
+	        $('#popCounsellingContractButton').text('바로가기');
+	        
+	        // 팝업 선택박스 index 높이기
+		    $(".select2Basic_pop").select2({   
+		        dropdownCssClass : 'increasedzindexclass_pop',
+		        minimumResultsForSearch: Infinity,
+		        width:"100%"
+		    });    
+		}
+	});
+}	
+	
+$(document).ready(function(){
+	
+    var popCustomerSearch = $("#popCounsellingCustomerButton").trpLayerFixedPopup("#popCustomerSearchDiv");
+    var popContractSearch = $("#popCounsellingContractButton").trpLayerFixedPopup("#popContractSearchDiv");
+
+    $('#popCounsellingCustomerButton').click(function($e){
+        $e.preventDefault();
+        popCustomerSearch.open(this);
+	});
+	
+    $("body").on("click", "#popCustomerSearchDiv .btn_close, #popCustomerSearchDiv .btn_cancel", function($e) {
+    	$('#popCounsellingCustomerNumber').val($('#popCustSrchChoiceCustomerNumber').val());
+    	$('#popCounsellingCustomerName').val($('#popCustSrchChoiceCustomerName').val());
+    	$('#popCounsellingPhoneNumber').val($('#popCustSrchChoicePhoneNumber').val());
+        $e.preventDefault();
+        popCustomerSearch.close();
+    	$('#popCustSrchResetButton').click();
+    });
+
+    $('#popCounsellingContractButton').click(function($e){
+    	
+    	if ($('#popCounsellingSaveFlag').val() == 'I') {
+        	if ($('#popCounsellingCustomerNumber').val() == '') {
+        		showAlert('고객을 선택하십시오.');
+        		$('#popCounsellingCustomerButton').focus();
+        		return false;
+        	}
+            $e.preventDefault();
+            popContractSearch.open(this);
+            $('#popContractCustomerNumber').val($('#popCounsellingCustomerNumber').val());
+            getDataContractSearch(1);
+    	} else {
+    		if ($('#popCounsellingConNumber').val() != '') {
+    			var flag = $('#popCounsellingCustomerName').val()+'|'+$('#popCounsellingPhoneNumber').val()+'|||||'+formatDate($('#popCounsellingRegistrationDateTime').val())+'|'+formatDate($('#popCounsellingRegistrationDateTime').val());    			
+    			movePage('/billing/contractPaymentList/'+$('#popCounsellingConNumber').val()+'/'+flag,1,1);
+    		}
+    	}
+	});
+	
+    $("body").on("click", "#popContractSearchDiv .btn_close, #popContractSearchDiv .btn_cancel", function($e) {
+		$('#popCounsellingConNumber').val($('#popContractChoiceConNumber').val());
+		if ($('#popContractChoiceProductName').val() != '') {
+			$('#popCounsellingProductName').text(formatDate($('#popContractChoiceRegistrationDateTime').val()) + ' / ' + $('#popContractChoiceProductName').val());
+		} else {
+			$('#popCounsellingProductName').text('');
+		}
+        $e.preventDefault();
+        popContractSearch.close();
+        resetContractSearch();
+    });
+
+    $('#popCounsellingSaveButton').click(function(){
+		if ($('#popCounsellingCustomerNumber').val() == '') {
+			showAlert("고객을 선택하십시오.",$('#popCounsellingCustomerButton'));
+			return;
+		}		
+
+		if ($('#popCounsellingCategory').val() == '') {
+			showAlert("상담유형을 선택하십시오.",$('#popCounsellingCategory'));
+			return;
+		}
+		
+		if ($('#popCounsellingInboundPath').val() == '') {
+			showAlert("상담경로를 선택하십시오.",$('#popCounsellingInboundPath'));
+			return;
+		}
+		
+		if ($('#popCounsellingState').val() == '') {
+			showAlert("상태를 선택하십시오.",$('#popCounsellingState'));
+			return;
+		}		
+
+		if ($('#popCounsellingTitle').val() == '') {
+			showAlert("제목을 입력하십시오.",$('#popCounsellingTitle'));
+			return;
+		} else if (!isKoreanNumber($('#popCounsellingTitle').val())){
+			showAlert("제목은 한글,영문,숫자만 입력가능합니다.",$('#popCounsellingTitle'));
+			return;
+		}		
+		
+		if ($('#popCounsellingMemo').val() == '') {
+			showAlert('요청내용 입력하십시오.',$('#popCounsellingMemo'));
+			return;
+		} else if (!isKoreanNumber($('#popCounsellingMemo').val())){
+			showAlert("요청내용은 한글,영문,숫자만 입력가능합니다.",$('#popCounsellingMemo'));
+			return;
+		}		
+		
+		if ($('#popCounsellingAnswer').val() != '' && !isKoreanNumber($('#popCounsellingAnswer').val())){
+			showAlert("요청내용은 한글,영문,숫자만 입력가능합니다.",$('#popCounsellingAnswer'));
+			return;
+		}		
+		
+		if ($('#popCounsellingConNumber').val() == '') {
+			$('#popCounsellingConNumber').val(0);
+		}
+		
+		var queryString = $("form[name=popCounsellingForm]").serialize();
+		
+		$.ajax({
+			method : 'post',
+			url : '/counselling/savecounselling',
+			data : queryString,
+			success : function(data) {
+				showAlert('저장되었습니다.');
+				getData(1);
+				$('#popCounsellingCancelButton').click();
+			}
+		});
+	});
+});
+/*]]>*/
+</script>
+<form name="popCounsellingForm" onsubmit="return false;">
+<input type="hidden" id="popCounsellingCustomerNumber" name="customerNumber"/>
+<input type="hidden" id="popCounsellingCounsellingDate" name="counsellingDate"/>
+<input type="hidden" id="popCounsellingCounsellingTime" name="counsellingTime"/>
+<input type="hidden" id="popCounsellingRegistrationDateTime" name="registrationDateTime"/>
+<input type="hidden" id="popCounsellingSaveFlag" name="saveFlag"/>
+<div class="popup-dim"></div>
+<div class="popup-align">
+	<div class="popup-vertical">
+		<div class="popup-layer option wl">
+			<a class="btn_close" href="#">X</a>
+			<div class="pop_tit">상담등록</div>
+			<!-- 알림 mode0 -->
+			<section class="section">
+
+				<div class="table-wrap">
+					<div class="con_title ">
+						<h3 class="h3">고객정보</h3>
+						<div class="ab-r">
+							<p class="comparison_text"><em>*</em> 필수입력정보</p>
+						</div>
+					</div>
+					<table class="form_table">
+						<colgroup>
+							<col width="130px" />
+							<col width="*" />
+							<col width="130px" />
+							<col width="*" />
+						</colgroup>
+						<tbody>
+							<tr>
+								<th>고객명 <i>*</i></th>
+								<td>
+									<input type="text" class="w_ss mr5" value="" readonly="readonly" id="popCounsellingCustomerName" name="customerName"/>
+									<a class="btn btn_gray" href="#none" role="button" id="popCounsellingCustomerButton">검색</a>
+								</td>
+								<th>전화번호 <i>*</i></th>
+								<td>
+									<input type="text" class="" value="" placeholder="" readonly="readonly" id="popCounsellingPhoneNumber" name="phoneNumber"/>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+				<div class="table-wrap mt40">
+					<div class="con_title ">
+						<h3 class="h3">상담정보</h3>
+					</div>
+					<table class="form_table">
+						<colgroup>
+							<col width="130px" />
+							<col width="38%" />
+							<col width="130px" />
+							<col width="*" />
+						</colgroup>
+						<tbody>
+							<tr>
+								<th>주문번호 </th>
+								<td>
+									<input type="text" class="w_ss mr5" value="" readonly="readonly" id="popCounsellingConNumber" name="conNumber"/>
+									<a class="btn btn_gray" href="#none" role="button" id="popCounsellingContractButton">검색</a>
+								</td>
+								<th>상담유형 <i>*</i></th>
+								<td>
+									<div class="select-box">
+										<select class="select2Basic_pop" id="popCounsellingCategory" name="category">
+											<option value="">선택</option>
+											<option th:each="result : ${categoryList}" th:value="${result.code}" th:text="${result.codeName}"/>
+										</select>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<th>주문정보</th>
+								<td colspan="3" id="popCounsellingProductName">
+									주문번호 검색시 주문일/상품명이 자동 입력됩니다.
+								</td>
+							</tr>
+							<!--// 190718추가 -->
+							<tr>
+								<th>상담경로 <i>*</i></th>
+								<td>
+									<div class="select-box">
+										<select class="select2Basic_pop" id="popCounsellingInboundPath" name="inboundPath">
+											<option value="">선택</option>
+											<option th:each="result : ${inboundPathList}" th:value="${result.code}" th:text="${result.codeName}"/>
+										</select>
+									</div>
+								</td>
+								<th>상태 <i>*</i></th>
+								<td>
+									<div class="select-box">
+										<select class="select2Basic_pop" id="popCounsellingState" name="state">
+											<option value="">선택</option>
+											<option th:each="result : ${stateList}" th:if="${result.code!='DELETE'}" th:value="${result.code}" th:text="${result.codeName}"/>
+										</select>
+									</div>
+								</td>
+							</tr>
+							<!--190718추가 //-->
+							<tr>
+								<th>제목 <i>*</i></th>
+								<td colspan="3">
+									<input type="text" class="" value="" id="popCounsellingTitle" name="title"/>
+								</td>
+							</tr>
+							<!--// 190718추가 -->
+							<tr>
+								<th>요청내용 <i>*</i></th>
+								<td colspan="3">
+									<div class="textarea-box">
+										<textarea cols="30" rows="20" placeholder="" id="popCounsellingMemo" name="memo"></textarea>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<th>답변내용</th>
+								<td colspan="3">
+									<div class="textarea-box">
+										<textarea cols="30" rows="20" placeholder="" id="popCounsellingAnswer" name="answer"></textarea>
+									</div>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<div class="btn_set-center mt30">
+					<a class="btn btn_green btn_wm radius mr5" role="button" href="#none" id="popCounsellingSaveButton">저장</a>
+					<a class="btn btn_default btn_wm radius btn_cancel" href="#none" role="button" id="popCounsellingCancelButton">취소</a>
+				</div>
+
+			</section>
+		</div>
+	</div>
+</div>
+</form>
+</div>

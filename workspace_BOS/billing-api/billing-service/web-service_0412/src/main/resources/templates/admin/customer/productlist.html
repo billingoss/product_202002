@@ -1,0 +1,87 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+		//alert("$(document).ready ALERT 경고창");
+		$('#buttonproductsale').click(function() {
+			alert("click");
+			$.ajax({
+				url: '/contract/contractmain',
+				method : 'get',
+				success: function(data){
+				}
+			});
+		});
+	});
+</script>
+
+				<div class="row">
+					<div class="col-md-12">
+						<div class="panel panel-default">
+							<div class="panel-heading">
+								<h2 class="panel-title">
+									<strong>상품 이용 내역</strong>
+								</h2>
+							</div>
+							<div class="panel-body">
+								<div class="table-responsive">
+									<table class="table">
+										<thead  class="table-header-bg">
+											<tr>
+												<th style="width: 20%;">상품명</th>
+												<th style="width: 10%;">상태</th>
+												<th style="width: 10%;">가입일자</th>
+												<th style="width: 10%;">종료일자</th>
+												<th style="width: 10%;">기간(월)</th>
+												<th style="width: 10%;">상품가격</th>
+												<th style="width: 10%;">결제구분</th>
+												<th style="width: 10%;">배송주기</th>
+												<th style="width: 10%;">결제주기</th>
+												<th style="width: 5%;"></th>
+											</tr>
+										</thead>
+										<tbody class="table-body-row">	
+											<tr th:each="result : ${productListResult}">
+												<td style="vertical-align: middle" th:text="${result.conNumber}"  hidden="true"></td>
+												<td style="vertical-align: middle" th:text="${result.productName}"></td>
+												<td style="vertical-align: middle" th:text="${result.contractState}"></td>
+												<td style="vertical-align: middle" th:text="${result.effectStartDateTime}"></td>
+												<td style="vertical-align: middle" th:text="${result.effectEndDateTime}"></td>
+												<td style="vertical-align: middle" th:text="${result.duration}"></td>
+												<td style="vertical-align: middle; text-align: right" th:text="${result.priceAmount}"></td>
+												<td style="vertical-align: middle" th:text="${result.recurringInvoiceYn}"></td>
+												<td style="vertical-align: middle" th:text="${result.deliveryCycle}"></td>
+												<td style="vertical-align: middle" th:text="${result.invoiceCycle}"></td>
+												<td style="vertical-align: middle">
+													<a th:href="@{/contract/productsale/{customerNumber}(customerNumber=${result.customerNumber})}" onclick="location.href">
+														<button class="btn btn-small btn-table-default">변경</button>
+													</a>
+												</td>
+											</tr>
+										</tbody>
+										<tfoot>
+											<tr>
+												<td class="no-line"></td>
+												<td class="no-line"></td>
+												<td class="no-line"></td>
+												<td class="no-line"></td>
+												<td class="no-line"></td>
+												<td class="no-line"></td>
+												<td class="no-line"></td>
+												<td class="no-line"></td>
+												<td class="no-line"></td>
+												<td class="no-line"></td>
+												<td class="no-line"></td>
+											</tr>
+										</tfoot>
+									</table>
+								</div>
+							</div>
+							<div class="panel-footer" style="padding-bottom: 40px;">
+				   			<div>
+				   				<a href="/contract/contractmain" onclick="location.href">
+				   					<button class="btn btn-primary pull-right" style="margin: 3px;" id="buttoncontractmain">상품  가입</button>
+                  </a>	
+				   			</div>
+				   		</div>
+						</div>
+					</div>
+				</div>

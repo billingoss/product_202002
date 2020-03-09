@@ -1,0 +1,56 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+		$('#searchbutton').click(function(){
+			debugger;
+			//alert("searchbutton click");
+			$("#customerlisttablebody").empty();
+			getCustomerDataBySearchBar(1);
+		});
+	});
+	
+	function getCustomerDataBySearchBar(page) {
+		var param = new Object();
+		param.page = page;
+		param.perPageNum = 5; /*만약값을셋팅하지 않으면 기본 페이지당 row수 10*/
+		
+    param.customerName = $("form[name=dataForm]").find("input[name=customerName]").val();
+    param.phoneNumber = $("form[name=dataForm]").find("input[name=phoneNumber]").val();
+		
+		$.ajax({
+			method : 'get',
+			url : '/customer/findsearchbar',
+			data : param, 
+			dataType : 'json',
+			error : function(xhr, status, error) {
+				alert(error);
+			},
+			success : handleCustomerData
+		});
+	}
+</script>
+<div class="col-md-12">
+	<div class="panel panel-heading" style="vertical-align: middle; text-align: center;
+		margin-left: auto; margin-right: auto;  padding-bottom: 0px;">
+		<div class="form-section">
+			<div class="row" style="text-align: center">
+				<form id="dataForm" name="dataForm" class="form-inline" role="form" style="margin-bottom: 10px;">
+					<div class="col-md-3">
+						<div class="form-group">
+							<span>고객명</span>
+							<input type="text" class=" form-control" name ="customerName"/>
+						</div>
+					</div>
+					<div class="col-md-4">
+						<div class="form-group">
+							<span>전화번호</span>
+							<input type="text" class=" form-control" name ="phoneNumber"/>
+						</div>
+					</div>
+					<div class="col-md-4">
+						<button id="searchbutton" type="button" class="btn btn-primary">조회</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>

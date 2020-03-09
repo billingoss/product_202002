@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout" layout:decorator="layout/default">
+	<!-- index.html 고유 CSS 추가 -->
+	<th:block layout:fragment="css">
+	</th:block>
+	<!-- index.html 고유 스크립트 추가 -->
+	<th:block layout:fragment="script">
+	<script src="https://ssl.daumcdn.net/dmaps/map_js_init/postcode.v2.js"></script>
+    <script type="text/javascript">
+    var idDupFlag = false;
+    var emailDupFlag = true;
+	var titleStr = "회원사등록";
+
+		$(document).ready(function() {
+			//아이디 focus 설정
+			$('#loginid').focus();
+			
+			//근무기간 설정
+			$('#effectStartDateTime').val(getTodayType(""));
+			
+			/****************************************************
+			저장 버튼 event 설정
+			****************************************************/
+			$('#saveBtn').click(function(){		
+
+				//사업자등록번호
+				if (isEmpty($('#businessRegistrationNumber').val())) {				
+			        showAlert("사업자 등록번호는 필수 입력입니다.", $('#businessRegistrationNumber'));
+			        return false;
+				}
+				
+				//사업자등록번호 유효성 체크
+				if (!checkBizID($('#businessRegistrationNumber').val())) {
+					showAlert("사업자 등록번호가 잘못 입력 되었습니다.",$('#businessRegistrationNumber'));
+					return false;
+				}
+				
+				//상호명
+				if (isEmpty($('#businessName').val())) {					
+					showAlert("상호명은 필수 입력입니다.",$('#businessName'));
+					return false;
+				} 
+				
+				//전화번호
+				if (isEmpty($('#telNumber').val())) {					
+					showAlert("전화 번호는 필수 입력입니다.",$('#telNumber'));
+					return false;
+				}
+				
+				//우편번호
+				if (isEmpty($('#zipCode').val())) {					
+					showAlert('우편번호를 입력하십시오.', $('#zipCode'));
+					return false;
+				} 
+				
+				//기본주소
+				if (isEmpty($('#baseAddress').val())) {					
+					showAlert('기본주소를 입력하십시오.', $('#baseAddress'));
+					return false;
+				} 
+				
+				//상세주소
+				if (isEmpty($('#detailAddress').val())) {					
+					showAlert('기본주소를 입력하십시오.', $('#detailAddress'));
+					return false;
+				} 	
+/* 				
+				//비밀번호 
+				if (isEmpty($('#passWord').val())) {					
+					showAlert('비밀번호를 입력하십시오.', $('#passWord'));
+					return false;
+				} 						
+				
+				//password 유효성 체크
+				if (!checkPassword($('#passWord'), $('#loginId').val())){					
+					return false;
+				}
+				
+				//비밀번호 확인 정합성 체크				
+				if ($('#passWord').val() != $('#compPassWord').val()){
+					showAlert("비밀번호가 일치하지 않습니다.",$('#compPassWord'));
+					return false;
+				}
+				 
+				//고객명
+				if (isEmpty($('#employeeName').val())) {
+					showAlert("고객명은 필수 입력입니다.", $('#employeeName'));
+					return false;
+				} 
+				
+				//이메일 정합성 체크
+				if (!validateEmail($('#email').val())) {
+					showAlert('e-mail주소가 잘못 입력 되었습니다.', $('#email'));
+					return false;
+				}
+				
+				//email 중복 체크 여부
+				if (!emailDupFlag) {						
+					showAlert("email 중복 체크를 하십시오.", $('#email'));
+					return false;
+				} 	
+				
+				//약관동의 여부				
+				if ($('#inforAgreementYn').prop('checked') == false) {
+					showAlert('개인정보 수집 및 이용에 대한 안내 모두 동의해주세요.');
+					$('#paymentAgreementYn').focus();
+					return;
+				}
+						 */		
+				//회원 정보 저장 호출
+				showConfirm('저장 하시겠습니까?', updateBusinessProc);
+			});		
+			
+			/****************************************************
+			ID 중복 체크 버튼 event 설정
+			****************************************************/
+			$('#idDupCheckBtn').click(function(){
+				if (isEmpty($('#loginId').val())) {
+					showAlert('Login ID를 입력하십시오.', $('#loginId'));
+					return false;
+				} 				
+				//ID 중목 체크
+				isDupCheck('ID');				
+			});
+			
+			/****************************************************
+			이메일 중복 체크 버튼 event 설정
+			****************************************************/
+			$('#emailDupCheckBtn').click(function(){				
+				if (isEmpty($('#email').val())) {					
+					showAlert('e-amil을 입력하십시오.', $('#email'));
+					return false;
+				} 
+				
+				//이메일 정합성 체크
+				if (!validateEmail($('#email').val())) {
+					showAlert('e-mail주소가 잘못 입력 되었습니다.', $('#email'));
+					return false;
+				}
+								
+				//email 중목 체크
+				isDupCheck('EMAIL');
+			});
+			
+			/****************************************************
+			ID 변경시 중복체크 상태 변경 event 설정
+			****************************************************/
+			$('#loginId').change(function(){
+				idDupFlag = false;
+			});
+			
+			/****************************************************
+			email 변경시 중복체크 상태 변경 event 설정
+			****************************************************/
+			$('#email').change(function(){
+				emailDupFlag = false;
+			});
+			
+			
+			/****************************************************
+			사업자등록번호 formatting
+			****************************************************/
+			$("#businessRegistrationNumber").val(bizNoFormatter($("#businessRegistrationNumber").val(),1));
+					
+			/****************************************************
+			관리자가 아닐 경우 화면 수정 불가
+			****************************************************/
+			/*<![CDATA[*/
+			var managerId = $('#managerId').val();
+			var sessionId = $('#sessionId').val();	
+			if(managerId != sessionId){
+				setFormDisabled(true);
+				$('#businessName').attr( 'disabled', true);
+				$('#telNumber').attr( 'disabled', true);
+				$('#addFind').attr( 'disabled', true);
+			}
+			/****************************************************
+			전화번호 formatting
+			****************************************************/			
+			inputFormatPhone();
+			
+			/*]]>*/
+		});	
+		
+		/****************************************************
+		중복체크 상태 변경 event 설정
+		****************************************************/		
+		var isDupCheck = function(divFlag){
+			
+			setFormDisabled(false);	
+			var queryString = $("form[name=businessForm]").serialize();
+			queryString = queryString.replace(/-/g, '');
+			
+			var goUrl = "";
+			if(divFlag == 'ID'){
+				goUrl = '/business/isLoginIdDup';
+			}else if(divFlag == 'EMAIL'){
+				goUrl = '/business/isEmailDup';				
+			}else {
+				showAlert('중복 체크를 할 수 없습니다.');
+				return false;
+			}
+			
+			$.ajax({
+				method:'post',
+				url: goUrl,
+				data : queryString,
+				error: function(xhr, status, error){						
+					setFormDisabled(true);
+				},
+				success : function(json){
+					debugger;		
+					var msg = "";
+					var resultFlag;
+					if(json==0){							
+						msg ='사용 가능한 '+divFlag+'  입니다.'
+						resultFlag = true;
+					}
+					else{
+						msg = '이미 존재하는 '+divFlag+' 입니다.';
+						resultFlag = false;
+					}
+					
+					var focusObj = $('#loginId'); 
+					if(divFlag == 'ID'){
+						idDupFlag = resultFlag;
+						focusObj = $('#loginId');
+
+					}else if(divFlag == 'EMAIL'){
+						emailDupFlag = resultFlag;
+						focusObj = $('#email');
+					}
+					
+			        showAlert(msg, focusObj);	     
+			        setFormDisabled(true);	
+				}					
+			})
+		};
+		
+		/*********************************************************
+		회원사 정보 수정 
+		**********************************************************/
+		var updateBusinessProc = function (){
+			
+			setFormDisabled(false);			
+			var queryString = $("form[name=businessForm]").serialize();
+			queryString = queryString.replace(/-/g, '');
+			
+			$.ajax({
+					method:'post',
+					url: '/business/updateBusinessProc',
+					data: queryString,
+					error: function(xhr, status, error){						
+						setFormDisabled(true);
+					},
+					success : function(json){
+						debugger;						
+						var msg = "";
+						var promise = Promise.resolve(true);              	 
+		              	 promise = new Promise(function (resolve, reject) {             		
+		              		if(json.errMsg == null || json.errMsg == ""){
+								msg = '회원사 수정이 완료 되었습니다. ';														
+							}else {
+								msg = json.errMsg;
+							}
+		              		 return resolve();
+		              	 });
+		              	 promise = promise.then(function(res) {		              		
+		              		showAlert(msg);
+							//idDupFlag = false;
+							//emailDupFlag = false;
+							setFormDisabled(true);
+		              	 });	
+					}					
+			});			
+		};
+		
+		/*********************************************************
+		화면 mode 설정 
+		**********************************************************/
+		var setFormDisabled = function(flag){			
+			$('#zipCode').attr( 'disabled', flag);
+			$('#baseAddress').attr( 'disabled', flag);
+			$('#businessRegistrationNumber').attr( 'disabled', flag);
+		}
+		
+	</script>
+	</th:block>        
+         <!-- container -->
+        <div id="container" layout:fragment="contentFragment">
+	         <div id="contents" class="setup">
+	                <h2 class="h2">설정</h2>	
+	                <section th:include="fragments/topMenu::topMenuFragmemt"></section>	
+	                <section>
+	                    <div class="cont-box wfull">
+			        <form id="businessForm" name="businessForm" class="form-horizontal" onsubmit="return false;">
+	                        <div class="table-wrap">
+	                            <!--회원정보입력//-->
+	                            <div class="con_title mt0">
+	                                <h3 class="h3">회원사정보입력</h3>
+	                                <div class="ab-r">
+	                                    <p class="comparison_text"><em>*</em> 필수입력정보</p>
+	                                </div>
+	                            </div>
+	                            <table class="form_table">
+	                                <colgroup>
+	                                    <col width="20%" />
+	                                    <col width="*" />
+	                                </colgroup>
+	                                <tbody>
+			                            <tr>
+		                                    <th>사업자등록번호 <i>*</i></th>
+		                                    <td>
+		                                        <input type="text" class="textType w_lg" placeholder=""  disabled="disabled"  id="businessRegistrationNumber" name="businessRegistrationNumber" th:value="${bizInfo.businessRegistrationNumber}"/>
+		                                    </td>
+		                                </tr>
+		                                <tr>
+		                                    <th>상호명 <i>*</i></th>
+		                                    <td>
+		                                        <input type="text" class="textType w_lg" placeholder="" id="businessName" name="businessName" th:value="${bizInfo.businessName}"/>
+		                                        <input type="hidden" id="loginId" name="loginId" th:value="${bizInfo.loginId}" />
+		                                        <input type="hidden" id="managerId" name="managerId" th:value="${bizInfo.managerId}"/>
+		                                        <input type="hidden" id="sessionId" name="sessionId" th:value="${session.loginId}"/>
+		                                    </td>
+		                                </tr>                                
+		                                <tr>
+		                                    <th>전화번호 <i>*</i></th>
+		                                    <td>
+		                                        <input type="text" class="textType w_lg phone" placeholder="" id="telNumber" name="telNumber" th:value="${bizInfo.telNumber}"/>
+		                                    </td>
+		                                </tr>
+										<tr>
+		                                    <th>주소 <i>*</i></th>
+		                                    <td>
+		                                        <div class="address-box mb10">
+		                                            <span class="post_item"><input type="text" class="w_mm mr5" placeholder="우편번호" th:value="${bizInfo.zipCode}"  disabled="disabled"  id="zipCode" name="zipCode" /></span>
+		                                            <span class="btn_item"><button class="btn btn_gray " id="addFind" role="button" onclick="execDaumPostcode('wrap', 'zipCode', 'baseAddress')">주소검색</button></span>
+		                                            <div id="wrap" style="display:none;border:1px solid;width:500px;height:300px;margin:5px 0;position:relative" >
+														<img src="//t1.daumcdn.net/localimg/localimages/07/postcode/320/close.png" id="btnFoldWrap" style="cursor:pointer;position:absolute;right:0px;top:-1px;z-index:1" onclick="layerDisplay('wrap')" alt="접기 버튼" />
+													</div>
+		                                        </div>
+		                                        <div class="">
+		                                            <input type="text" class="w_lg_g mr5"   placeholder="기본주소" disabled="disabled"  id="baseAddress"  name="baseAddress" th:value="${bizInfo.baseAddress}" />
+		                                            <input type="text" class="w_lg_s" placeholder="상세주소 입력" id="detailAddress" name="detailAddress" th:value="${bizInfo.detailAddress}" />
+		                                        </div>
+		                                    </td>
+		                                </tr>
+<!-- 			                            <tr>
+		                                    <th>아이디 <i>*</i></th>
+		                                    <td>
+		                                        <input type="text" class="w_lg mr5" placeholder="아이디 입력" disabled="disabled"  id="viewLoginId" th:value="${bizInfo.loginId}" />
+		                                        <input type="hidden" id="loginId" name="loginId" th:value="${bizInfo.loginId}" />
+		                                        <input type="hidden" id="managerId" name="managerId" th:value="${bizInfo.managerId}"/>		                                        
+		                                        <button class="btn btn_gray " role="button" id="idDupCheckBtn">중복확인</button>
+		                                    </td>
+		                                </tr>
+		                                <tr>
+		                                    <th>비밀번호 <i>*</i></th>
+		                                    <td>
+		                                        <input type="password" class="textType w_lg" placeholder="8자 이상 영문, 숫자, 특수문자 조합을 사용" id="passWord" name="passWord"/>
+		                                        <button class="btn btn_gray changePassWordBtn" role="button" id="changePasswordBtn">비밀번호변경</button>
+		                                    </td>
+		                                </tr>
+ 		                                 <tr>
+		                                    <th>비밀번호확인 <i>*</i></th>
+		                                    <td>
+		                                        <input type="password" class="textType w_lg" placeholder="" id="compPassWord" name="compPassWord"/>
+		                                    </td>
+		                                </tr>
+		                                <tr>
+		                                    <th>고객명 <i>*</i></th>
+		                                    <td>
+		                                        <input type="text" class="textType w_lg"  placeholder="" id="employeeName"  name="employeeName" th:value="${bizInfo.employeeName}" />
+		                                        <input type="hidden"  id="effectStartDateTime" name="effectStartDateTime" />
+		                                        <input type="hidden"  id="effectEndDateTime" name="effectEndDateTime" value="99991231"/>
+		                                    </td>
+		                                </tr>
+		                                <tr>
+		                                    <th>이메일 <i>*</i></th>
+		                                    <td>
+		                                        <input type="text" class="w_lg mr5" placeholder="이메일 주소 입력" id="email" name="email" th:value="${bizInfo.email}"/>		                                        
+		                                        <button class="btn btn_gray " role="button" id="emailDupCheckBtn">중복확인</button>
+		                                    </td>
+		                                </tr> -->
+	                                </tbody>
+	                            </table>
+	                        </div>
+	
+	                        <div class="btn_set-center mt30">
+	                            <a class="btn btn_green btn_m radius" role="button" href="#none" th:if="${session.loginId.equals(bizInfo.managerId)}" id="saveBtn">저장</a>
+	                        </div>
+	
+		        </form>
+	                    </div>
+	                </section>
+	            </div>               
+        </div>
+        <!-- //container -->
+        <span id="popupTemp" layout:fragment="popupFragment" >      
+			<div th:replace="online/business/changePasswordPop::changePasswordPop"></div>
+		</span>        
+</html>

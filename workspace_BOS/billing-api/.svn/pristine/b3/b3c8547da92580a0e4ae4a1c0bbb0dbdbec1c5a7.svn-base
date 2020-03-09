@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout" layout:decorator="layout/default">
+<!-- index.html 고유 CSS 추가 -->
+<th:block layout:fragment="css">
+</th:block>
+<!-- index.html 고유 스크립트 추가 -->
+<th:block layout:fragment="script">
+<script type="text/javascript">
+/*<![CDATA[*/
+function getData(page) {
+
+	var queryString = $("form[name=searchForm]").serialize();
+	queryString = queryString + '&page='+page+'&perPageNum=10&pagingYn=Y';
+	queryString = queryString.replace(/-/g, '');
+	
+	$.ajax({
+		method : 'get',
+		url : '/product/getproductlist',
+		data : queryString, 
+		dataType : 'json',
+		error : function(xhr, status, error) {
+			alert(error);
+		},
+		success : handleData
+	});
+}
+
+function handleData(data) {
+	debugger;
+	
+	//PageMaker정보를 Json으로부터 분리한다.
+	json = data.lists; //hashmap의 list array데이타
+	pageMaker = data.pageMaker; //pageMaker 
+
+	$('#totalCount').html(pageMaker.totalCount);
+	$('#productTbody').empty();
+	var trHTML = '';
+
+	if (json.length == 0) {
+		trHTML = '<tr class="no_empty"><td colspan=11><div class="data-empty"><img src="/resources/images/common/img_no_empty.png" alt="데이터 없음" /><span class="txt_empty">검색 결과가 없습니다.</span></div></td></tr>';
+	} else {
+		$.each(json, function(i, item) {
+			trHTML += '<tr>'
+			       +  '<td><span class="trp checkbox-box"><input id="checkbox_all'+(i+1)+'" class="js_item" type="checkbox" name="chk" value="'+item.productNumber+'|'+item.productState+'"><i></i><label for="checkbox_all"'+(i+1)+'"></label></span></td>'
+				   +  '<td>' + ((pageMaker.cri.page-1)*10+i+1) + '</td>'
+				   +  '<td>' + item.productTypeName + '</a></td>'
+				   +  '<td class="tal ellipsis">' + item.productName + '</td>'
+				   +  '<td>' + (item.packagePriceReferenceYn=='Y'?'종량형':'정액형') + '</td>'
+				   +  '<td class="tar">' + numberComma(item.priceAmount) + '</td>'
+				   +  '<td>' + item.productStateName + '</td>'
+				   +  '<td>' + formatDate(item.subscribeStartDateTime) + '</td>'
+				   +  '<td>' + formatDate(item.subscribeEndDateTime) + '</td>'
+				   +  '<td class="tal ellipsis">' + item.productDescription + '</td>'
+				   +  '<td>' + formatDate(item.lastChangeDateTime) + '</td>'
+			       +  '</tr>';
+		});
+	}
+
+	$('#productTbody').append(trHTML);
+	formatPhone();
+	pagingProc(pageMaker);
+}
+
+function getPagingData(page){
+	getData(page);
+}
+$(document).ready(function(){
+	
+	//조회버튼 클릭
+	$('#searchButton').click(function(){
+		getData(1);
+	});
+	
+	//초기화버튼 클릭
+	$('#resetButton').click(function(){
+		$('#productType').val('');
+		$('#productState').val('');
+		$('#productName').val('');
+	    $(".select2Basic").select2({            
+	        minimumResultsForSearch: Infinity
+	    });
+	});
+	
+	//엑셀다운로드 버튼 클릭
+	$('#excelButton').click(function(){
+		var f = document.searchForm;
+		f.method = 'post';
+		f.action = '/product/getproductlistexcel';
+		f.submit();
+	});
+	
+    $(".check-all").click(function() {
+        $(".js_item").prop("checked", $(this).is(":checked"));
+        if ($(this).is(":checked")) {
+            $(".js_item:not(.check-all)").parents("tr").addClass("selected");
+        } else {
+            $(".js_item:not(.check-all)").parents("tr").removeClass("selected");
+        }
+    });
+
+    $(".js_item").click(function() {
+        if ($(this).is(":checked")) {
+            $(this).parents("tr").addClass("selected");
+        } else {
+            $(this).parents("tr").removeClass("selected");
+        }
+        if ($(".js_item:not(.check-all)").length == $(".js_item:not(.check-all):checked").length) {
+            $(".check-all").prop("checked", true);
+        } else {
+            $(".check-all").prop("checked", false);
+        }
+    });
+});
+/*]]>*/
+</script>
+</th:block>
+        <!-- container -->
+        <div id="container" layout:fragment="contentFragment">
+		<form name="searchForm" onsubmit="return false;">
+            <div id="contents" class="product">
+                <h2 class="h2">상품관리</h2>
+                <!-- 
+				<section th:include="fragments/topMenu::topMenuFragmemt"></section>
+ 				-->
+                <section>
+                    <div class="cont-box wfull">
+                        <!--상품관리//-->
+                        <table class="form_table">
+                            <colgroup>
+                                <col width="170px" />
+                                <col width="*" />
+                                <col width="170px" />
+                                <col width="*" />
+                            </colgroup>
+                            <tbody>
+                                <tr>
+                                    <th>상품유형</th>
+                                    <td>
+                                        <div class="select-box w_mm">
+                                            <select class="select2Basic" id="productType" name="productType">
+                                            	<option value="">전체</option>
+												<option th:each="result : ${productTypeList}" th:value="${result.code}" th:text="${result.codeName}"/>
+											</select>
+                                        </div>
+                                    </td>
+                                    <th>상태</th>
+                                    <td>
+                                        <div class="select-box w_mm">
+                                            <select class="select2Basic" id="productState" name="productState">
+                                            	<option value="">전체</option>
+												<option th:each="result : ${productStateList}" th:value="${result.code}" th:text="${result.codeName}"/>
+											</select>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>상품명</th>
+                                    <td colspan="3">
+                                        <input type="text" class="w_lg_s" value="" placeholder="" id="productName" name="productName"/>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="btn_set-center mt30">
+                            <a class="btn btn_green btn_m radius mr5" role="button" href="#none" id="searchButton">검색</a>
+                            <a class="btn btn_default btn_m radius" href="#none" role="button" id="resetButton">초기화</a>
+                        </div>
+
+                        <!--리스트//-->
+                        <div class="table-wrap mt80">
+                            <div class="table-header ">
+                                <div class="con_title">총 <em id="totalCount">0</em>건</div>
+                                <div class="ab-r">
+                                    <div class="btn_set">
+                                        <a class="btn btn_default"><i class="icon_down" id="excelButton">엑셀다운로드</i></a>
+                                    </div>
+                                </div>
+                            </div>
+                            <table class="table_list" id="check_table">
+                                <colgroup>
+                                    <col style="width:5%"/>
+                                    <col style="width:5%"/>
+                                    <col style="width:8%"/>
+                                    <col style="width:auto"/>
+                                    <col style="width:8%"/>
+                                    <col style="width:10%"/>
+                                    <col style="width:8%"/>
+                                    <col style="width:8%"/>
+                                    <col style="width:8%"/>
+                                    <col style="width:auto"/>
+                                    <col style="width:8%"/>
+                                </colgroup>
+                                <thead>
+                                    <tr>
+                                        <th>
+                                            <span class="trp checkbox-box">
+												<input id="checkbox_all1" class="js_item check-all" type="checkbox" name=""/>
+												<i></i>
+												<label for="checkbox_all1"></label>
+											</span>
+                                        </th>
+                                        <th>번호</th>
+                                        <th>상품유형</th>
+                                        <th>상품명</th>
+                                        <th>패키지유형</th>
+                                        <th>상품가격</th>
+                                        <th>상태</th>
+                                        <th>판매시작일</th>
+                                        <th>판매종료일</th>
+                                        <th>상품설명</th>
+                                        <th>등록일</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="productTbody">
+                                </tbody>
+                            </table>
+                            <div class="paging-area">
+                                <div class="btn_set">
+                                	<!-- 
+                                    <div class="fl">
+                                        <button class="btn btn_gray btn_w" type="button">삭제</button>
+                                    </div>
+                                    <div class="fr">
+                                        <button class="btn btn_default btn_w" type="button"><i class="icon_add">등록</i></button>
+                                    </div>
+                                     -->
+                                </div>
+		                        <div class="paging" id="pagination">
+		                        </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+            </div>
+        </form>
+        </div>
+        <!-- //container -->
+</html>

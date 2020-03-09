@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+
+<head>
+<!-- header -->
+<meta charset="UTF-8"/>
+<title>정기배송 | BILL Letter</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="viewport" id="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,initial-scale=1.0"/>
+<link rel="stylesheet" href="/css/library/csslibrary.css"/>
+<link rel="stylesheet" href="/css/screen.css"/>
+<!--[if lt IE 9]>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js" type="text/javascript" charset="utf-8"></script>
+<![endif]-->
+<script src="/js/library/jquery.min.js"></script>
+<script src="/js/library/jquerylibrary.min.js"></script>
+<script src="/js/screen.js"></script>
+<script src="/js/commonlib.js" type="text/javascript"></script>
+<script src="http://dmaps.daum.net/map_js_init/postcode.v2.js"></script>
+<!-- //header -->
+
+<script type="text/javascript">
+$(document).ready(function(){
+	
+	$('#saleButton').click(function(){
+		if (!$('input[name=productList]').eq(0).val()) {
+			alert('판매중인 상품이 없습니다.');
+			return;
+		} else {
+			$('#productId').val($('input[name=productList]').eq(0).val());
+		}
+		
+		var f = document.saleForm;
+		f.action = '/billletter/productsale';
+		f.submit();
+	});
+
+	$('#saleDoneButton').click(function(){
+		var f = document.saleForm;
+		f.action = '/billletter/productsalelist';
+		f.submit();
+	});
+});
+</script>
+</head>
+
+<body id="saleBody">
+<form name="saleForm" onsubmit="return false;">
+<input type="hidden" id="channelCustomerNumber" name="channelCustomerNumber" th:value="${contractInsert.channelCustomerNumber}"/>
+<input type="hidden" id="productId" name="productId"/>
+<!-- 
+<input type="hidden" id="customerName" name="customerName" value="김혜수"/>
+<input type="hidden" id="phoneNumber" name="phoneNumber" value="01011112222"/>
+ -->
+</form>
+<input type="hidden" name="productList" th:each="result:${productList}" th:value="${result.value1}"/>
+    <div class="wrapper">
+        <!-- container -->
+        <div id="container">
+            <div id="contents" class="cont">
+                <div class="title">
+					<h3>닥터노아</h3>
+					<!-- <button type="button" class="back_btn">뒤로가기</button> -->
+				</div>
+
+                <!-- 하단버튼//-->
+                <div class="btn-area">
+                    <p>
+                        <button id="saleButton">정기결제 신청</button>
+                        <button id="saleDoneButton">나의 주문내역</button>
+                    </p>
+                </div>
+                <!--// 하단버튼-->
+            </div>
+        </div>
+        <!-- //container -->
+    </div>
+</body>
+</html>

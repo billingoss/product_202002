@@ -1,0 +1,262 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+		var today = getToday().replace('-','').replace('-','');
+		
+		$('#deliveryyear').val(today.substring(0,4));
+		$('#deliverymonth').val(today.substring(4,6));
+		
+		$("#searchbutton").click(function(){
+			getData(1);
+		});
+		
+		function getData(page) {
+			var param = new Object();
+			param.page = page;
+			param.perPageNum = 10; /*만약값을셋팅하지 않으면 기본 페이지당 row수 10*/
+			param.deliverydate = $("#deliveryyear").val() + $('#deliverymonth').val()+'01';
+			param.deliverytype = $("#deliverytype").val();
+			param.recurringdeliveryyn = $('#recurringdeliveryyn').val();
+			param.customername = $('#customername').val();
+			param.customerphonenumber = $('#customerphonenumber').val().replace('-','').replace('-','');
+			param.pagingyn = 'Y';
+			
+			$.ajax({
+				method : 'get',
+				url : '/order/getdeliverylist',
+				data : param, //JSON.stringify(paramData) , /* queryString, */
+				dataType : 'json',
+				error : function(xhr, status, error) {
+					alert(error);
+				},
+				success : handleData
+			});
+		}
+
+		function handleData(data) {
+			debugger;
+			
+			//PageMaker정보를 Json으로부터 분리한다.
+			json = data.lists; //hashmap의 list array데이타
+			pageMaker = data.pageMaker; //pageMaker 
+			displayproductdescription = data.displayproductdescription;
+
+			if (json.length == 0) {
+				Common.Dialog.alert({
+					title : '',
+					content : '데이터가 없습니다.'
+				});
+			}
+			
+			$('#totalcount').html('총 : ' + pageMaker.totalCount + '건');
+
+			$('#deliverytbody').empty();
+			var trHTML = '';
+
+			$.each(json, function(i, item) {
+				 trHTML += '<tr>'          
+						+  '<td style="vertical-align: middle"><input name="chk" type="checkbox" value="' + item.connumber + '|' + item.deliverynumber1 + '"/></td>';
+ 				 trHTML += setData(i, item, (pageMaker.cri.page-1) * 10, displayproductdescription);
+ 				 trHTML += '</tr>';
+			});
+			$('#deliverytbody').append(trHTML);
+			formatPhone();
+			pagingDeliveryProc(pageMaker);
+		}
+		
+		function pagingDeliveryProc(pageMaker) {
+			//=============paginationorder 시작=====================
+			$("#paginationorder").empty();
+			if (pageMaker.totalCount != 0) {
+				$("#paginationorder").empty();
+				if (pageMaker.prev == true) {
+					
+					/*<![CDATA[*/  //타임리프에서 부등호상용시 조심해야함 반드시 CDATA로 감싸야함
+					$("#paginationorder").append('<li class="goBackPage"><a><<</a></li>'); //다음페이지로 가기 버튼 활성화
+					/*]]>*/
+				}
+
+
+				//아래는 타임리프사용시 조시매야한다. for하기와 같이 쓰지않음 에러발생함
+				/*<![CDATA[*/
+				for (var i = pageMaker.startPage; i <= pageMaker.endPage; i++) {
+					/*]]>*/
+
+					//alert(i);
+					if (pageMaker.cri.page == i) { 
+						$("#paginationorder").append('<li class="disabled active" style="color: red;"><a>' + i + "</a></li>"); //버튼 비활성화
+
+					} else {
+
+						$("#paginationorder").append('<li class="goPage" data-page="' + i + '"><a>' + i + "</a></li>"); //버튼 활성화
+
+					}
+				}
+
+				if (pageMaker.next == true) {
+					$("#paginationorder").append('<li class="goNextPage"><a>>></a></li>'); //다음페이지로 가기 버튼 활성화
+				}
+			}
+		//=============paginationorder 끝=====================
+		}
+
+		//===================페이지이벤트처리시작==========================
+		/* $(".goBackPage").click(function() { */
+        $(document).on("click", "#paginationorder .goBackPage", function(){
+        	page = Number(pageMaker.startPage) - 1;
+
+			//pageFlag = 1;
+
+			//$("상단 ajax를 함수로 만들어 재귀호출");
+			getData(page);
+			//pageFlag = 0;
+        	
+        });
+
+
+		$(document).on("click", "#paginationorder .goPage", function(){
+			page = $(this).attr("data-page");
+			//alert(page);
+			//pageFlag = 1;
+			getData(page);
+			//pageFlag = 0;
+
+		});
+
+        $(document).on("click", "#paginationorder .goNextPage", function(){
+			page = Number(pageMaker.endPage) + 1;
+			//$("상단 ajax를 함수로 만들어 재귀호출");
+			getData(page);
+			//pageFlag = 0;
+
+		});
+	});
+
+	function setData(i, item, count, displayproductdescription){
+		var tdHTML = '';
+		tdHTML  = '<td style="vertical-align: middle">' + (count + i + 1) + '</td>'
+				+ '<td style="vertical-align: middle">' + (item.registrationdatetime.length==8?item.registrationdatetime.substring(0,4)+'-'+item.registrationdatetime.substring(4,6)+'-'+item.registrationdatetime.substring(6,8):item.registrationdatetime) + '</td>'
+				+ '<td style="vertical-align: middle">' + item.channelname + '</td>'
+				+ '<td style="vertical-align: middle">' + item.customertype + '</td>'
+				+ '<td style="vertical-align: middle">' + item.recurringdeliveryyn + '</td>'
+				+ '<td style="vertical-align: middle">' + item.deliverycustomername + '</td>'
+				+ '<td class="phone" style="vertical-align: middle">' + item.deliveryphonenumber1 + '</td>'
+				+ '<td style="vertical-align: middle">' + item.productname + '</td>'
+				+ '<td style="vertical-align: middle">' + item.quantity + '</td>'
+				+ '<td style="vertical-align: middle">' + item.deliveryday + '</td>'
+				+ '<td style="vertical-align: middle">' + item.deliverytypename + '</td>'
+				+ '<td style="vertical-align: middle">' + item.deliveryzipcode + '</td>'
+				+ '<td style="vertical-align: middle">' + item.deliveryaddress + '</td>'
+				+ '<td style="vertical-align: middle">' + item.deliveryremark + '</td>'
+				+ '<td style="vertical-align: middle; background-color:#EAEAEA">' + (item.deliverydate1.length==8?item.deliverydate1.substring(0,4)+'-'+item.deliverydate1.substring(4,6)+'-'+item.deliverydate1.substring(6,8):item.deliverydate1) + '</td>'
+				+ '<td style="vertical-align: middle; background-color:#EAEAEA">' + (parseInt(item.deliveryremaincount) + parseInt(item.deliveryindex1) + 1) + '</td>'
+				+ '<td style="vertical-align: middle; background-color:#EAEAEA">' + item.deliverystate1 + '</td>'
+				+ '<td style="vertical-align: middle">' + (item.deliverydate2.length==8?item.deliverydate2.substring(0,4)+'-'+item.deliverydate2.substring(4,6)+'-'+item.deliverydate2.substring(6,8):item.deliverydate2) + '</td>'
+				+ '<td style="vertical-align: middle">' + (item.deliverydate2.length==8?(parseInt(item.deliveryremaincount) + parseInt(item.deliveryindex1) + 2):'') + '</td>'
+				+ '<td style="vertical-align: middle">' + item.deliverystate2 + '</td>'
+				+ '<td style="vertical-align: middle; background-color:#EAEAEA">' + (item.deliverydate3.length==8?item.deliverydate3.substring(0,4)+'-'+item.deliverydate3.substring(4,6)+'-'+item.deliverydate3.substring(6,8):item.deliverydate3) + '</td>'
+				+ '<td style="vertical-align: middle; background-color:#EAEAEA">' + (item.deliverydate3.length==8?(parseInt(item.deliveryremaincount) + parseInt(item.deliveryindex1) + 3):'') + '</td>'
+				+ '<td style="vertical-align: middle; background-color:#EAEAEA">' + item.deliverystate3 + '</td>'
+				+ '<td style="vertical-align: middle">' + (item.deliverydate4.length==8?item.deliverydate4.substring(0,4)+'-'+item.deliverydate4.substring(4,6)+'-'+item.deliverydate4.substring(6,8):item.deliverydate4) + '</td>'
+				+ '<td style="vertical-align: middle">' + (item.deliverydate4.length==8?(parseInt(item.deliveryremaincount) + parseInt(item.deliveryindex1) + 4):'') + '</td>'
+				+ '<td style="vertical-align: middle">' + item.deliverystate4 + '</td>'
+				+ '<td style="vertical-align: middle; background-color:#EAEAEA">' + (item.deliverydate5.length==8?item.deliverydate5.substring(0,4)+'-'+item.deliverydate5.substring(4,6)+'-'+item.deliverydate5.substring(6,8):item.deliverydate5) + '</td>'
+				+ '<td style="vertical-align: middle; background-color:#EAEAEA">' + (item.deliverydate5.length==8?(parseInt(item.deliveryremaincount) + parseInt(item.deliveryindex1) + 5):'') + '</td>'
+				+ '<td style="vertical-align: middle; background-color:#EAEAEA">' + item.deliverystate5 + '</td>'
+				+ '<td style="vertical-align: middle">' + (item.deliverydate6.length==8?item.deliverydate6.substring(0,4)+'-'+item.deliverydate6.substring(4,6)+'-'+item.deliverydate6.substring(6,8):item.deliverydate6) + '</td>'
+				+ '<td style="vertical-align: middle">' + (item.deliverydate6.length==8?(parseInt(item.deliveryremaincount) + parseInt(item.deliveryindex1) + 6):'') + '</td>'
+				+ '<td style="vertical-align: middle">' + item.deliverystate6 + '</td>'
+				+ '<td style="vertical-align: middle">' + (item.deliverystartdatetime.length==8?item.deliverystartdatetime.substring(0,4)+'-'+item.deliverystartdatetime.substring(4,6)+'-'+item.deliverystartdatetime.substring(6,8):item.deliverystartdatetime) + '</td>'
+				+ '<td style="vertical-align: middle">' + (item.effectenddatetime.length==8?item.effectenddatetime.substring(0,4)+'-'+item.effectenddatetime.substring(4,6)+'-'+item.effectenddatetime.substring(6,8):item.effectenddatetime) + '</td>'
+				+ '<td style="vertical-align: middle">' + item.duration + '</td>'
+				+ '<td style="vertical-align: middle">' + item.deliverycyclename + '</td>'
+				+ '<td style="vertical-align: middle">' + item.deliverytimes + '</td>'
+				+ '<td style="vertical-align: middle">' + item.deliverytotalcount + '</td>'
+				+ '<td style="vertical-align: middle">' + (parseInt(item.deliveryremaincount) + parseInt(item.deliveryindex2)) + '</td>';
+		if (displayproductdescription == 'Y'){
+			tdHTML += '<td style="vertical-align: middle">' + item.productoption + '</td>'
+				+ '<td style="vertical-align: middle">' + item.productdescription1 + '</td>'
+				+ '<td style="vertical-align: middle">' + item.productdescription2 + '</td>'
+				+ '<td style="vertical-align: middle">' + item.productdescription3 + '</td>'
+				+ '<td style="vertical-align: middle">' + item.productdescription4 + '</td>'
+				+ '<td style="vertical-align: middle">' + item.productdescription5 + '</td>'
+				+ '<td style="vertical-align: middle">' + item.bigissuequantity + '</td>';				 
+		}
+		tdHTML += '<td style="vertical-align: middle">' + (item.subscribedatetime.length==8?item.subscribedatetime.substring(0,4)+'-'+item.subscribedatetime.substring(4,6)+'-'+item.subscribedatetime.substring(6,8):item.subscribedatetime) + '</td>'
+				+ '<td style="vertical-align: middle">' + item.customername + '</td>'
+				+ '<td class="phone" style="vertical-align: middle">' + item.customerphonenumber + '</td>'
+				+ '<td style="vertical-align: middle">' + item.paymentday + '</td>'
+				+ '<td style="vertical-align: middle">' + item.paymentmethodname + '</td>'
+				+ '<td style="vertical-align: middle">' + item.paymentamount + '</td>'
+				+ '<td style="vertical-align: middle">' + item.deliverychargetypename + '</td>'
+				+ '<td style="vertical-align: middle">' + item.deliverychargeamount + '</td>'
+		return tdHTML;		
+	}
+</script>
+<script src="/js/bootstrap-datepicker.js" type="text/javascript" ></script>
+<div class="col-md-12">
+	<div class="panel panel-heading" style="vertical-align: middle; text-align: center;
+		margin-left: auto; margin-right: auto;  padding-bottom: 0px;">
+		<div class="form-section">
+			<div class="row" style="text-align: center">
+				<form id="customerDataForm" name="customerDataForm" class="form-inline" role="form" style="margin-bottom: 10px;">
+					<div class="col-md-3">
+						<div class="form-group">
+							<span>배송월</span>
+							<select id="deliveryyear" class="form-control">
+								<option th:each="result : ${deliveryYearList}" th:value="${result.deliverydate}" th:text="${result.deliverydate}"/>
+							</select>&nbsp;년&nbsp;&nbsp;
+							<select id="deliverymonth"  class="form-control">
+								<option value="01">1</option>
+								<option value="02">2</option>
+								<option value="03">3</option>
+								<option value="04">4</option>
+								<option value="05">5</option>
+								<option value="06">6</option>
+								<option value="07">7</option>
+								<option value="08">8</option>
+								<option value="09">9</option>
+								<option value="10">10</option>
+								<option value="11">11</option>
+								<option value="12">12</option>
+							</select>&nbsp;월
+						</div>
+					</div>
+					<div class="col-md-2">
+						<div class="form-group">
+							<span>고객명</span>
+							<input type="text" class="form-control" id="customername" style="width:100px;"/>
+						</div>
+					</div>
+					<div class="col-md-2">
+						<div class="form-group">
+							<span>전화번호</span>
+							<input type="text" class="form-control" id="customerphonenumber" style="width:150px;"/>
+						</div>
+					</div>
+					<div class="col-md-2">
+						<div class="form-group">
+							<span>정기배송여부</span>
+							<select name="recurringdeliveryyn" id="recurringdeliveryyn" class="form-control">
+								<option value="">전체</option>
+								<option value="Y">정기배송</option>
+								<option value="N">일회성</option>
+							</select>       
+						</div>
+					</div>
+					<div class="col-md-2">
+						<div class="form-group">
+							<span>배송유형</span>
+							<select name="deliverytype" id="deliverytype" class="form-control">
+								<option value="">전체</option>
+								<option th:each="result : ${codeList}" th:value="${result.code}" th:text="${result.codename}"/>
+							</select>       
+						</div>
+					</div>
+					<div class="col-md-1">
+						<button id="searchbutton" type="button" class="btn btn-primary">조회</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>

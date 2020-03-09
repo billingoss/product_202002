@@ -1,0 +1,90 @@
+<script type="text/javascript">
+	$(document).ready(function(){
+		debugger;
+		$('#customersearchbtn').click(function(){
+			debugger;
+			//alert("searchbutton click");
+			if ($('form[name=dataForm] input[name=customerName]').val() ==  ''){
+				alert('조회하실 고객명을 입력하십시오.');
+				return false;
+			} 
+			var queryString = $("form[name=dataForm]").serialize() ;
+			queryString = queryString.replace(/-/g, '');
+			  //alert("queryString = " + queryString);
+			$.ajax({
+					method : 'get',
+					url : '/contract/findsearchbar',
+					data : queryString,
+					error: function(xhr, status, error) {
+							//alert(error);
+					},
+					success : function(json){
+								$('#customerListlDialog .modal-content').html(json);
+								$('#customerListlDialog').modal('show');
+							}
+			});
+		});
+		
+		$('#customercreatepopup').click(function(){
+			debugger;
+			  $.ajax({
+				    method : 'get',
+				       url : '/contract/customercreatepopup',
+				       error: function(xhr, status, error) {
+				        //alert(error);
+				       },
+				       success : function(json){
+					        $('#customercreatepopuplDialog .modal-content').html(json);
+					        $('#customercreatepopuplDialog').modal('show');
+				    	}
+			   });
+
+		});
+		
+	});
+</script>
+<div class="col-md-12">
+	<div class="panel panel-heading" style="vertical-align: middle; text-align: center;
+		margin-left: auto; margin-right: auto; padding-bottom: 0px;">
+		<div class="form-section">
+			<div class="row" style="text-align: center">
+				<form id="dataForm" name="dataForm" class="form-inline" role="form" style="margin-bottom: 10px;">
+					<div class="col-md-3">
+						<div class="form-group">
+							<label >고객명 : </label>
+      						<input class="form-control" type="text" name="customerName"  />
+						</div>
+					</div>
+					<div class="col-md-4">
+						<div class="form-group">
+							<span>전화번호</span>
+							<input class="phone form-control" type="text" name ="phoneNumber"/>
+						</div>
+					</div>
+					<div class="col-md-4">
+						<a data-toggle="modal" data-target="#customerListlDialog">
+							<button id="customersearchbtn" type="button" class="btn btn-primary">조회</button>
+						</a>
+						<a data-toggle="modal" data-target="#customercreatepopuplDialog">
+							<button id="customercreatepopup" type="button" class="btn btn-primary">등록</button>
+						</a>
+						<input type="hidden" name="customerNumber" />
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="modal" id="customerListlDialog" role="dialog">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content"></div>
+	</div>
+</div>
+
+<div class="modal" id="customercreatepopuplDialog" role="dialog">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content"></div>
+	</div>
+</div>
+

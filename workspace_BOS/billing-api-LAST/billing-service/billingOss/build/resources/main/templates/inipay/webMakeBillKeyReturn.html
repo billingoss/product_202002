@@ -1,0 +1,14 @@
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script th:inline="javascript">
+	var billKey;	
+	var resultCode;
+	var resultMsg;
+	/*<![CDATA[*/
+	billKey = /*[[${billKeyResult.billKey}]]*/;	
+	resultCode = /*[[${billKeyResult.resultCode}]]*/;
+	resultMsg = /*[[${billKeyResult.resultMsg}]]*/;
+	/*]]>*/	
+
+	showAlert(resultMsg);
+</script>
+<script language="javascript" type="text/javascript" src="https://stgstdpay.inicis.com/stdjs/INIStdPay_close.js" charset="UTF-8"></script>

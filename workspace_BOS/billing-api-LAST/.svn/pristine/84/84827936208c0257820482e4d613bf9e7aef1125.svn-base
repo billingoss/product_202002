@@ -1,0 +1,234 @@
+<script type="text/javascript">
+$(document).ready(function() {
+	
+	$.fn.datepicker.defaults = {
+		    autoclose: true,
+		    beforeShowDay: $.noop,
+		    calendarWeeks: false,
+		    clearBtn: false,
+		    daysOfWeekDisabled: [],
+		    endDate: Infinity,
+		    forceParse: true,
+		    format: 'yyyy-mm-dd',
+		    keyboardNavigation: true,
+		    language: 'kr',
+		    minViewMode: 0,
+		    orientation: 'auto',
+		    rtl: false,
+		    startDate: -Infinity,
+		    startView: 3,
+		    todayBtn: false,
+		    todayHighlight: false,
+		    weekStart: 0
+	};
+	$('.date').datepicker();
+	
+	var discountId = 0;
+	var beforeDiscountId = 0;
+	
+	var pkgPrdChk = function(obj) { //체크박스 활성화
+		//$('input[name="discountListBox"]').not(obj).prop('checked', false);
+		//$(obj).parents('tbody').find('input[type="text"], select').prop('disabled', true);
+    	//$('#discountmaintable tr').removeClass('selectedbgcolor');
+    	//$('td input:checkbox', this).prop('checked', true);
+    	
+    	if(obj.checked) {
+    		$(obj).parents('tr').find('input[type="text"], select').prop('disabled', false);
+    		$(obj).parents('tr').find('[name="discountId"], select').prop('disabled', true);
+    		$(obj).parents('tr').find('[name="discountType"], select').prop('disabled', true);
+    		$(obj).parents('tr').find('[name="discountState"]' ).prop('disabled', true);
+    		$(obj).parents('tr').addClass('selectedbgcolor');
+    	} else {
+    		$(obj).parents('tr').find('input[type="text"], select').prop('disabled', true);
+    		$(obj).parents('tr').removeClass('selectedbgcolor');
+    	}
+	}
+	$('#discountmaintable').on('click', 'input[name="discountListBox"]', function() {
+	//$('#discountlisttablebody').on('click', 'tr', function (){
+		pkgPrdChk(this);
+		discountId = $(this).val();
+    });
+	
+		
+    $('#discountadd').click(function() {
+    	/*
+		if($('#discountmaintable tbody tr.append').is(':visible')) {
+			alert('추가는 하나씩 가능합니다.');
+			return false;
+		}
+    	*/
+    	
+		$.ajax({
+	        url : '/product/finddiscountid',
+	        method : 'get', 
+	        error : function(xhr, status, error) {
+	          alert(error);
+	        },
+	        success : function(data){
+	        	//$('#discountmaintable > tbody').append(data).find('.append input:checkbox').trigger('click');
+	        	$('#discountmaintable > tbody').append(data);
+	        }
+		});
+    });
+    
+    /* 저장버튼 클릭  */
+    $('#discountsave').click(function() {
+			
+		var di = '#' + discountId;
+
+		var totalCnt = 0;
+		var successCnt = 0;
+		var errorCnt = 0;
+		
+		$('[name="discountListBox"]:checked').each(function(){
+			var $tr = $(this).parents('tr');
+
+			var itemObj = new Object();
+			itemObj.discountInsert = $('[name="add"]', $tr).val()
+			itemObj.discountId = $('[name="discountId"]', $tr).val();
+			itemObj.discountName = $('[name="discountName"]', $tr).val();
+			itemObj.discountType = $('[name="discountType"]', $tr).val();
+			itemObj.discountValue = $('[name="discountValue"]', $tr).val();			
+			itemObj.subscribeStartDateTime = $('[name="subscribeStartDateTime"]', $tr).val();
+			itemObj.subscribeEndDateTime = $('[name="subscribeEndDateTime"]', $tr).val();
+			itemObj.discountDescription = $('[name="discountDescription"]', $tr).val();
+			
+			if(itemObj.discountValue == '' || isNaN(itemObj.discountValue) == true) {
+				alert("할인율/금액은 숫자만 입력하시기 바랍니다." );
+				$('[name="discountValue"]', $tr).focus();
+				return false;
+			}
+			if(itemObj.discountName == '') {
+				alert("할인명을 입력하십시오." );
+				$('[name="discountName"]', $tr).focus();
+				return false;
+			}
+			if(itemObj.discountType == '') {
+				alert("할인유형을 입력하십시오." );
+				$('[name="discountType"]', $tr).focus();
+				return false;
+			}
+			if(itemObj.subscribeStartDateTime == '') {
+				alert("시작일자를 입력하십시오." );
+				$('[name="subscribeStartDateTime"]', $tr).focus();
+				return false;
+			}
+			if(itemObj.subscribeEndDateTime == '') {
+				alert("종료일자를 입력하십시오." );
+				$('[name="subscribeEndDateTime"]', $tr).focus();
+				return false;
+			}
+
+			var url = '';
+			if(itemObj.discountInsert == 'true'){
+				url = 'saveDiscount'
+				//alert("신규할인을 추가합니다."); 
+			}else{
+				url = 'saveDiscountUpdate'
+				//alert("기존 할인을 수정합니다.");
+			}
+
+			totalCnt = totalCnt + 1;
+			
+			$.ajax({
+		        url : '/product/'+url,
+		        data : itemObj,
+		        type : 'post',
+		        error : function(xhr, status, error) {
+					errorCnt = errorCnt + 1;
+					alert("error = " + error);
+		        },
+		        success : function(data) {
+		        	successCnt = successCnt + 1;
+					if (totalCnt == successCnt + errorCnt){
+			        	alert("처리가 완료되었습니다.");
+			        	//$(di).children().children().attr("readonly", true);
+				        //체크 후 체크 하면 비활성화 처리 오류        	
+			        	//$("input:checkbox[name=discountListBox]").attr("readonly", false);
+			        	$('#searchbutton').click();
+					}
+	        	}
+			});
+			
+		});
+    });
+});
+
+</script>
+<div class="row">
+		<div class="col-md-12">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+	    		<h2 class="panel-title">
+	     			<strong>할인 목록</strong>
+	    		</h2>
+	   		</div>
+	   		<div class="panel-body">
+	    		<div style="overflow:auto;" class="table-responsive">
+	     			<table class="table" id="discountmaintable">
+	      			<thead class="table-header-bg">
+	       				<tr>
+	           			<th style="width: 4%;"></th>
+	        				<!-- <th style="width: 8%;">할인ID</th> -->
+	        				<th>할인명</th>
+					        <th style="width: 12%;">할인유형</th>
+					        <th style="width: 12%;">할인율/금액</th>
+					        <th style="width: 10%;">상태</th>
+					        <th style="width: 10%;">시작일자</th>
+					        <th style="width: 10%;">종료일자</th>
+					        <th>할인설명</th>
+					        <!-- <th style="width: 65px;"></th> -->
+					        <th style="width: 65px;"></th>
+								</tr>
+							</thead>
+							<tbody id="discountlisttablebody" class="table-body-row">
+								<tr th:each="result : ${discountListResult}" th:id="${result.discountId}">
+								  <td><input type="checkbox" name="discountListBox" th:value="${result.discountId}"/>
+									  <input type="hidden" placeholder="할인ID" class="form-control" disabled="disabled" 
+										name="discountId" th:value="${result.discountId}"/>
+									</td>
+									<td style="vertical-align: middle">
+										<input type="text" placeholder="할인명" class="form-control" disabled="disabled" style="border:0px; background-color:transparent;"
+										name="discountName" th:value="${result.discountName}"/>
+									</td>
+									<td style="vertical-align: middle">
+										<input type="text" placeholder="할인유형" class="form-control" disabled="disabled" style="border:0px; background-color:transparent;"
+										name="discountType" th:value="${result.discountType}"/>
+									</td>
+									<td style="vertical-align: middle">
+										<input type="text" placeholder="할인율/금액" style="border:0px; background-color:transparent; text-align:right " class="form-control" disabled="disabled" 
+										name="discountValue" th:value="${result.discountValue}"/>
+									</td>
+									<td style="vertical-align: middle">
+										<input type="text" placeholder="상태" class="form-control" disabled="disabled" style="border:0px; background-color:transparent;"
+										name="discountState" th:value="${result.discountState}"/>
+									</td>
+									<td style="vertical-align: middle">
+										<input type="text" placeholder="적용시작일자 " class="form-control date" disabled="disabled" style="border:0px; background-color:transparent;"
+										name="subscribeStartDateTime" th:value="${result.subscribeStartDateTime}"/>
+									</td>
+									<td style="vertical-align: middle">
+										<input type="text" placeholder="적용종료일자" class="form-control date" disabled="disabled" style="border:0px; background-color:transparent;"
+										name="subscribeEndDateTime" th:value="${result.subscribeEndDateTime}"/>
+									</td>
+									<td style="vertical-align: middle">
+										<input type="text" placeholder="할인설명" class="form-control" disabled="disabled" style="border:0px; background-color:transparent;"
+										name="discountDescription" th:value="${result.discountDescription}"/>
+									</td>
+									<td></td>
+								</tr>
+							</tbody>
+	     			</table>
+	    		</div>
+				</div>
+	   		<div class="panel-footer" style="padding-bottom: 40px;">
+	   			<div>
+	   				<button class="btn btn-primary pull-right" style="margin: 3px;" id="discountsave">저장</button>
+	   			</div>
+	   			<div>
+	    			<button class="btn btn-primary pull-right" style="margin: 3px;" id="discountadd">추가</button>
+	    		</div>
+	   		</div>
+	  	</div>
+ 	</div>
+</div>

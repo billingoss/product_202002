@@ -1,0 +1,485 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+		$("#customersearchbar").load("searchbar");
+	});
+</script>
+<div class="row">
+	<div id="customersearchbar"></div>
+</div>
+<div class="row">
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h2 class="panel-title">
+					<strong>결제내역</strong>
+				</h2>
+			</div>
+			<div class="panel-body height-315px">
+				<div class="table-responsive">
+					<table class="table">
+						<thead class="table-header-bg">
+							<tr>
+								<th style="width: 2%;display:none;" ></th>
+								<th style="width: 7%;">결제방식</th>
+								<th style="width: 7%;">결제요청일</th>
+								<th style="width: 7%;">고객명</th>
+								<th style="width: 10%;">상품명</th>
+								<th style="width: 5%;">결제주기</th>
+								<th style="width: 8%; text-align:center;">금액</th>
+								<th style="width: 8%;text-align:center;">조정금액</th>
+								<th style="width: 8%;display:none;">상태</th>
+								<th style="width: 6%;display:none;">결제일</th>
+								<th style="width: 8%;text-align:center;">결제금액</th>
+								<th style="width: 8%;text-align:center;">남은금액</th>
+								<th style="width: 13%;display:none;">오류사유</th>
+								<th style="width: 1%;"></th>
+							</tr>
+						</thead>
+						<tbody id="InvoiceCustomermaintablebody" class="table-body-row">
+					
+							<tr th:each="icl: ${invoicelist}">
+								<td ><input class="tot_amount" type="checkbox" value="" /></td>								
+								<td th:text="${icl.paymenttype}"></td>
+								<td th:text="${icl.invoiceDate}"></td>
+								<td th:text="${icl.customerName}"></td>
+								<td th:text="${icl.productName}"></td>
+								<td th:text="${icl.invoicecycle}"></td>
+								<!-- ="${#numbers.formatDecimal(icl.totalInvoiceAmount, 0, 'COMMA', 2, 'POINT')}" -->
+								<td th:text="${#numbers.formatDecimal(icl.totalInvoiceAmount, 0, 'COMMA', 0, 'POINT')}"></td>
+								<td th:text="${#numbers.formatDecimal(icl.adjustamount, 0, 'COMMA', 0, 'POINT')}"></td>
+								<td th:text="${icl.paymentstatecodename}"></td>
+								<td th:text="${icl.paymentdate}"></td>
+								<!-- ${#numbers.formatInteger(icl.paymentAmount, 3, 'COMMA')} -->
+								<td th:text="${#strings.length(icl.paymentAmount)} > 3 ? ${#numbers.formatDecimal(icl.paymentAmount, 0, 'COMMA', 0, 'POINT')} : ${icl.paymentAmount}"></td>
+								<!--  <td th:text="${#strings.length(icl.totalInvoiceAmount)}" > </td>-->
+								<td class="b1collectionBalanceAmount" th:text="${#numbers.formatDecimal(icl.collectionBalanceAmount, 0, 'COMMA', 0, 'POINT')}"></td>
+								<td th:text="${icl.errorReason}"></td>
+								<td>
+									<a href="/billing/invoiceDetail" data-toggle="modal" data-target="#invoiceDetailDialog"><button class="btn btn-small btn-danger">상세</button></a> 
+									<a href="/adjustPopup" data-toggle="modal" data-target="#mainadjustDialog"><button class="btn btn-small btn-info">조정</button></a></td>
+							</tr>
+						</tbody>
+						<tfoot>
+							<tr>
+								<td colspan="5" style="text-align: center"><strong>합계</strong></td>
+								<td style="text-align: right" id="p2invtotalsum" class="no-line"></td>
+								<td style="text-align: right" id="p2adjtotalsum" class="no-line"></td>
+								<td style="text-align: right" id="p2paytotalsum"></td>
+								<td style="text-align: right" id="p2coltotalsum"></td>
+								<td></td>
+							</tr>
+						</tfoot>
+					</table>
+				</div>
+			</div>
+			<div align="center">
+				<!-- class="col-md-12" -->
+				<ul id="paginationcustomer" class="pagination">
+					<!-- 페이징처리 자리 -->
+				</ul>
+				<!-- 페이지네이션 -->
+			</div>
+			<div class="panel-footer" style="padding-bottom: 40px;">
+				<button class="btn btn-primary pull-right" style="margin: 3px;" id="customerrefund" disabled="disabled">환불</button>
+				<button class="btn btn-primary pull-right" style="margin: 3px;" id="customerpayment" disabled="disabled">결제</button>
+			</div>
+		</div>
+	</div>
+	<div class="modal" id="customerinvoiceDetailDialog" role="dialog">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content"></div>
+		</div>
+	</div>
+	<div class="modal" id="customeradjustDialog" role="dialog">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content"></div>
+		</div>
+	</div>
+	<div class="modal" id="customerpaymentDialog" role="dialog">
+		<div class="modal-dialog modal-lg modal-dialog-center">
+			<div class="modal-content"></div>
+		</div>
+	</div>
+	<div class="modal" id="customerrefundDialog" role="dialog">
+		<div class="modal-dialog modal-lg modal-dialog-center">
+			<div class="modal-content"></div>
+		</div>
+	</div>
+</div>
+<input type="hidden" id="ginvoicenumber" />
+<input type="hidden" id="ginvoicedate" />
+<input type="hidden" id="gconnum" />
+<div class="row">
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h2 class="panel-title">
+					<strong>결제상세내역 </strong>
+				</h2>
+			</div>
+			<div class="panel-body height-250px">
+				<div class="table-responsive">
+					<table class="table" id="PaymentCustomermaintable">
+						<thead class="table-header-bg">
+							<tr>
+								<th style="width: 20%;">처리일시</th>
+								<th style="width: 8%;">구분</th>
+								<th style="width: 10%;">결제방법</th>
+								<th style="width: 10%;text-align:center;">금액</th>
+								<th style="text-align:center;">비고</th>
+							</tr>
+						</thead>
+						<tbody id="PaymentCustomermaintablebody" class="table-body-row">
+
+						</tbody>
+					</table>
+				</div>
+			</div>
+			<div align="center">
+						<!-- class="col-md-12" -->
+				<ul id="paginationpayment" class="pagination">
+							<!-- 페이징처리 자리 -->
+				</ul>
+						<!-- 페이지네이션 -->
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+	$(document).ready(function() {
+		$(CustomerTableSum);
+		$('#InvoiceCustomermaintablebody').on('change','input[type=checkbox]',function() {
+			$('#InvoiceCustomermaintablebody input[type=checkbox]').not(this).prop('checked',false);			
+			var colvalue = $('td',$(this).parent().parent()).eq(10).text().replace(',','');
+			debugger;
+			//alert(colvalue);
+			if (colvalue == 0) {
+				$('#customerpayment').prop("disabled", true);
+				$('#customerrefund').prop("disabled", false);
+			} else {
+				$('#customerpayment').prop("disabled", false);
+				$('#customerrefund').prop("disabled", true);
+			}
+		});
+
+ 		$('#customerpayment').click(function() {
+			var connumber = '';
+			var providernumber = '';
+			var invoicenumber = '';
+			var channelgubun ='C';			
+			
+			//alert
+			$('#InvoiceCustomermaintablebody tr').each(function() {
+				if ($(this).find("input[type=checkbox]").is(":checked")) {
+					connumber = $('td',this).eq(15).text();
+					providernumber = $('td',this).eq(16).text();
+					invoicenumber = $('td',this).eq(0).text();
+				}
+			});
+			
+			if (invoicenumber == '') {
+				Common.Dialog.alert({
+			   		  title:'결제'
+			           , content: '결제내역을 선택해 주세요.'
+			       });				
+				return;
+			} 	
+			
+ 			iniPayment(connumber,providernumber, invoicenumber, channelgubun);
+ 		});
+ 		
+/* 		$('#customerpayment').click(function() {
+			var coltotal = 0;
+			var customername = '';
+			var packagename = '';
+			var invoicenumber = '';
+			var connumber = '';
+			var invoicedate = '';
+			var paymenttype = '일괄결제';
+			
+			//alert
+			$('#InvoiceCustomermaintablebody tr').each(function() {
+				if ($(this).find("input[type=checkbox]").is(":checked")) {
+					var colvalue = parseInt($('td',this).eq(12).text().replace(/,/g,''));
+					invoicenumber = $('td',this).eq(0).text();
+					paymenttype = $('td',this).eq(2).text();
+					invoicedate = $('td',this).eq(3).text();
+					customername = $('td',this).eq(4).text();
+					packagename = $('td',this).eq(5).text();
+					connumber = $('td',this).eq(15).text();
+					coltotal += colvalue;
+				}
+			});
+			if (invoicenumber == '') {
+				Common.Dialog.alert({
+			   		  title:'결제'
+			           , content: '결제내역을 선택해 주세요.'
+			       });				
+				return;
+			} 
+			
+			var today = new Date();
+			$.ajax({
+						url : '/billing/paymentDialog',
+						error : function(xhr,status, error) {
+							alert(error);
+						},
+						success : function(data) {
+							$('#customerpaymentDialog .modal-content').html(data);
+							$("#customerpaymentDialog").modal('show');
+							$("#paymentDate").text(yyyymmdd(today));
+							$("#paymentTotalAmt").text(numberComma(coltotal));
+							$("#paymentCustomername").val(customername);
+							$("#paymentPackagename").val(packagename);
+							$(".pamentinvoicenumber").val(invoicenumber);
+							$(".pamentconnumber").val(connumber);
+							$(".paymentpaymentamt").val(coltotal);
+							$(".pamentinvoicedate").val(invoicedate);
+							$(".channelgubun").val('C');
+						}
+					});
+		});
+ */
+		$('#customerrefund').click(function() {
+			var paytotal = 0;
+			var customername = '';
+			var packagename = '';
+			var invoicenumber = '';
+			var connumber = '';
+			var invoicedate = '';
+			var providernumber = '';
+			var tid = "";
+			var paymenttype = '일괄결제';
+			
+			//alert
+			$('#InvoiceCustomermaintablebody tr').each(function() {
+				if ($(this).find("input[type=checkbox]").is(":checked")) {
+					var payvalue = parseInt($('td',this).eq(11).text().replace(/,/g,''));
+					invoicenumber = $('td',this).eq(0).text();
+					paymenttype = $('td',this).eq(2).text();
+					invoicedate = $('td',this).eq(3).text();
+					customername = $('td',this).eq(4).text();
+					packagename = $('td',this).eq(5).text();
+					connumber = $('td',this).eq(15).text();
+					providernumber = $('td',this).eq(16).text();
+					tid = $('td',this).eq(17).text();
+					paytotal += payvalue;
+				}
+			});		
+			//alert(tid)
+			if (invoicenumber == '') {
+				Common.Dialog.alert({
+			   		  title:'환불'
+			           , content: '결제내역을 선택해 주세요.'
+			       });				
+				return;
+			} 
+			var today = new Date();
+			console.log(yyyymmdd(today));
+			$.ajax({
+				url : '/billing/refundDialog',
+				error : function(xhr,status, error) {
+					alert(error);
+				},
+				success : function(data) {
+					var date = new Date();
+					$('#customerrefundDialog .modal-content').html(data);
+					$("#customerrefundDialog").modal('show');
+					$("#refundCustomername").val(customername);
+					$("#refundPackagename").val(packagename);
+					$("#refundinvoicenumber").val(invoicenumber);
+					$("#refundinvoicedate").val(invoicedate);
+					$("#refundconnumber").val(connumber);
+					$("#tid").val(tid);
+					
+					$("#refundDate").text(yyyymmdd(today));
+					$("#refundTotalAmt").text(numberComma(-1* paytotal));
+					//$(".refundpaymentamt").val(-1* paytotal);
+					
+				}
+			});
+		});
+		
+		$(document).on("click","#InvoiceCustomermaintablebody tr", function() {
+			//some think
+			debugger;
+			$('#InvoiceCustomermaintablebody input[type=checkbox]').not(this).prop('checked',false);
+			//$('#InvoiceCustomermaintablebody tr input[type=checkbox]').prop('checked',true);
+			$('input[type=checkbox]', this).prop('checked',true);
+			var colvalue = $('td',$(this)).eq(12).text().replace(',','');
+			//alert(colvalue);
+			if (colvalue == 0) {
+				$('#customerpayment').prop("disabled", true);
+				$('#customerrefund').prop("disabled", false);
+			} else {
+				$('#customerpayment').prop("disabled", false);
+				$('#customerrefund').prop("disabled", true);
+			}
+			$('#InvoiceCustomermaintablebody tr').not(this).removeClass('selectedbgcolor');
+			$(this).addClass('selectedbgcolor');
+			var invoicenumber = $('td', this).eq(0).text();
+			var invoicedt = $('td', this).eq(3).text();
+			var connumber = $('td', this).eq(15).text();
+			$("#paginationpayment").empty();
+			$('#ginvoicenumber').val(invoicenumber);
+			$('#ginvoicedate').val(invoicedt);
+			$('#gconnum').val(connumber);
+			//getpaymentdetail
+			getCustomerPaymentData(1,invoicenumber, invoicedt,connumber);
+		});
+		
+		function getCustomerPaymentData(page, invoicenumber,invoicedt, connumber) {
+			debugger;
+			var param = new Object();
+			param.page = page;
+			param.perPageNum = 5; /*만약값을셋팅하지 않으면 기본 페이지당 row수 10*/
+			param.InvoiceNumber = $('#ginvoicenumber').val();
+			param.InvoiceDate = $('#ginvoicedate').val();
+			param.conNumber = $('#gconnum').val();
+
+			$.ajax({
+				method : 'get',
+				url : '/billing/getpaymentdetail',
+				data : param,
+				dataType : 'json',
+				error : function(xhr, status, error) {
+					alert(error);
+				},
+				success : function(json) {
+					//alert(json.length);
+					handleCustomerPaymentData(json);
+				}
+			});
+		}
+		
+		function handleCustomerPaymentData(data) {		
+			json = data.lists; //hashmap의 list array데이타
+			pageMaker = data.pageMaker; //pageMaker 
+			$('#PaymentCustomermaintablebody').empty();
+			if (json.length == 0) {
+				return;
+			}
+			
+			var trHTML = '';
+			$.each(json, function(i, item) {
+				if (item.paymentdatetime == null)
+					return null;
+		        debugger;
+				trHTML += '<tr>' + '<td>'
+						+ item.paymentdatetime + '</td>'
+						+ '<td>' + item.paymenttypecodename + '</td>' 
+						+ '<td>' + item.paymentmethodcodename + '</td>'
+						+ '<td style="text-align: right">' + numberComma(item.paymentamount) + '</td>' 
+						//+ '<td>' + item.employeename+ '</td>' 
+						//+ '<td>' + item.reason + '</td>' 
+						+ '<td style="text-align:center;">' + item.reason + ' ' +  item.etc + '</td>'
+						+ '</tr>';
+			});
+			$('#PaymentCustomermaintablebody').append(trHTML);
+			pagingCustomerPaymentProc(pageMaker);
+		}
+		
+		function pagingCustomerPaymentProc(pageMaker) {
+			//=============pagination 시작=====================
+			$("#paginationpayment").empty();
+			if (pageMaker.totalCount != 0) {
+				$("#paginationpayment").empty();
+				if (pageMaker.prev == true) {		
+					/*<![CDATA[*///타임리프에서 부등호상용시 조심해야함 반드시 CDATA로 감싸야함
+					$("#paginationpayment").append('<li class="goBackPage"><a><<</a></li>'); //다음페이지로 가기 버튼 활성화
+					/*]]>*/
+				}
+				//아래는 타임리프사용시 조시매야한다. for하기와 같이 쓰지않음 에러발생함
+				/*<![CDATA[*/
+				for (var i = pageMaker.startPage; i <= pageMaker.endPage; i++) {
+					/*]]>*/
+					//alert(i);
+					if (pageMaker.cri.page == i) {
+						$("#paginationpayment").append('<li class="disabled active" style="color: red;"><a>' + i + "</a></li>"); //버튼 비활성화
+					} else {
+						$("#paginationpayment").append('<li class="goPage" data-page="' + i + '"><a>' + i + "</a></li>"); //버튼 활성화
+					}
+				}
+				if (pageMaker.next == true) {
+					$("#paginationpayment").append('<li class="goNextPage"><a>>></a></li>'); //다음페이지로 가기 버튼 활성화
+				}
+			}
+			//=============pagination 끝=====================
+		}
+
+		//===================페이지이벤트처리시작==========================
+		/* $(".goBackPage").click(function() { */
+		$(document).on("click","#paginationpayment .goBackPage", function() {
+			debugger;
+			page = Number(pageMaker.startPage) - 1;
+			//pageFlag = 1;
+			//$("상단 ajax를 함수로 만들어 재귀호출");
+			getCustomerPaymentData(page);
+			//pageFlag = 0;
+		});
+
+		$(document).on("click", "#paginationpayment .goPage", function() {
+			debugger;
+			page = $(this).attr("data-page");
+			//alert(page);
+			//pageFlag = 1;
+			getCustomerPaymentData(page);
+			//pageFlag = 0;
+		});
+		
+		$(document).on("click","#paginationpayment .goNextPage", function() {
+			debugger;
+			page = Number(pageMaker.endPage) + 1;
+			//$("상단 ajax를 함수로 만들어 재귀호출");
+			getCustomerPaymentData(page);
+			//pageFlag = 0;
+		});
+	});
+						
+	function CustomerdetailDialogTableSum() {
+		var coltotal = 0;
+		var paytotal = 0;
+		var invtotal = 0;
+		var adjtotal = 0;
+		$('#detailDialogTable tbody tr').each(
+				function() {
+					var colvalue = parseInt($('td', this).eq(6).text().replace(',', ''));
+					var payvalue = parseInt($('td', this).eq(5).text().replace(',', ''));
+					var adjvalue = parseInt($('td', this).eq(4).text().replace(',', ''));
+					var invvalue = parseInt($('td', this).eq(3).text().replace(',', ''));
+					coltotal += colvalue;
+					paytotal += payvalue;
+					invtotal += invvalue;
+					adjtotal += adjvalue;
+				});
+		$('#detailDialogTableadjtotalsum').text(numberComma(adjtotal));
+		$('#detailDialogTablecoltotalsum').text(numberComma(coltotal));
+		$('#detailDialogTablepaytotalsum').text(numberComma(paytotal));
+		$('#detailDialogTableinvtotalsum').text(numberComma(invtotal));
+		$('#detailDialogTabletax').text(numberComma(Math.round(coltotal * 0.1)));
+		$('#detailDialogTablecoltaxtotalsum').text(numberComma(Math.round(coltotal * 0.1) + coltotal));
+	}
+	
+	function CustomerTableSum() {
+		var coltotal = 0;
+		var paytotal = 0;
+		var invtotal = 0;
+		var adjtotal = 0;
+		$('#InvoiceCustomermaintablebody tr').each(
+				function() {
+					var colvalue = parseInt($('td', this).eq(12).text().replace(/,/g, ''));
+					var payvalue = parseInt($('td', this).eq(11).text().replace(/,/g, ''));
+					var invvalue = parseInt($('td', this).eq(7).text().replace(/,/g, ''));
+					var adjvalue = parseInt($('td', this).eq(8).text().replace(/,/g, ''));
+					coltotal += colvalue;
+					paytotal += payvalue;
+					invtotal += invvalue;
+					adjtotal += adjvalue;
+				});
+		$('#p2coltotalsum').text(numberComma(coltotal));
+		$('#p2paytotalsum').text(numberComma(paytotal));
+		$('#p2invtotalsum').text(numberComma(invtotal));
+		$('#p2adjtotalsum').text(numberComma(adjtotal));
+	}
+	
+</script>

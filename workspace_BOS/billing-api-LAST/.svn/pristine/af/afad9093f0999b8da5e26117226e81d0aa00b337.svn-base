@@ -1,0 +1,60 @@
+<style>
+table td {
+	vertical-align: middle;
+}
+</style>
+<script type="text/javascript">
+	$(document).ready(function() {		
+				
+//		$("#businessManager").load("/bizRest/addBusinessMain");	
+			$("#myInfo").load("/bizRest/viewEmployeeDetail/"+$('#loginid').val());
+		
+		$('#tabMyInfo').click(function() {			
+			$("#businessManager").empty();
+			$("#employeeManager").empty();
+			$("#myInfo").load("/bizRest/viewEmployeeDetail/"+$('#loginid').val());
+		});	
+		
+		$('#tabBusinessManager').click(function() {
+			$("#myInfo").empty();
+			$("#employeeManager").empty();
+			$("#businessManager").load("/bizRest/addBusinessMain");
+		});	
+		
+		$('#tabEmployeeManager').click(function() {			
+			$("#myInfo").empty();
+			$("#businessManager").empty();
+			$("#employeeManager").load("/bizRest/viewEmployeeManager");
+		});	
+		
+	//	$("#customersearch").load("/contract/customersearch");
+	});
+	
+	function emptyElement(elementid){
+		$('.modal-content').empty();
+	}	
+</script>
+<section class="page container">
+	<!-- tab line start -->
+	<input type="hidden" id="loginid"  name="loginid" class="form-control" th:value="${session.loginid}" />
+		<div class="span16" id="contractmaintab">
+			<ul class="nav nav-tabs font-size18px">
+		  		<li class="active" id="tabMyInfo">
+					<a data-toggle="tab" href="#myInfo" onclick="emptyElement('myInfo')">내 정보 관리</a>
+				</li>			  
+				<li th:if="${session.manageryn} == 'Y'" id="tabBusinessManager">
+			  		<a data-toggle="tab" href="#businessManager" onclick="emptyElement('businessManager')">회원사관리</a>			  		
+		  		</li>		  		
+		  		<li th:if="${session.adminyn} == 'Y'" id="tabEmployeeManager">
+					<a data-toggle="tab" href="#employeeManager" onclick="emptyElement('employeeManager')">사원관리</a>
+				</li>			  
+			</ul>
+		
+			<div class="span16 tab-content">
+				<div id="myInfo" class="tab-pane fade in active"/>
+				<div id="businessManager" class="tab-pane fade"/>
+				<div id="employeeManager" class="tab-pane fade"/>
+			</div>	
+		  </div>	
+	  <!-- tab line start -->
+</section>

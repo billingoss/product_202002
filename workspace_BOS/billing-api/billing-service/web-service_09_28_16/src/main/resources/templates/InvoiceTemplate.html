@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<link
+	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+	media="screen" rel="stylesheet" />
+<style>
+</style>
+</head>
+<body>
+	<div class="container">
+		<!--청구서 header 시작-->
+		<div class="row">
+			<div class="col-xs-12">
+				<div class="invoice-title">
+					<h2 style="line-height: 2.0em;">
+						<strong>청구서</strong>
+					</h2>
+					<h3 class="pull-right" style="font-size: 20px;">청구번호 <span th:text="${invoicenumber}"></span></h3>
+				</div>
+			</div>
+		</div>
+		<!--청구서 header 끝 div-->
+		<!--청구서 header 끝 -->
+		<!-- 청구서 body 시작-->
+		<div class="row">
+			<div class="col-xs-12">
+				<div class="col-xs-6" style="padding: 0px;">
+					<div class="col-xs-12" style="padding: 0px;">
+						<div class="col-xs-6 col-sm-3" style="padding: 0px;">
+							<strong>기본정보 </strong>
+						</div>
+					</div>
+					<div class="col-xs-12" style="padding: 0px;">
+						<div class="col-xs-6 col-sm-3" style="padding: 0px;">
+							<strong>고&nbsp;객&nbsp;명&nbsp; </strong>
+						</div>
+						<div class="col-xs-6 col-sm-3" style="padding: 0px;"
+							th:text="${invoicecustomerinfo.customerName}"></div>
+					</div>
+					<div class="col-xs-12" style="padding: 0px;">
+						<div class="col-xs-6 col-sm-3" style="padding: 0px;">
+							<strong>전화번호 </strong>
+						</div>
+						<div class="col-xs-6 col-sm-3" style="padding: 0px;"
+							th:text="${invoicecustomerinfo.phoneNumber}"></div>
+					</div>
+					<div class="col-xs-12" style="padding: 0px;">
+						<div class="col-xs-8 col-sm-3" style="padding: 0px;">
+							<strong>상품명 </strong>
+						</div>
+						<div class="col-xs-8 col-sm-3" style="padding: 0px;"
+							th:text="${invoicecustomerinfo.productName}"></div>
+					</div>
+					<div class="col-xs-12" style="padding: 0px;">
+						<div class="col-xs-8 col-sm-4"
+							style="padding: 0px; margin-top: 20px;">
+							<strong>상품설명 </strong> <br></br>
+						</div>
+						<div class="col-xs-8 col-sm-12" style="padding: 0px;"
+							th:text="${invoicecustomerinfo.productDescription}">
+							<br></br> <br></br>
+						</div>
+					</div>
+				</div>
+				<div class="col-xs-6" style="padding: 0px;">
+					<div class="col-xs-10"
+						style="float: right; text-align: right; padding: 0px;">
+						<h4 style="font-size: 23px; line-height: 1.7em">
+							납부하실 금액은 <br></br> <span th:text="${#strings.length(colsum)} > 3 ? ${#numbers.formatDecimal(colsum, 0, 'COMMA', 0, 'POINT')} : ${colsum}"> </span> 원 입니다.
+						</h4>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- 기본정보~ row div -->
+
+		<!-- 요금 상세 정보 시작 -->
+		<div class="row">
+			<div class="col-xs-12">
+				<div class="panel panel-default">
+					<div class="panel-heading" style="padding: 3px 5px 3px 14px;">
+						<h4 style="font-size: 17px;">
+							<strong>상세 청구 내역</strong>
+						</h4>
+					</div>
+					<div class="panel-body col-xs-12">
+						<div class="col-xs-6" style="padding: 0px 0px 20px 0px;">
+							<h5 style="font-size: 12px;">
+								<strong>청구일자</strong>
+							</h5>
+							<h5 style="font-size: 12px;" id="invoicedate">
+								<span th:text="${invoicecustomerinfo.invoicedate}"></span>
+							</h5>
+						</div>
+					</div>
+					<div class="panel-body">
+						<div>
+							<table class="table" id="detailDialogTable">
+								<thead>
+									<tr>
+										<th>구분</th>
+										<th>항목</th>
+										<th>청구금액</th>
+										<th>조정금액</th>
+										<th>수납금액</th>
+										<th>미납금액</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:each="idl: ${invoicedetaillist}">
+										<td th:text="${idl.invoiceClassificationCode}"></td>
+										<td th:text="${idl.revenueItemCode}"></td>
+										<td
+											th:text="${#strings.length(idl.invoiceItemAmount)} > 3 ? ${#numbers.formatDecimal(idl.invoiceItemAmount, 0, 'COMMA', 0, 'POINT')} : ${idl.invoiceItemAmount}"></td>
+										<td
+											th:text="${#strings.length(idl.adjustamt)} > 3 ? ${#numbers.formatDecimal(idl.adjustamt, 0, 'COMMA', 0, 'POINT')} : ${idl.adjustamt}"></td>
+										<td
+											th:text="${#strings.length(idl.paymentAmount)} > 3 ? ${#numbers.formatDecimal(idl.paymentAmount, 0, 'COMMA', 0, 'POINT')} : ${idl.paymentAmount}"></td>
+										<td
+											th:text="${#strings.length(idl.collectionBalanceAmount)} > 3 ? ${#numbers.formatDecimal(idl.collectionBalanceAmount, 0, 'COMMA', 0, 'POINT')} : ${idl.collectionBalanceAmount}"></td>
+									</tr>
+								</tbody>
+								<tfoot>
+									<tr>
+										<th colspan="5"><span class="pull-right">Total</span></th>
+										<th id="detailDialogTablecoltaxtotalsum"> <span th:text="${#strings.length(colsum)} > 3 ? ${#numbers.formatDecimal(colsum, 0, 'COMMA', 0, 'POINT')} : ${colsum}"> </span></th>
+									</tr>
+								</tfoot>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- 요금 상세 정보끝 -->
+		<!-- 세금계산서 정보시작 -->
+		<div class="row">
+			<div class="col-xs-12">
+				<div class="panel panel-default">
+					<div class="panel-heading" style="padding: 3px 5px 3px 14px;">
+						<h4 style="font-size: 17px;">
+							<strong>세금계산서</strong>
+						</h4>
+					</div>
+					<div class="panel-body">
+						<table class="table table-condense">
+							<thead>
+								<tr>
+									<th>공급가</th>
+									<th>부가세</th>
+									<th>공급자명</th>
+									<th>공급사업자번호</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+								<!-- "${#strings.length(itii.vatAmount)} > 3 ? ${#numbers.formatDecimal(itii.vatAmount, 0, 'COMMA', 0, 'POINT')} : ${itii.vatAmount}" -->
+									<th th:text="${#strings.length(itii.invoiceItemAmount)} > 3 ? ${#numbers.formatDecimal(itii.invoiceItemAmount, 0, 'COMMA', 0, 'POINT')} : ${itii.invoiceItemAmount}"></th>
+									<th th:text="${#strings.length(itii.vatAmount)} > 3 ? ${#numbers.formatDecimal(itii.vatAmount, 0, 'COMMA', 0, 'POINT')} : ${itii.vatAmount}"></th>
+									<th>베베티움</th>
+									<th>1234567890</th>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- 세금계산서 정보끝 -->
+	</div>
+</body>
+</html>

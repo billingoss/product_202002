@@ -1,0 +1,119 @@
+<div id="popContractSearchDiv" class="trp popupfixed-wrap" th:fragment="contractSearchPopup">
+<script type="text/javascript">
+/*<![CDATA[*/
+function getDataContractSearch(page) {
+
+	if ($('#popContractCustomerNumber').val() == ''){
+		showAlert('조회할 고객번호가 없습니다. 다시 조회하십시오.');
+		return;
+	}
+
+	var queryString = $("form[name=popContractSearchForm]").serialize();
+	queryString = queryString + '&page='+page+'&perPageNum=10&pagingYn=Y';
+	queryString = queryString.replace(/-/g, '');
+	
+	$.ajax({
+		method : 'get',
+		url : '/contractlist/getcontractsearch',
+		data : queryString, 
+		dataType : 'json',
+		success : handleDataContractSearch
+	});
+}
+
+function handleDataContractSearch(data) {
+	debugger;
+	
+	//PageMaker정보를 Json으로부터 분리한다.
+	json = data.lists; //hashmap의 list array데이타
+	pageMaker = data.pageMaker; //pageMaker 
+
+	$('#popContractSearchTbody').empty();
+	var trHTML = '';
+
+	if (json.length == 0) {
+		trHTML = '<tr class="no_empty"><td colspan=4><div class="data-empty"><img src="/resources/images/common/img_no_empty.png" alt="데이터 없음" /><span class="txt_empty">검색 결과가 없습니다.</span></div></td></tr>';
+	} else {
+		$.each(json, function(i, item) {
+			trHTML += '<tr>'
+			       +  '<td><a href="#none">' + item.conNumber + '<input type="hidden" name="contractInfo" value="' + item.conNumber + '|' + item.productName + '|' + item.registrationDateTime + '"/></a></td>'
+			       +  '<td><a href="#none">' + formatDate(item.registrationDateTime) + '</a></td>'
+			       +  '<td class="tal ellipsis" title="' + item.productName + '"><a href="#none">' + item.productName + '</a></td>'
+			       +  '<td><a href="#none">' + item.contractStateName + '</a></td>'
+			       +  '</tr>';
+		});
+	}
+
+	$('#popContractSearchTbody').append(trHTML);
+	pagingProcPopup(pageMaker, "paginationContractSearch", "getDataContractSearch");
+}
+
+function resetContractSearch(){
+	$('#popContractCustomerNumber').val('');
+	$('#popContractChoiceConNumber').val('');
+	$('#popContractChoiceProductName').val('');
+	$('#popContractChoiceRegistrationDateTime').val('');
+	$('#popContractSearchTbody').empty();
+}
+
+$(document).ready(function(){
+
+	$('#popContractSearchTbody').on('click', 'tr', function(){
+		if ($(this).find('input[name=contractInfo]').val()) {
+			var conNumber = $(this).find('input[name=contractInfo]').val().split('|');
+			$('#popContractChoiceConNumber').val(conNumber[0]);
+			$('#popContractChoiceProductName').val(conNumber[1]);
+			$('#popContractChoiceRegistrationDateTime').val(conNumber[2]);
+			$('#popContractSearchDiv .btn_close').click();
+		}
+	});
+});
+/*]]>*/
+</script>
+<form name="popContractSearchForm" onsubmit="return false;">
+<input type="hidden" id="popContractCustomerNumber" name="customerNumber"/>
+<input type="hidden" id="popContractChoiceConNumber" name="popContractChoiceConNumber"/>
+<input type="hidden" id="popContractChoiceProductName" name="popContractChoiceProductName"/>
+<input type="hidden" id="popContractChoiceRegistrationDateTime" name="popContractChoiceRegistrationDateTime"/>
+<div class="popup-dim"></div>
+<div class="popup-align">	
+	<div class="popup-vertical">
+		<div class="popup-layer option wl">
+			<a class="btn_close" href="#">X</a>
+			<div class="pop_tit">주문번호검색</div>
+			<!-- 알림 mode0 -->
+			<section class="section">
+				<div class="table-wrap">
+					<div class="alert_txt mb20">
+						상담을 진행할 주문번호를 선택해 주세요.
+					</div>
+
+					<table class="table_list">
+						<colgroup>
+							<col style="width:15%"/>
+							<col style="width:15%"/>
+							<col style="width:auto"/>
+							<col style="width:14%"/>
+						</colgroup>
+						<thead>
+							<tr>
+								<th>주문번호</th>
+								<th>주문일</th>
+								<th>상품명</th>
+								<th>주문상태</th>
+							</tr>
+						</thead>
+						<tbody id="popContractSearchTbody">
+						</tbody>
+					</table>
+                    <div class="paging-area">
+	                    <div class="paging" id="paginationContractSearch">
+	                    </div>
+                    </div>
+				</div>
+			</section>
+		</div>
+	</div>
+</div>
+</form>
+</div>

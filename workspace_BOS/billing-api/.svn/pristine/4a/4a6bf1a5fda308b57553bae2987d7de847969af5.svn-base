@@ -1,0 +1,153 @@
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.8/css/all.css" />
+<div class="modal-header modal-popup-header">
+	<h5 class="modal-title">
+	   &nbsp;
+		<button type="button" class="close" data-dismiss="modal">&times;</button>
+	</h5>
+</div>
+
+<div class="modal-body" style="padding-bottom: 0px; padding-top: 0px;">
+
+	<div class="row" style="margin-top: 15px;">
+		<div class="col-md-6 col" style="padding-left: 20px;">
+			<form role="form" name ="refundForm">
+					<div class="panel-heading" style = "border-bottom: 1px solid">
+						<h4 class="panel-title">
+							<strong>환불 기본정보</strong>
+						</h4>
+					</div>
+					<div class="panel-body">
+						<div class="form-horizontal" role="form">
+							<div class="form-group">
+								<div class="col-md-4">
+									<label for="inputType" class="control-label">고객명</label>
+								</div>
+								<div class="col-md-8">
+									<input type="text" id="refundCustomername" class="form-control" readonly="true" />
+								</div>
+							</div>
+							<div class="form-group">
+								<div class="col-md-4">
+									<label for="inputType" class="control-label">상품명</label>
+								</div>
+								<div class="col-md-8">
+									<input type="text" id="refundPackagename" class="form-control" readonly="true" />
+								</div>
+							</div>
+						</div>
+					</div>
+								
+				<div class="tab-pane fade in active" id="nav-tab-refundcard">
+					<div class="col-md-12" >
+					  <div class="panel-body" style="padding-top: 0px;">
+						
+						    <input type="hidden" class="form-control" id="refundinvoicenumber" name="invoicenumber" />
+							<input type="hidden" class="form-control" id="refundinvoicedate" name="invoicedate" />		
+							<input type="hidden" class="form-control" id="refundconnumber" name="connumber" />
+							<!-- <input type="hidden" class="form-control refundpaymentamt" id="refundpaymentamt" name="paymentamt" />	
+							<input type="hidden" class="form-control cardapprovenumber" id="refundpaymentamt" name="cardapprovenumber" value="1234" />	
+							<input type="hidden" class="form-control cardcorporationcode" id="refundpaymentamt" name="cardcorporationcode" value="06"/>
+							<input type="hidden" class="form-control refundtypecode" name="paymenttypecode" value="CARD"/> -->
+							<input type="hidden" class="form-control" id="tid" name="tid" value=""/>
+						<br></br>
+					  </div>
+					</div>
+				</div>
+			
+				<div class="panel-heading" style = "border-bottom: 1px solid">
+					<h4 class="panel-title">
+						<strong>금액 정보</strong>
+					</h4>
+				</div>
+				<div class="panel-body">
+					<table class="table table-bordered">
+						<tbody>
+							<tr>
+								<td>환불일자</td>
+								<td id="refundDate"></td>
+							</tr>
+							<tr>
+								<td>금액</td>
+								<td id="refundTotalAmt">0</td>
+							</tr>
+							<tr>
+							   <td>메모</td>
+							   <td><div class="col-md-12">
+									<textarea id="cancelMsg" name="cancelMsg" class="form-control" style="height: 120px;"></textarea>
+					               </div>
+					           </td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</form>	
+			<!-- tab-content .// -->
+			<div class="panel">
+				<button id="refundBtn" class="btn btn-success btn-lg btn-block" >환불</button>
+			</div>
+		</div>
+		<!-- col-bamt text -->
+	</div>
+</div>
+<script type="text/javascript">
+$(document).ready(function() {
+
+	$("#refundBtn").click(function(){
+		
+		if ($('#cancelMsg').val() == '') {
+			Common.Dialog.alert({
+	    		  title:'환불'
+	            , content: '환불 사유를 입력 하세요.'
+				, focusObj : $('#cancelMsg')
+	        });
+			return;
+		} 
+		
+		
+		var queryString = $("form[name=refundForm]").serialize() ;
+		/*<![CDATA[*/
+		// queryString = queryString.replace(/,/g, '') + "&cancelMsg=" + $('#refundmsg').val();
+		 /*]]>*/
+		 
+		$.ajax({
+			   method : 'post',
+               url : '/payment/payCancleProc',
+               data : queryString,
+               dataType : 'json',
+               error: function(xhr, status, error){
+            	 Common.Dialog.alert({
+		    		  title:'ERROR'
+		            , content: error
+		        });
+               },
+               success : function(json){
+            	 //iniPayResult.put("resultCode", resultCode);
+       			//iniPayResult.put("resultMsg", resultMsg);
+       			if (json.resultCode == "00"){
+               	 var promise = Promise.resolve(true);              	 
+              	 promise = new Promise(function (resolve, reject) {              		
+        			 Common.Dialog.alert({
+  			    		  title:'환불'
+  			            , content: '정상처리 되었습니다.'
+  			         });
+              		$('#customerrefund').prop("disabled", true);
+              		 return resolve();
+              	 });
+              	 promise = promise.then(function(res) {
+              		 
+              		 $("#customerrefundDialog").modal('hide'); 
+              		 $('#searchbt').click();
+              		 //refreshPaymentHistory($("form[name=card-refund-form] .refundinvoicenumber").val(),$("form[name=card-refund-form] .refundinvoicedate").val(),$("form[name=card-refund-form] .refundconnumber").val());
+              	 });       				
+       			}else {
+       			 Common.Dialog.alert({
+			    		  title:'환불'
+			            , content: json.resultMsg
+			         });
+       			}
+
+               }
+		});		 
+	})
+})
+</script>

@@ -1,0 +1,92 @@
+<div id="popupDeliveryDateChangeDiv" class="trp popupfixed-wrap" th:fragment="deliveryDateChangePop">
+<script type="text/javascript">
+/*<![CDATA[*/
+$(document).ready(function(){
+
+	var today = getToday();
+	
+	$('#popDateChangeDeliveryDate').val(today);
+	
+	//배송일변경 버튼 클릭
+    $('#popDateChangeSaveButton').click(function(){
+    	
+    	var flag = true;
+		var deliveryNumber = new Array();
+		var deliveryDate = $('#popDateChangeDeliveryDate').val().replace(/-/g, '');
+		
+		if (deliveryDate.length != 8) {
+			showAlert("배송일을 입력하십시오.");
+			$('#popDateChangeDeliveryDate').focus();
+		}
+	       
+		$('input[name=chk]:checked').each(function(i, item){
+			if (item.value.split('|')[1] != 'BEFORE') {
+				showAlert("배송대기 상태인 배송내역만 배송일 변경가능합니다.");
+				flag = false;
+				return false;
+			} else {
+				deliveryNumber.push(item.value.split('|')[0]);
+			}
+		});
+	       
+		if (flag == true)  {
+		    if (deliveryNumber.length == 0) {
+		    	showAlert("배송일을 변경할 배송내역을 선택하십시오.");
+		    	return;
+		    }
+
+		    jQuery.ajaxSettings.traditional = true;
+			$.ajax({
+				method : 'post',
+				url : '/contractlist/savedeliverydetaildate',
+				data : {deliveryDate : deliveryDate, deliveryNumber : deliveryNumber}, 
+				success : function(data) {
+					showAlert('저장되었습니다.');
+					$('#searchButton').click();
+				}
+			});
+		}
+
+		$('#popupDeliveryDateChangeDiv .btn_close').click();
+    });
+});
+/*]]>*/
+</script>
+<form name="popDeliveryForm" onsubmit="return false;">
+	<div class="popup-dim"></div>
+	<div class="popup-align">
+		<div class="popup-vertical">
+			<div class="popup-layer option ws">
+				<a class="btn_close" href="#">X</a>
+				<div class="pop_tit">배송일자변경</div>
+				<!-- 알림 mode0 -->
+				<section class="section">
+					<div class="alert_txt mb20">
+						선택한 배송대기중인 배송내역의 배송일자를 일괄로 변경합니다.
+					</div>
+					<table class="form_table">
+						<colgroup>
+							<col width="130px"/>
+							<col width="*"/>
+						</colgroup>
+						<tbody>
+							<tr>
+								<th>배송일</th>
+								<td>
+									<span class="datepicker-box w_ms">
+										<input type="text" class="js-datepicker" id="popDateChangeDeliveryDate" name="deliveryDate"/>
+									</span>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<div class="btn_set-center bottom_set mt30">
+						<a class="btn btn_green btn_wm radius mr5" role="button" href="#none" id="popDateChangeSaveButton" >저장</a>
+						<a class="btn btn_default btn_wm radius btn_cancel" href="#none" role="button" id="popDateChangeCancelButton">취소</a>
+					</div>
+				</section>
+			</div>
+		</div>
+	</div>
+</form>
+</div> 

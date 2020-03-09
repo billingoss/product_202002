@@ -1,0 +1,73 @@
+<div th:fragment="contractInfo">
+				<div class="con_title mt0">
+				    <h3 class="h3">주문정보</h3>
+				</div>
+				<table class="form_table" >
+                    <colgroup>
+                        <col width="170px" />
+                        <col width="*" />
+                        <col width="170px" />
+                        <col width="*" />
+                    </colgroup>
+                    <tbody>
+                        <tr>
+                            <th>고객명</th>
+                            <td th:text="${contract.customerName}"></td>
+                            <th>전화번호</th>
+                            <td class="phone" th:text="${contract.phoneNumber}"></td>
+                        </tr>
+                        <tr>
+                            <th>판매채널</th>
+                            <td th:text="${contract.channelName}"></td>
+                            <th>주문번호</th>
+                            <td th:utext="${contract.conNumber + (contract.additionValue=='Y'?'&nbsp;&nbsp;&lt;button class=&quot;btn btn_gray btn_sm&quot; type=button id=contractAdditionButton &gt; 부가정보보기  &lt;/button&gt;':'')}" id="billKeyConNumber"></td>
+                        </tr>
+                        <tr>
+                            <th>상품명 / 수량</th>		                            
+                            <td th:utext="${contract.productName+' / '+contract.quantity}+' 개' + '&nbsp;&nbsp;&lt;button class=&quot;btn btn_gray btn_sm&quot; type=button id=contractProductButton &gt; 상세보기  &lt;/button&gt;'">
+                             </td>
+                            <th>이용기간</th>
+                            <td th:text="${contract.duration+'개월'}"></td>
+                        </tr>
+                        <tr>
+                            <th>결제방식</th>
+                            <td >
+                            	<span class="billKeyHistBtn" id="paymethodType" style="cursor:pointer" th:text="${contract.recurringInvoiceYn=='Y'?'자동정기결제':'일괄결제'}"></span>
+                            	<!-- <button class="btn btn_gray btn_sm billKeyHistBtn" role="button" id="billKeyHistBtn" >결제정보변경이력</button> -->
+                                 <div class="tooltip mr10 billKeyHistBtn" id="billKeyHistBtn" style="cursor:pointer">
+                                     <i class="icon_tooltip js-tooltip_sendstate" data-geo=".js_tooltip_change_contInfo"></i>
+                                     <div class="js_tooltip_change_contInfo" style="display: none;">
+                                         <p class="tip_inner">
+                                             클릭 시 결제정보 변경 이력을 조회 하실 수 있습니다.
+                                         </p>
+                                     </div>
+                                 </div>                            	
+                            </td>
+                            <th>결제일</th>
+                            <td th:text="${contract.recurringInvoiceYn=='N'?contract.registrationDateTime.substring(0,4)+'.'+contract.registrationDateTime.substring(4,6)+'.'+contract.registrationDateTime.substring(6,8):'격월 '+contract.paymentDay+'일('+contract.registrationDateTime.substring(0,4)+'.'+contract.registrationDateTime.substring(4,6)+'.'+contract.registrationDateTime.substring(6,8)+' 첫 결제)'}"></td>
+                        </tr>
+                        <tr>
+                            <th>배송주기</th>
+                            <td th:text="${contract.deliveryCycleName+' '+contract.deliveryTimes+' 회'}"></td>
+                            <th>배송일</th>
+                            <td th:text="${contract.recurringDeliveryYn=='N'?contract.deliveryStartDateTime.substring(0,4)+'.'+contract.deliveryStartDateTime.substring(4,6)+'.'+contract.deliveryStartDateTime.substring(6,8):contract.deliveryCycleName+' '+contract.deliveryDay+'일('+contract.deliveryStartDateTime.substring(0,4)+'.'+contract.deliveryStartDateTime.substring(4,6)+'.'+contract.deliveryStartDateTime.substring(6,8)+' 첫 배송)'}"></td>
+                        </tr>
+                        <tr>
+                            <th>주문상태</th>
+                            <td th:text="${contract.contractStateName}"></td>
+                            <th>주소</th>
+                            <td  id="contractAddress"  th:text="${contract.baseAddress +' '+ contract.detailAddress}"></td>
+                        </tr>
+                        <tr>
+                          	<th>고객메모</th>
+                            <td id="contractCustomerRemark" th:text="${contract.customerRemark}"></td>
+                            <th>배송메모</th>
+                            <td id="contractDeliveryRemark" th:text="${contract.deliveryRemark}"></td>
+                        </tr>
+                        <tr>
+                          	<th>비고</th>
+                            <td id="contractRemark" th:text="${contract.remark}" colspan="3"></td>
+                        </tr>
+                    </tbody>		                    
+                </table>		              
+</div>

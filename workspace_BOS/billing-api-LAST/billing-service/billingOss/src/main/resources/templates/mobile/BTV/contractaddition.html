@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+
+<head>
+<!-- header -->
+<meta charset="UTF-8"/>
+<title>정기배송 | BTV</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="viewport" id="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,initial-scale=1.0"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="-1"/>
+<link rel="stylesheet" href="/mobileResources/css/library/csslibrary.css"/>
+<link rel="stylesheet" href="/mobileResources/css/screen.css"/>
+<!--[if lt IE 9]>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js" type="text/javascript" charset="utf-8"></script>
+<![endif]-->
+<script src="/mobileResources/js/library/jquery.min.js"></script>
+<script src="/mobileResources/js/library/jquerylibrary.min.js"></script>
+<script src="/mobileResources/js/screen.js"></script>
+<script src="/js/commonlib.js" type="text/javascript"></script>
+<!-- <script src="http://dmaps.daum.net/map_js_init/postcode.v2.js"></script> -->
+<script src="https://ssl.daumcdn.net/dmaps/map_js_init/postcode.v2.js"></script>
+<!-- //header -->
+<script type="text/javascript">
+$(document).ready(function(){
+/*<![CDATA[*/
+	$('#saveButton').click(function(){
+		
+		var saveYn = true;
+		
+		$('input[type=text]').each(function(i, item){
+			if (item.value == '' && $('#'+item.name.replace('additionValue','')).val().split('|')[0] == 'Y') {
+				alert("정보를 입력하십시오.");
+				$(this).focus();
+				saveYn = false;
+				return false;
+			}
+		});
+		if (saveYn == false) {
+			return;
+		}
+		
+		$('input[type=radio]').each(function(i, item){
+			if (!$('input[name='+item.name+']:checked').val() && $('#'+item.value.split('|')[0]).val().split('|')[0] == 'Y') {
+				alert("정보를 선택하십시오.");
+				$(this).focus();
+				saveYn = false;
+				return false;
+			}	
+		});
+		if (saveYn == false) {
+			return;
+		}
+		
+		$('input[type=checkbox]').each(function(i, item){
+			if (!$('input[name='+item.name+']:checked').val() && $('#'+item.value.replace('|','')).val().split('|')[0] == 'Y') {
+				alert("정보를 선택하십시오.");
+				$(this).focus();
+				saveYn = false;
+				return false;
+			}	
+		});
+		if (saveYn == false) {
+			return;
+		}
+		
+		$('input[type=text]').each(function(i, item){
+			if (item.value != '' && !isKoreanNumber(item.value)){
+				alert("한글,영문,숫자만 입력가능합니다.");
+				$(this).focus();
+				saveYn = false;
+				return false;
+			}	
+		});
+		if (saveYn == false) {
+			return;
+		}
+		
+		$('input[type=text]').each(function(i, item){
+			$('#'+item.name.replace('additionValue','')).val($('#'+item.name.replace('additionValue','')).val()+'|'+item.value);
+		});
+
+		$('input[type=radio]:checked').each(function(i, item){
+			$('#'+item.value.split('|')[0]).val($('#'+item.value.split('|')[0]).val()+'|'+item.value.split('|')[1]);
+		});
+		
+		$('select').each(function(i, item){
+			$('#'+item.value.split('|')[0]).val($('#'+item.value.split('|')[0]).val()+'|'+item.value.split('|')[1]);
+		});
+		
+		$('input[type=checkbox]:checked').each(function(i,item){
+			$('#'+item.value.replace('|','')).val($('#'+item.value.replace('|','')).val()+'|'+item.value.split('|')[1]);
+		});
+		
+		var additionCode = new Array();
+		var additionValue = new Array();
+		
+		var providerNumber = $('#providerNumber').val();
+		var conNumber = $('#conNumber').val();
+		
+		$('input[name=additionCode]').each(function(){
+			if ($(this).val().split('|')[2]) {
+				additionCode.push($(this).val().split('|')[1]);
+				additionValue.push($(this).val().split('|')[2]);
+			} 
+		});
+		
+		jQuery.ajaxSettings.traditional = true;
+		$.ajax({
+			method:'post',
+			url: '/btv/contractadditionsave',
+			data: {providerNumber : providerNumber, conNumber : conNumber, additionCode : additionCode, additionValue : additionValue},
+			success : function(json) {
+				var f = document.conForm;
+				f.action = '/btv/productsaledone';
+				f.submit();
+			},
+			error : function(json) {
+				$('input[name=additionCode]').each(function(){
+					if ($(this).val().split('|')[2]) {
+						$(this).val($(this).val().split('|')[0]+'|'+$(this).val().split('|')[1]);
+					}
+				});
+			}
+		});
+	});
+/*]]>*/
+});
+</script>
+</head>
+
+<body id="saleBody">
+<form name="conForm" onsubmit="return false;">
+<input type="hidden" name="providerNumber" th:value="${contractInsert.providerNumber}"/>
+<input type="hidden" name="conNumber" th:value="${contractInsert.conNumber}"/>
+</form>
+<form name="saleForm" onsubmit="return false;">
+<input type="hidden" id="providerNumber" name="providerNumber" th:value="${contractInsert.providerNumber}"/>
+<input type="hidden" id="conNumber" name="conNumber" th:value="${contractInsert.conNumber}"/>
+
+    <div class="wrapper">
+        <!-- container -->
+        <div id="container">
+            <div id="contents" class="cont">
+                <div class="title">
+					<h3>추가 정보 입력</h3>
+				</div>
+
+                <!-- 업체정보//-->
+                <section class="section">
+                    <div class="inner">
+                        <div class="product_box" style="border-top:unset;padding:unset;">
+                            <div class="img_info">
+                                <p class="img">
+                                    <img th:src="${provider.optionValue1}"/>
+                                </p>
+                                <p class="info">
+                                    <em><th:block th:utext="${provider.value2}"/></em>
+                                    <span th:text="${provider.value1}"></span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <div class="inner">
+                        <div class="tit_box">
+							<th:block th:each="result:${contractAdditionList}">
+								<th:block th:if="${result.optionCode=='TITLE'}">
+									<h4 class="tit" th:text="${result.value2}"></h4>
+								</th:block>
+							</th:block>	
+                        </div>
+
+                        <div class="form_box">
+							<th:block th:each="result,index:${contractAdditionList}">
+								<th:block th:if="${result.optionCode!='TITLE'}">
+									<div>
+										<span th:utext="${index.index+'. '+result.value2}" style="font-weight:bold;font-size:13px;"></span>
+									</div>
+									<div style="margin-top:5px;margin-bottom:15px;">
+										<span style="font-size:13px;">
+											<th:block th:if="${result.optionCode=='SUBJECTIVE'}">
+												<th:block th:if="${result.optionValue1=='TEXT'}">
+													<input type="hidden" th:id="${result.value1}" name="additionCode" th:value="${result.value3+'|'+result.value1}"/>
+													<input type="text" th:name="${'additionValue'+result.value1}" style="height:30px;"/>
+												</th:block>	
+											</th:block>
+											<th:block th:if="${result.optionCode=='OBJECTIVE'}">
+												<th:block th:if="${result.optionValue1=='RADIO'}">
+													<input type="hidden" th:id="${result.value1}" name="additionCode" th:value="${result.value3+'|'+result.value1}"/>
+													<th:block th:each="codeList:${result.codeList}">
+														<input type="radio" th:name="${'additionValue'+result.value1}" th:value="${result.value1+'|'+codeList.code}" th:text="${codeList.codeName}"/>
+													</th:block>
+												</th:block>	
+												<th:block th:if="${result.optionValue1=='SELECT'}">
+													<input type="hidden" th:id="${result.value1}" name="additionCode" th:value="${result.value3+'|'+result.value1}"/>
+													<select th:name="${'additionValue'+result.value1}" style="height:30px;">
+														<option th:each="codeList:${result.codeList}" th:value="${result.value1+'|'+codeList.code}" th:text="${codeList.codeName}"/>
+													</select>
+												</th:block>	
+											</th:block>
+											<th:block th:if="${result.optionCode=='MULTIPLEX'}">
+												<th:block th:if="${result.optionValue1=='CHECK'}">
+													<th:block th:each="codeList,index:${result.codeList}">
+														<input type="hidden" th:id="${result.value1+codeList.code}" name="additionCode" th:value="${result.value3+'|'+result.value1}"/>
+														<input type="checkbox" th:name="${'additionValue'+result.value1}" th:value="${result.value1+'|'+codeList.code}" th:text="${codeList.codeName}"/>
+														<th:block th:if="${index.index%5==4}">
+															<br/>
+														</th:block>
+													</th:block>
+												</th:block>	
+											</th:block>
+										</span>
+									</div>
+								</th:block>
+							</th:block>	 
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- 하단버튼//-->
+                <div class="btn-area">
+                    <p>
+                        <a href="#none" id="saveButton">저장</a>
+                    </p>
+                </div>
+                <!--// 하단버튼-->
+
+            </div>
+        </div>
+        <!-- //container -->
+
+    </div>
+</form>    
+</body>
+</html>

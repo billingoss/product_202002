@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+
+<head>
+<!-- header -->
+<meta charset="UTF-8"/>
+<title>정기배송 | BILL Letter</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="viewport" id="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,initial-scale=1.0"/>
+<link rel="stylesheet" href="/css/library/csslibrary.css"/>
+<link rel="stylesheet" href="/css/screen.css"/>
+<!--[if lt IE 9]>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js" type="text/javascript" charset="utf-8"></script>
+<![endif]-->
+<script src="/js/library/jquery.min.js"></script>
+<script src="/js/library/jquerylibrary.min.js"></script>
+<script src="/js/screen.js"></script>
+<script src="/js/commonlib.js" type="text/javascript"></script>
+<script src="http://dmaps.daum.net/map_js_init/postcode.v2.js"></script>
+<!-- //header -->
+
+<script type="text/javascript">
+
+$(document).ready(function(){
+
+    /*<![CDATA[*/
+	$('.trems-link').click(function(){
+		
+		var param = new Object();
+		param.conNumber = this.id.replace('btn','');
+
+		$('div[name=divDetail]').each(function(){
+			$(this).attr('style','display:none;');
+		});
+
+		$('.trems-link').each(function(){
+			if (this.id.replace('btn','') != param.conNumber) {
+				$(this).html('상세보기');
+			}
+		});
+
+		if ($(this).html() == '상세보기'){
+			$(this).html('상세닫기');
+		} else {
+			$(this).html('상세보기');
+			return false;
+		}
+		
+		$.ajax({
+			method:'get',
+			url: '/billletter/productsaledetail',
+			data: param,
+			dataType : 'json',
+			error: function(xhr, status, error){
+				alert(error);
+			},
+			success : function(data){
+				var html = '';
+
+				json = data.deliveryList;
+				if (json.length > 0) {
+					html = "";
+					$.each(json, function(i, item) {
+						html += '<tr>';
+						html += '<td>' + (i+1) + '차</td>';
+						html += '<td>' + formatDate(item.deliveryDate) + '</td>';
+						html += '<td>' + item.deliveryStateName + '</td>';
+						html += '</tr>'
+					});	     
+					$('#tbodyDelivery'+param.conNumber).html(html);
+				}
+				
+				json = data.invoiceList;
+				if (json.length > 0) {
+					html = "";
+					$.each(json, function(i, item) {
+						 html += '<tr>';
+						 html += '<td>' + (i+1) + '차</td>';
+						 html += '<td>' + formatDate(item.invoiceDate) + '</td>';
+						 html += '<td>' + numberComma(item.invoiceAmount) + '원 </td>';
+						 html += '<td>' + (item.collectionCloseYn=='Y'?'결제완료':'결제전') + '</td>';
+						 html += '</tr>';
+					});	        
+					$('#tbodyInvoice'+param.conNumber).html(html);
+				}
+				
+				$('#div'+param.conNumber).attr('style','display:block;');
+			}
+		});
+	});
+    
+	$('#saleButton').click(function(){
+
+		var f = document.saleForm;
+		f.action = '/billletter/doctornoah';
+		f.submit();
+
+		/*
+		var param = new Object();
+		param.customerName = $('#customerName').val();
+		param.phoneNumber = $('#phoneNumber').val();
+		param.channelCustomerNumber = $('#channelCustomerNumber').val();
+		param.productId = $('#productId').val();
+		
+		$.ajax({
+			method:'get',
+			url: '/billletter/productsale',
+			data: param,
+			error: function(xhr, status, error){
+				alert(error);
+			},
+			success : function(json){
+				$('body').html(json);
+			}
+		});
+		*/
+	});
+	/*]]>*/
+});
+</script>
+</head>
+<body id="saleBody">
+<form name="saleForm" onsubmit="return false;">
+<input type="hidden" id="customerName" name="customerName" th:value="${contractInsert.customerName}"/>
+<input type="hidden" id="phoneNumber" name="phoneNumber" th:value="${contractInsert.phoneNumber}"/>
+<input type="hidden" id="channelCustomerNumber" name="channelCustomerNumber" th:value="${contractInsert.channelCustomerNumber}"/>
+<input type="hidden" id="productId" name="productId" th:value="${contractInsert.productId}"/>
+    <div class="wrapper">
+        <!-- container -->
+        <div id="container">
+            <div id="contents" class="cont">
+                <div class="title">
+					<h3>정기배송신청내역</h3>
+					<!-- <button type="button" class="back_btn">뒤로가기</button> -->
+				</div>
+
+                <!-- 상품정보//-->
+                <section class="section" th:each="result : ${contractList}">
+                    <div class="inner">
+                        <div class="tit_box">
+                            <h4 class="tit" th:text="${#strings.substring(result.registrationDatetime,0,4)+'-'+#strings.substring(result.registrationDatetime,4,6)+'-'+#strings.substring(result.registrationDatetime,6,8)}"></h4>
+                            <p class="sub_txt"><a href="#none" th:id="${'btn'+result.conNumber}" class="trems-link" style="font-size: 12px;color: #3b98e6;border-bottom: 1px solid #3b98e6;">상세보기</a></p>
+                        </div>
+                        <div class="product_box">
+                            <div class="img_info">
+                                <p class="img">
+                                    <img src="/images/common/@temp_1.jpg" />
+                                </p>
+                                <p class="info">
+                                    <span th:text="${result.productName}">
+										<!-- 오동나무 오일로 3번 정성껏 코팅한 대나무칫솔 + 천연 유래성분으로 만든 안전한 치약 -->
+									</span>
+                                    <em th:text="${#numbers.formatDecimal(result.invoiceAmount,0,'COMMA',0,'POINT')+'원 / '+result.productQuantity+'개 / '+result.contractStateName}"></em>
+                                </p>
+                            </div>
+                            <ul class="product_info">
+                            </ul>
+                        </div>
+						<div th:id="${'div'+result.conNumber}" name="divDetail" class="table-form" style="display:none;">
+			                <h5>배송일정</h5>
+			                <table class="table_list">
+			                    <colgroup>
+			                        <col width="30%"/>
+			                        <col width="*"/>
+			                        <col width="30%"/>
+			                    </colgroup>
+			                    <thead>
+			                        <tr>
+			                            <th>차수</th>
+			                            <th>배송일</th>
+			                            <th>상태</th>
+			                        </tr>
+			                    </thead>
+			                    <tbody th:id="${'tbodyDelivery'+result.conNumber}" name="tbodyDelivery">
+			                    </tbody>
+							</table>
+				
+			                <h5>결제일정</h5>
+			                <table class="table_list">
+			                    <colgroup>
+			                        <col width="20%"/>
+			                        <col width="*"/>
+			                        <col width="30%"/>
+			                        <col width="22%"/>
+			                    </colgroup>
+			                    <thead>
+			                        <tr>
+			                            <th>차수</th>
+			                            <th>결제일</th>
+			                            <th>가격</th>
+			                            <th>상태</th>
+			                        </tr>
+			                    </thead>
+			                    <tbody th:id="${'tbodyInvoice'+result.conNumber}" name="tbodyInvoice">
+			                    </tbody>
+			                </table>
+						</div>
+                    </div>
+                </section>
+
+                <!-- 하단버튼//-->
+                <div class="btn-area">
+                    <p>
+                        <a id="saleButton">정기결제신청</a>
+                    </p>
+                </div>
+                <!--// 하단버튼-->
+
+            </div>
+        </div>
+        <!-- //container -->
+    </div>
+</form>    
+</body>
+</html>

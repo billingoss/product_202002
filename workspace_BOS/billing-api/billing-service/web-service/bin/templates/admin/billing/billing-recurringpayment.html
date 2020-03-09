@@ -1,0 +1,212 @@
+<script src="/js/bootstrap-datepicker.js" type="text/javascript" ></script>
+<div class="row">
+<div id="progressbar" style="display:none;"></div>
+	<div id="searchbar-datepicker-recurring">
+	 <div class="col-md-12">
+		<div class="panel panel-heading"
+			style="vertical-align: middle; text-align: center; margin-left: auto; margin-right: auto; background-color: #f5f5f5; padding-bottom: 0px;">
+			<div class="form-section">
+				<div class="row" style="text-align: center">
+					<form class="form-inline" style="margin-bottom: 10px;" id="recaldateForm" name="recaldateForm" >
+						<div class="col-md-3">
+							<span>요금일자</span> <input type="text" class=" form-control" id="recalfromDate" name="recalfromDate" data-date-format="yyyy-mm-dd" />
+						</div>
+						<div class="col-md-4">
+							<button type="button" class="btn btn-primary" id="recalculationbt">결제</button>
+					    </div>
+					</form>    
+					
+				</div>
+			</div>
+		</div>
+	</div>
+	</div>
+</div>
+<div class="row">
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h2 class="panel-title">
+					<strong>요금 리스트</strong>
+				</h2>
+			</div>
+			<div class="panel-body">
+				<div class="table-responsive">
+					<table class="table table-striped" id="calmaintable">
+						<thead>
+							<tr>
+								<th style="width: 15%;">결제방식</th>
+							    <th style="width: 15%;">청구번호</th>
+							    <th style="width: 15%;">계약번호</th>
+								<th style="width: 15%;">요금생성일</th>
+								<th style="width: 15%;">고객명</th>
+								<th style="width: 15%;">상품명</th>
+								<th>미납금액</th>
+							</tr>
+						</thead>
+						<tbody id="recalmaintablebody" >
+						</tbody>
+						<tfoot>
+							<tr>
+								<td colspan="5" style="text-align:center"><strong>합계</strong></td>
+								<td id="recalcoltotalsum" class="no-line"></td>
+							</tr>
+						</tfoot>
+					</table>
+				</div>
+			</div>
+			<div class="panel-footer" style="padding-bottom: 40px;">
+				<button class="btn btn-small btn-info pull-right"
+					style="margin: 3px;" id="recurrinprocgbt">정기결제</button>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+$(document).ready(function() {
+	
+	$("#recalfromDate").val(getToday());
+	$("#progressbar").load("/report/progressbar");
+	
+	$('#recalfromDate').datepicker().on('click', function(ev){                 
+	    $('#recalfromDate').datepicker('show');
+	});
+	$('#recalfromDate').datepicker().on('changeDate', function(ev){                 
+	    $('#recalfromDate').datepicker('hide');
+	});
+	
+	$('#recalculationbt').click(function(){
+		 var queryString = $("#recalfromDate").val();
+		 queryString = queryString.replace(/-/g, '');
+		 $('#recalmaintablebody').empty();
+		 $.ajax({
+				method : 'get',
+	            url : '/billing/billing-recalculation-view/'+queryString,
+	            dataType : 'json',
+	            error: function(xhr, status, error){
+	         	   Common.Dialog.alert({
+				    		  title:'조회오류'
+				            , content: error
+				        });
+	            },
+	            success : function(json){
+	         	   var trHTML = '';
+	         	   $('#recalmaintablebody').empty();
+	         	   if(json.length == 0){
+	     			   Common.Dialog.alert({
+				    		  title:'정기결제대상'
+				            , content: '정기결제대상 대상이 없습니다.'
+				           });
+	     			   return;
+	     		   }
+	         	   $.each(json, function (i, item) {
+	         		   
+	             	    trHTML += '<tr>' 
+	                 	       + '<td>' + item.paymenttype + '</td>'
+	             	           + '<td>' + item.invoicenumber + '</td>'
+	                           + '<td>' + item.connumber + '</td>'
+	                           + '<td>' + item.invoicedate + '</td>'
+	                           + '<td>' + item.customername + '</td>'
+	                           + '<td>' + item.productname + '</td>'
+	                           + '<td>' + numberComma(item.collectionbalanceamount) + '</td>'
+	                           + '</tr>';
+	         	   });
+	         	   $('#recalmaintablebody').append(trHTML);
+	         	   calcolTableSum();
+	            }
+	        });
+	   });
+	
+	$('#recurrinprocgbt').click(function(){
+		var totalcnt = 0;
+		var cnt =0 ;
+		var cnt2 =0 ;
+		totalcnt =  gettotalcnt();
+		var promise = Promise.resolve(true);
+		debugger;
+		$('#recalmaintablebody tr').each(function() {
+			
+				var invoicenumber= $('td', this).eq(1).text();
+				var connumber	= $('td', this).eq(2).text();
+				var invoicedate = $('td', this).eq(3).text();
+				var paymentamt = $('td', this).eq(6).text();
+				/*<![CDATA[*/
+				if(totalcnt !=0 && paymentamt != 0 && totalcnt != cnt){
+						debugger;
+						cnt++;
+						cnt2++;
+						promise = recurringproc(invoicenumber,connumber,invoicedate,paymentamt, totalcnt,cnt2);
+							
+				}
+		   /*]]>*/
+		});
+		
+		
+	});	
+		
+	
+	function gettotalcnt(){
+	//	$("#progressbar").css("display", "block");
+		var totalcnt = 0;
+		$('#recalmaintablebody tr').each(function() {
+			var paymentamt = $('td', this).eq(6).text();
+			
+			if(paymentamt != 0){
+				totalcnt++;
+			}
+		});
+	//   $('#recurproccnt').text('1 / ' + totalcnt);
+	   return totalcnt;
+	}
+	
+	function recurringproc(invoicenumber,connumber,invoicedate,paymentamt,totalcnt,cnt){
+			$.ajax({
+			method : 'post',
+            url : '/billing/recurringproc/'+invoicenumber + '/' + connumber + '/' + invoicedate.replace(/-/g, '') + '/' + paymentamt.replace(/,/g, ''),
+            dataType : 'json',
+            error: function(xhr, status, error){
+         	   Common.Dialog.alert({
+			    		  title:'처리오휴'
+			            , content: error
+			        });
+            },
+            success : function(json){
+            	debugger;
+            	$('#recurproccnt').text(cnt + ' / ' + totalcnt);	
+            	setroundui(cnt, totalcnt);
+            	if(cnt == totalcnt){
+            		Common.Dialog.alert({
+            	  		  title:'처리완료'
+            	          , content: '정상처리되었습니다.'
+            		      });
+            	  // $("#progressbar").css("display", "none");
+            	   $('#recalculationbt').click();
+            	}
+            	return true;
+            }
+        });
+	}
+	
+	function setroundui(cnt, totalcnt) {
+		debugger;
+	    
+	    var elem = document.getElementById("roundprogressbar"); 
+	    var pnum = Math.ceil(100*(cnt/totalcnt));
+		var tmp = 'p'+pnum;
+        $('#roundprogressbar').addClass(tmp);	
+	}  
+	
+});
+
+function calcolTableSum() {
+	var coltotal = 0;
+	$('#recalmaintablebody tr').each(function() {
+		var colvalue = parseInt($('td', this).eq(6).text().replace(/,/g, ''));
+		coltotal += colvalue;
+	});
+
+	$('#recalcoltotalsum').text(numberComma(coltotal));
+	
+  }
+
+</script>

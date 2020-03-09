@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+
+<head>
+<!-- header -->
+<meta charset="UTF-8"/>
+<title>정기배송 | BILL Letter</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+<meta name="viewport" id="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,initial-scale=1.0"/>
+<link rel="stylesheet" href="/css/library/csslibrary.css"/>
+<link rel="stylesheet" href="/css/screen.css"/>
+<!--[if lt IE 9]>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js" type="text/javascript" charset="utf-8"></script>
+<![endif]-->
+<script src="/js/library/jquery.min.js"></script>
+<script src="/js/library/jquerylibrary.min.js"></script>
+<script src="/js/screen.js"></script>
+<script src="/js/commonlib.js" type="text/javascript"></script>
+<script src="http://dmaps.daum.net/map_js_init/postcode.v2.js"></script>
+<!-- //header -->
+
+<script type="text/javascript">
+
+//통합주소 daum api 
+function foldDaumPostcode() {
+	//우편번호 찾기 찾기 화면을 넣을 element
+	var element_wrap = document.getElementById('wrap');
+	// iframe을 넣은 element를 안보이게 한다.
+	element_wrap.style.display = 'none';
+}
+
+function execDaumPostcode(){
+	//우편번호 찾기 찾기 화면을 넣을 element
+	var element_wrap = document.getElementById('wrap');
+	// 현재 scroll 위치를 저장해놓는다.
+	var currentScroll = Math.max(document.body.scrollTop, document.documentElement.scrollTop);
+	new daum.Postcode({
+		oncomplete: function(data) {
+			// 검색결과 항목을 클릭했을때 실행할 코드를 작성하는 부분.
+			// 각 주소의 노출 규칙에 따라 주소를 조합한다.
+			// 내려오는 변수가 값이 없는 경우엔 공백('')값을 가지므로, 이를 참고하여 분기 한다.
+			var fullAddr = data.address; // 최종 주소 변수
+			var extraAddr = ''; // 조합형 주소 변수
+			// 기본 주소가 도로명 타입일때 조합한다.
+			if(data.addressType === 'R')
+			{
+				//법정동명이 있을 경우 추가한다.
+				if(data.bname !== ''){
+				    extraAddr += data.bname;
+				}
+				// 건물명이 있을 경우 추가한다.
+				if(data.buildingName !== ''){
+				    extraAddr += (extraAddr !== '' ? ', ' + data.buildingName : data.buildingName);
+				}
+				// 조합형주소의 유무에 따라 양쪽에 괄호를 추가하여 최종 주소를 만든다.
+				fullAddr += (extraAddr !== '' ? ' ('+ extraAddr +')' : '');
+			}
+			// 우편번호와 주소 정보를 해당 필드에 넣는다.
+			document.getElementById('zipcode').value = data.zonecode; //5자리 새우편번호 사용
+			document.getElementById('baseAddress').value = fullAddr;
+			// iframe을 넣은 element를 안보이게 한다.
+			// (autoClose:false 기능을 이용한다면, 아래 코드를 제거해야 화면에서 사라지지 않는다.)
+			element_wrap.style.display = 'none';
+			// 우편번호 찾기 화면이 보이기 이전으로 scroll 위치를 되돌린다.
+			document.body.scrollTop = currentScroll;
+		},
+		// 우편번호 찾기 화면 크기가 조정되었을때 실행할 코드를 작성하는 부분. iframe을 넣은 element의 높이값을 조정한다.
+		onresize : function(size) {
+		    element_wrap.style.height = (size.height)+'px';
+		},
+			width : '100%',
+			height : '100%'
+	}).embed(element_wrap);
+	// iframe을 넣은 element를 보이게 한다.
+	element_wrap.style.display = 'block';
+}
+//daum api end
+$(document).ready(function(){
+	
+	/*<![CDATA[*/
+	var today = new Date();
+    var mm = today.getMonth()+1; //January is 0!
+	var dd = today.getDate();
+    
+    $('#paymentDay').val(dd);
+    $('#duration').val(4);
+    
+	if (dd < 16) {
+		$('#deliveryDay16').prop('checked',true);
+	} else {
+		$('#deliveryDay1').prop('checked',true);
+	}
+	setMessage();
+	
+	
+	function setMessage() {
+		if ($('#deliveryDay1').prop('checked')) {
+			$('#deliveryInfo').html('오늘 주문하신 상품은 <b>'+(mm==12?1:mm+1)+'월 1일 첫배송</b> 되며, 매월 1일 정기 배송됩니다.');
+			$('#saleButton').html('매월 <span>1</span>일 <span>' + numberComma($('#totalPrice').val())+ '</span>원 정기결제 신청');
+		} else {
+			if (dd < 16) {
+				$('#deliveryInfo').html('오늘 주문하신 상품은 <b>'+mm+'월 16일 첫배송</b> 되며, 매월 16일 정기 배송됩니다.');
+				$('#saleButton').html('매월 <span>16</span>일 <span>' + numberComma($('#totalPrice').val())+ '</span>원 정기결제 신청');
+			} else {
+				$('#deliveryInfo').html('오늘 주문하신 상품은 <b>'+(mm==12?1:mm+1)+'월 16일 첫배송</b> 되며, 매월 16일 정기 배송됩니다.');
+				$('#saleButton').html('매월 <span>16</span>일 <span>' + numberComma($('#totalPrice').val())+ '</span>원 정기결제 신청');
+			}
+		}
+	}
+	
+	$('#minusQuantity').click(function(){
+		var quantity = parseInt($('#productQuantity').val())-1;
+		if (quantity > 1){
+			$('#productQuantity').val(quantity);
+			$('#totalPrice').val(quantity * parseInt($('#priceAmount').val()));
+			$('#totalPriceLabel').text(numberComma($('#totalPrice').val()));
+			setMessage();
+		}
+	});
+
+	$('#plusQuantity').click(function(){
+		var quantity = parseInt($('#productQuantity').val())+1;
+		$('#productQuantity').val(quantity);
+		$('#totalPrice').val(quantity * parseInt($('#priceAmount').val()));
+		$('#totalPriceLabel').text(numberComma($('#totalPrice').val()));
+		setMessage();
+	});
+	
+	$('#deliveryDay1').click(function(){
+		setMessage();
+	});
+	
+	$('#deliveryDay16').click(function(){
+		setMessage();
+	});
+	
+	$('#saleButton').click(function(){
+		
+		if ($('#deliveryCustomerName').val() == '') {
+			alert('주문자 이름을 입력하십시오.');
+			$('#deliveryCustomerName').focus();
+			return;
+		}
+		
+		if ($('#zipcode').val() == '') {
+			alert('주소를 입력하십시오.');
+			$('#zipButton').focus();
+			return;
+		}
+
+		if ($('#deliveryPhoneNumber').val() == '') {
+			alert('연락처를 입력하십시오.');
+			$('#deliveryPhoneNumber').focus();
+			return;
+		}
+		
+		if ($('#paymentAgreementYn').prop('checked') == false) {
+			alert('자동승인 동의후 주문가능합니다.');
+			$('#paymentAgreementYn').focus();
+			return;
+		}
+		
+		if ($('#contractAgreementYn').prop('checked') == false) {
+			alert('정기주문서비스 이용동의후 주문가능합니다.');
+			$('#contractAgreementYn').focus();
+			return;
+		}
+		
+		if ($('#deliveryRemark').val().length > 50) {
+			alert('배송요청사항은 50자까지만 가능합니다.');
+			$('#deliveryRemark').focus();
+			return;
+		}
+		
+		if ($('#customerName').val() == '') {
+			$('#customerName').val($('#deliveryCustomerName').val());
+		}
+		if ($('#phoneNumber').val() == '') {
+			$('#phoneNumber').val($('#deliveryPhoneNumber').val());
+		}
+
+		var option = '&';
+		var queryString = $("form[name=saleForm]").serialize();
+		queryString = queryString.replace(/-/g, '');
+		
+		$.ajax({
+			method:'post',
+			url: '/billletter/productsalesave',
+			data: queryString,
+			error: function(xhr, status, error){
+				alert(error);
+			},
+			success : function(json) {
+				//setPaymentReqInfo(json.conNumber, "CARD", 'MOBILE');
+				goSaleDone(json);
+			}
+		});
+	});
+	
+	function goSaleDone(json) {
+		/*
+		var param = new Object();
+		param.conNumber = json.conNumber;
+		
+		$.ajax({
+			method:'get',
+			url: '/billletter/productsaledone',
+			data: param,
+			error: function(xhr, status, error){
+				alert(error);
+			},
+			success : function(json){
+				$('body').html(json);
+			}
+		});
+		*/
+
+		var f = document.conForm;
+		f.conNumber.value = json.conNumber;
+		f.action = '/billletter/productsaledone';
+		f.submit();
+	}
+	
+    $(".js_all-1").trpCheckBoxAllsImg(".js_all", ".js_item");
+
+    $('.trems-link').click(function() {
+        $(this).parent().toggleClass('on');
+        $(this).parent().find('.terms_box').slideToggle(300);
+
+        if ($(this).parent().hasClass('on')) {
+            $(this).parent().find('.trems-link').html("내용접기");
+        } else {
+            $(this).parent().find('.trems-link').html("내용보기");
+        }
+    });
+
+    // $(".trems-link").click(function(){
+    // 	$("li.on").each(function(){
+    // 		$(this).removeClass("on");
+    // 	});
+    // 	$(this).parent().toggleClass('on');
+    // 	$(this).next().slideToggle("300", function(){
+    // 		if($(this).css("display") == "none"){
+    // 			$(this).prev().removeClass("on");
+    // 		}
+    // 	});
+    // 	$("li.on").each(function(idx, el){
+    // 		if(!$(this).hasClass("on")){
+    // 			$(this).next().css("display", "none");
+    // 		}
+    // 	});
+    // });
+	
+	/*]]>*/
+});
+</script>
+</head>
+
+<body id="saleBody">
+<form name="conForm" onsubmit="return false;">
+	<input type="hidden" id="conNumber" name="conNumber"/>
+</form>
+<form name="saleForm" onsubmit="return false;">
+	<input type="hidden" id="customerName" name="customerName" th:value="${contractInsert.customerName}"/>
+	<input type="hidden" id="phoneNumber" name="phoneNumber" th:value="${contractInsert.phoneNumber}"/>
+	<input type="hidden" id="channelCustomerNumber" name="channelCustomerNumber" th:value="${contractInsert.channelCustomerNumber}"/>
+	<input type="hidden" id="productId" name="productId" th:value="${contractInsert.productId}"/>
+	<input type="hidden" id="duration" name="duration" />
+	<input type="hidden" id="paymentDay" name="paymentDay" />
+	<input type="hidden" id="deliveryCost" name="deliveryCost" value="0" />
+	<input type="hidden" id="recurringInvoiceYn" name="recurringInvoiceYn" value="Y" />
+	<input type="hidden" id="deliveryCycle" name="deliveryCycle" th:value="${deliveryCycle}"/>
+	<input type="hidden" id="deliveryTimes" name="deliveryTimes" th:value="${deliveryTimes}"/>
+	<input type="hidden" id="deliveryCompany" name="deliveryCompany" th:value="${deliveryCompany}"/>
+	<input type="hidden" id="priceAmount" name="priceAmount" th:value="${priceAmount}"/>
+	<input type="hidden" id="totalPrice" name="totalPrice" th:value="${priceAmount}"/>
+    <div class="wrapper">
+        <!-- container -->
+        <div id="container">
+            <div id="contents" class="cont">
+                <div class="title">
+					<h3>정기배송 신청</h3>
+					<!-- <button type="button" class="back_btn">뒤로가기</button> -->
+				</div>
+
+                <!-- 상품정보//-->
+                <section class="section">
+                    <div class="inner">
+                        <div class="tit_box">
+                            <h4 class="tit">상품정보</h4>
+                        </div>
+                        <div class="product_box">
+                            <!---->
+                            <div class="img_info">
+                                <p class="img">
+                                    <img src="/images/common/@temp_1.jpg" />
+                                </p>
+                                <p class="info">
+                                    <span th:text="${productName}">
+										<!-- 오동나무 오일로 3번 정성껏 코팅한 대나무칫솔 + 천연 유래성분으로 만든 안전한 치약 -->
+									</span>
+                                    <!-- <em>칫솔1개 + 치약 30g x 4개</em> -->
+                                </p>
+                            </div>
+
+                            <ul class="product_info">
+                                <li>
+                                    <dl>
+                                        <dt> 수량</dt>
+                                        <dd>
+                                            <button class="btn_minus" id="minusQuantity">삭제</button>
+                                            <input type="text" class="num" title="수량" id="productQuantity" name="productQuantity" value="1"/>
+                                            <button class="btn_plus" id="plusQuantity">추가</button>
+                                        </dd>
+                                    </dl>
+                                </li>
+                                <li>
+                                    <dl>
+                                        <dt>총액</dt>
+                                        <dd>
+                                            <span class="num_b" id="totalPriceLabel" th:text="${#numbers.formatDecimal(priceAmount, 0, 'COMMA', 0, 'POINT')}"></span> 원
+						                </dd>
+                                    </dl>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 정기배송정보//-->
+                <section class="section">
+                    <div class="inner">
+                        <div class="tit_box">
+                            <h4 class="tit">정기배송정보</h4>
+                            <p class="sub_txt">*배송주기는 격월 1회 고정</p>
+                        </div>
+
+                        <div class="form_box">
+                            <dl>
+                                <dt>배송일</dt>
+                                <dd>
+                                    <ul class="radio col2">
+                                        <li th:each="result:${deliveryDayList}">
+                                            <label th:for="${'deliveryDay'+result.value1}">
+												<span class="trp radio-box chang-txt1">
+													<input type="radio" th:id="${'deliveryDay'+result.value1}" name="deliveryDay" th:value="${result.value1}"/>
+													<i></i>
+													<em th:text="${'격월 ' + result.description}"></em>
+												</span>
+											</label>
+                                        </li>
+                                    </ul>
+                                </dd>
+                            </dl>
+                            <ul class="mark_dot-list">
+                                <li class="txt1" id="deliveryInfo"></li>
+                                <li>배송일은 지역에 따라 영업일 기준 <b>1-2일</b> 정도 추가로 소요될 수 있습니다.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 배송정보//-->
+                <section class="section">
+                    <div class="inner">
+                        <div class="tit_box">
+                            <h4 class="tit">배송정보</h4>
+                        </div>
+
+                        <div class="form_box">
+                            <dl>
+                                <dt>주문자</dt>
+                                <dd>
+                                    <input type="text" placeholder="주문자 이름 입력" id="deliveryCustomerName" name="deliveryCustomerName" th:value="${contractInsert.customerName}"/>
+                                </dd>
+                                <dt>배송지</dt>
+                                <dd>
+                                    <div class="address-box mb10">
+                                        <span class="post_item"><input type="text" class="input_lg" readonly="true" placeholder="우편번호" id="zipcode" name="zipcode" /></span>
+                                        <span class="btn_item"><button class="btn btn_blue" role="button" onclick="execDaumPostcode()" id="zipButton" style="margin-top:0px;">주소검색</button></span>
+                                    </div>
+									<!-- <div id="wrap" style="display:none;border:1px solid;width:500px;height:300px;margin:5px 0;position:relative" > -->
+									<div id="wrap" class="address-area" style="display:none;">
+									<img src="//t1.daumcdn.net/localimg/localimages/07/postcode/320/close.png" id="btnFoldWrap" style="cursor:pointer;position:absolute;right:0px;top:-1px;z-index:1" onclick="foldDaumPostcode()" alt="접기 버튼" />
+									</div>
+                                    <div class="mb10">
+                                        <input type="text" class="input_lg" placeholder="기본 주소" id="baseAddress"  name="baseAddress" readonly="true"/>
+                                    </div>
+                                    <div class="">
+                                        <input type="text" class="input_lg" placeholder="상세주소 입력" id="detailAddress" name="detailAddress" />
+                                    </div>
+                                </dd>
+                                <dt>연락처</dt>
+                                <dd>
+                                    <input type="number" placeholder="휴대전화 입력" id="deliveryPhoneNumber" name="deliveryPhoneNumber" th:value="${contractInsert.phoneNumber}"/>
+                                </dd>
+                                <dt>배송<br/>요청사항</dt>
+                                <dd>
+                                    <div class="textarea-box">
+                                        <textarea id="deliveryRemark" name="deliveryRemark" cols="30" rows="20" placeholder="배송 요청사항 입력 한글 50자"></textarea>
+                                    </div>
+                                </dd>
+
+                            </dl>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 결제대행사선택//-->
+                <section class="section">
+                    <div class="inner">
+                        <div class="tit_box">
+                            <h4 class="tit">결제대행사 선택</h4>
+                        </div>
+
+                        <div class="form_box">
+                            <ul class="radio col2">
+                                <li>
+                                    <label for="SKPAY">
+										<span class="trp radio-box">
+											<input type="radio" id="SKPAY" name="PG" value="SKPAY"/>
+											<i></i>
+											<em>SK PAY</em>
+										</span> 
+									</label>
+                                </li>
+                                <li>
+                                    <label for="KGINISIS">
+										<span class="trp radio-box">
+											<input type="radio" id="KGINISIS" name="PG" value="KGINISIS" th:checked="true"/>
+											<i></i>
+											<em>KG INISIS</em>
+										</span> 
+									</label>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 정기결제약관동의//-->
+                <section class="section terms">
+                    <div class="inner">
+                        <div class="tit_box">
+                            <h4 class="tit">정기결제 약관동의</h4>
+                        </div>
+                    </div>
+
+                    <ul class="check_all-wrap js_all-1">
+                        <li>
+                            <span class="trp checkbox-box">
+								<input class="js_all" type="checkbox" id="allAgreementYn" name="allAgreementYn"/>
+								<i></i>
+								<label for="allAgreementYn">정기결제 약관 모두 동의</label>
+							</span>
+                        </li>
+                        <li>
+                            <span class="trp checkbox-box">
+								<input class="js_item" type="checkbox" id="paymentAgreementYn" name="paymentAgreementYn" value="Y"/>
+								<i></i>
+								<label for="paymentAgreementYn">자동승인 동의</label>
+							</span>
+                            <a href="#none" class="trems-link">내용보기</a>
+                            <div class="terms_box">
+                                금융거래정보 제공동의서<br/><br/> 1. 금융실명거래 및 비밀조방에 관한 법률의 규정에 따라 이용자는 본 신청과 관련하여 다음 금융거래정보를 상기 청구기관(청구기관의 결제 대행업체를 포함함)에 제공하는 것에 동의합니다. 거래 카드사(은행) 명<br/><br/> 1. 금융실명거래 및 비밀조방에 관한 법률의 규정에 따라 이용자는 본 신청과 관련하여 다음 금융거래정보를 상기 청구기관(청구기관의
+                                결제 대행업체를 포함함)에 제공하는 것에 동의합니다. 거래 카드사(은행) 명
+                            </div>
+                        </li>
+                        <li>
+                            <span class="trp checkbox-box">
+								<input class="js_item" type="checkbox" id="contractAgreementYn" name="contractAgreementYn" value="Y"/>
+								<i></i>
+								<label for="contractAgreementYn">정기주문 서비스 이용동의</label>
+							</span>
+                            <a href="#none" class="trems-link">내용보기</a>
+                            <div class="terms_box">
+                                금융거래정보 제공동의서<br/><br/> 1. 금융실명거래 및 비밀조방에 관한 법률의 규정에 따라 이용자는 본 신청과 관련하여 다음 금융거래정보를 상기 청구기관(청구기관의 결제 대행업체를 포함함)에 제공하는 것에 동의합니다. 거래 카드사(은행) 명<br/><br/> 1. 금융실명거래 및 비밀조방에 관한 법률의 규정에 따라 이용자는 본 신청과 관련하여 다음 금융거래정보를 상기 청구기관(청구기관의
+                                결제 대행업체를 포함함)에 제공하는 것에 동의합니다. 거래 카드사(은행) 명
+                            </div>
+                        </li>
+                    </ul>
+                </section>
+
+                <!-- 하단버튼//-->
+                <div class="btn-area">
+                    <p>
+                        <a href="#none" id="saleButton">정기결제 신청</a>
+                    </p>
+                </div>
+                <!--// 하단버튼-->
+
+            </div>
+        </div>
+        <!-- //container -->
+
+    </div>
+</form>    
+</body>
+
+</html>

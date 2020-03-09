@@ -1,0 +1,242 @@
+<div id="popupContractAdditionDiv" class="trp popupfixed-wrap" th:fragment="contractAdditionPop">
+<script type="text/javascript">
+/*<![CDATA[*/
+function setContractAdditionData(conNumber) {
+	
+	$('#popContractAdditionConNumber').val(conNumber);
+	
+	var param = new Object();
+	param.conNumber = conNumber;
+	
+	$.ajax({
+		method : 'get',
+		url : '/contractlist/getcontractaddition',
+ 		data : param,
+		success : handleDataContractAddition
+	});
+}
+
+function handleDataContractAddition(data) {
+	
+	json = data.contractAdditionList;
+	
+	$.each(json, function(i, item) {
+		if (item.optionCode=='TITLE') {
+			$('#contractAdditionTitle').html(item.value2);
+			return;
+		}
+	});
+	
+	var html = "";
+	$('#contractAdditionTbody').empty();
+	$.each(json, function(i, item) {
+		html += "<tr>";
+		if (item.optionCode != 'TITLE') {
+			html += '<th>'+i+'. '+item.value2+'</th>';
+			if (item.optionCode=='SUBJECTIVE') {
+				if (item.optionValue1 = 'TEXT') {
+					html += '<td>';
+					html += '<input type="hidden" id="'+item.value1+'" name="additionCode" value="'+item.value3+'|'+item.value1+'"/>';
+					html += '<input type="text" id="additionValue'+item.value1+'" name="additionValue'+item.value1+'"/>';
+					html += '</td>';
+				}
+			} else if (item.optionCode=='OBJECTIVE') {
+				if (item.optionValue1=='RADIO') {
+					html += '<td>';
+					html += '<input type="hidden" id="'+item.value1+'" name="additionCode" value="'+item.value3+'|'+item.value1+'"/>';
+					codeList = item.codeList;
+					$.each(codeList, function(j, codeItem) {
+						html += '<span class="trp radio-box">';
+						html += '<input type="radio" id="additionValue'+item.value1+codeItem.code+'" name="additionValue'+item.value1+'" value="'+item.value1+'|'+codeItem.code+'"/>';
+						html += '<i></i>&nbsp;<label for="additionValue'+item.value1+codeItem.code+'">'+codeItem.codeName+'</label>';
+						html += '</span>'
+					});
+					html += '</td>';
+				} else if (item.optionValue1=='SELECT') {
+					html += '<td>';
+					html += '<input type="hidden" id="'+item.value1+'" name="additionCode" value="'+item.value3+'|'+item.value1+'"/>';
+					html += '<div class="select-box w_lg_s mb10">';
+					html += '<select class="select2Basic_pop" id="additionValue'+item.value1+'" name="additionValue'+item.value1+'">';
+					codeList = item.codeList;
+					$.each(codeList, function(j, codeItem) {
+						html += '<option value="'+item.value1+'|'+codeItem.code+'">'+codeItem.codeName+'</otpion>';
+					});
+					html += '</select>';
+					html += '</div>';
+					html += '</td>';
+				}
+			} else if (item.optionCode=='MULTIPLEX') {
+				html += '<td>';
+				if (item.optionValue1=='CHECK') {
+					codeList = item.codeList;
+					$.each(codeList, function(j, codeItem) {
+						html += '<input type="hidden" id="'+item.value1+codeItem.code+'" name="additionCode" value="'+item.value3+'|'+item.value1+'"/>';
+						html += '<span class="trp checkbox-box">';
+						html += '<input type="checkbox" id="additionValue'+item.value1+codeItem.code+'" name="additionValue'+item.value1+'" value="'+item.value1+'|'+codeItem.code+'"/>';
+						html += '<i></i><label for="additionValue'+item.value1+codeItem.code+'">'+codeItem.codeName+'</label>';
+						html += '</span>';
+					});
+				}
+				html += '</td>';
+			}
+		}
+		html += "</tr>";
+	});
+	$('#contractAdditionTbody').append(html);
+	
+    json = data.contractAddition;
+    $.each(json, function(i, item){
+    	if (item.additionType1 == 'SUBJECTIVE') {
+    		if (item.additionType2 == 'TEXT') {
+    			$('#additionValue'+item.additionCode).val(item.additionValue);
+    		}
+    	} else if (item.additionType1 == 'OBJECTIVE') {
+    		if (item.additionType2 == 'RADIO') {
+    			$('#additionValue'+item.additionCode+item.additionValue).prop('checked',true);
+    		} else if (item.additionType2 == 'SELECT') {
+    			$('#additionValue'+item.additionCode).val(item.additionCode+'|'+item.additionValue);
+    		}
+    	} else if (item.additionType1 == 'MULTIPLEX') {
+    		if (item.additionType2 == 'CHECK') {
+    			$('#additionValue'+item.additionCode+item.additionValue).prop('checked',true);
+    		}
+    	} 
+    });
+    
+    // 팝업 선택박스 index 높이기
+    $(".select2Basic_pop").select2({   
+        dropdownCssClass : 'increasedzindexclass_pop',
+        minimumResultsForSearch: Infinity,
+        width:"100%"
+    });    
+}
+$(document).ready(function(){
+	
+	//저장버튼 클릭
+	$('#popContractAdditionSaveButton').click(function(){
+		
+		var saveYn = true;
+		
+		$('#contractAdditionTbody input[type=text]').each(function(i, item){
+			if (item.value == '' && $('#'+item.name.replace('additionValue','')).val().split('|')[0] == 'Y') {
+				showAlert("정보를 입력하십시오.");
+				$(this).focus();
+				saveYn = false;
+				return false;
+			}
+		});
+		if (saveYn == false) {
+			return;
+		}
+		
+		$('#contractAdditionTbody input[type=radio]').each(function(i, item){
+			if (!$('input[name='+item.name+']:checked').val() && $('#'+item.value.split('|')[0]).val().split('|')[0] == 'Y') {
+				showAlert("정보를 선택하십시오.");
+				$(this).focus();
+				saveYn = false;
+				return false;
+			}	
+		});
+		if (saveYn == false) {
+			return;
+		}
+		
+		$('#contractAdditionTbody input[type=checkbox]').each(function(i, item){
+			if (!$('input[name='+item.name+']:checked').val() && $('#'+item.value.replace('|','')).val().split('|')[0] == 'Y') {
+				showAlert("정보를 선택하십시오.");
+				$(this).focus();
+				saveYn = false;
+				return false;
+			}	
+		});
+		if (saveYn == false) {
+			return;
+		}
+		
+		$('#contractAdditionTbody input[type=text]').each(function(i, item){
+			if (item.value != '' && !isKoreanNumber(item.value)){
+				showAlert("한글,영문,숫자만 입력가능합니다.");
+				$(this).focus();
+				saveYn = false;
+				return false;
+			}	
+		});
+		if (saveYn == false) {
+			return;
+		}
+		
+		$('#contractAdditionTbody input[type=text]').each(function(i, item){
+			$('#'+item.name.replace('additionValue','')).val($('#'+item.name.replace('additionValue','')).val()+'|'+item.value);
+		});
+
+		$('#contractAdditionTbody input[type=radio]:checked').each(function(i, item){
+			$('#'+item.value.split('|')[0]).val($('#'+item.value.split('|')[0]).val()+'|'+item.value.split('|')[1]);
+		});
+		
+		$('#contractAdditionTbody select').each(function(i, item){
+			$('#'+item.value.split('|')[0]).val($('#'+item.value.split('|')[0]).val()+'|'+item.value.split('|')[1]);
+		});
+		
+		$('#contractAdditionTbody input[type=checkbox]').each(function(i,item){
+			if (item.checked == true) {
+				$('#'+item.value.replace('|','')).val($('#'+item.value.replace('|','')).val()+'|'+item.value.split('|')[1]);
+			} else {
+				$('#'+item.value.replace('|','')).val($('#'+item.value.replace('|','')).val());
+			}
+		});
+		
+		var additionCode = new Array();
+		var additionValue = new Array();
+		
+		var conNumber = $('#popContractAdditionConNumber').val();
+		
+		$('#contractAdditionTbody input[name=additionCode]').each(function(){
+			if ($(this).val().split('|')[2]) {
+				additionCode.push($(this).val().split('|')[1]);
+				additionValue.push($(this).val().split('|')[2]);
+			} 
+		});
+		
+		jQuery.ajaxSettings.traditional = true;
+		$.ajax({
+			method:'post',
+			url: '/contractlist/savecontractaddition',
+			data: {conNumber : conNumber, additionCode : additionCode, additionValue : additionValue},
+			success : function(json) {
+				showAlert("저장되었습니다.");
+				setContractAdditionData($('#popContractAdditionConNumber').val());
+			}
+		});
+	});
+});
+/*]]>*/
+</script>
+<form name="popContractAdditionForm" onsubmit="return false;">
+<input type="hidden" id="popContractAdditionConNumber" name="conNumber"/>
+<div class="popup-dim"></div>
+<div class="popup-align">	
+	<div class="popup-vertical">
+		<div class="popup-layer option wl">
+			<a class="btn_close" href="#">X</a>
+			<div class="pop_tit" id="contractAdditionTitle"></div>
+			<section class="section">
+				<div class="table-wrap">
+					<table class="form_table">
+						<colgroup>
+							<col width="40%" />
+							<col width="*" />
+						</colgroup>
+						<tbody id="contractAdditionTbody">
+						</tbody>
+					</table>
+					<div class="btn_set-center bottom_set mt30">
+						<a class="btn btn_green btn_wm radius mr5" role="button" href="#none" id="popContractAdditionSaveButton" >저장</a>
+						<a class="btn btn_default btn_wm radius btn_cancel" href="#none" role="button" id="popContractAdditionCancelButton">취소</a>
+					</div>
+				</div>
+			</section>
+		</div>
+	</div>
+</div>
+</form>
+</div>

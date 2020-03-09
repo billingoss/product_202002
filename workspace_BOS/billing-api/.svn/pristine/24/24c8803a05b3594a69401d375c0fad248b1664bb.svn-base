@@ -1,0 +1,28 @@
+spring:
+  datasource:
+    type: org.apache.tomcat.jdbc.pool.DataSource
+    driverClassName: org.mariadb.jdbc.Driver
+    
+# 운영db
+#    url: jdbc:mariadb://billing-mariadb.c3jzbdiabvlx.ap-northeast-2.rds.amazonaws.com:3306/openbill?autoReconnect=true&useSSL=false&characterEncoding=UTF-8
+# 개발, 로컬
+    url: jdbc:mariadb://127.0.0.1:3306/openbill?autoReconnect=true&useSSL=false&characterEncoding=UTF-8
+    username: openbill_dev
+    password: billing!Q
+    thymeleaf:
+    cache: false   
+
+mybatis:
+  config-location: classpath:mybatis-config.xml
+  mapper-locations: classpath:mapper/**/*.xml
+
+
+server:
+  tomcat:
+    protocol-header: x-forwarded-proto
+# 빌레터
+#  port: 8888
+# 어드민
+  port: 7777
+# 항상 port 아래 설정, server 정보 숨김 처리
+  server-header: Server

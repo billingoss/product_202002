@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.api.repository.ProviderRepository">
+
+<resultMap id="providerInformation" type="com.api.model.ProviderInformation"> 
+	<result property="providerNumber" column="providernumber"/> 
+	<result property="code" column="code"/> 
+	<result property="detailCode" column="detailCode"/> 
+	<result property="seq" column="seq"/>
+	<result property="value1" column="value1"/>
+	<result property="value2" column="value2"/>
+	<result property="value3" column="value3"/>
+	<result property="optionCode" column="optionCode"/>
+	<result property="optionValue1" column="optionvalue1"/>
+	<result property="optionValue2" column="optionvalue2"/>
+	<result property="optionValue3" column="optionvalue3"/>
+	<result property="description" column="description"/>
+</resultMap>
+<select id="getProviderInformationByCode" resultMap="providerInformation"  parameterType = "ProviderInformation">
+select a.providernumber, a.code, a.detailcode, a.value1, a.value2, a.value3, a.optioncode, a.optionvalue1, a.optionvalue2, a.optionvalue3, a.description
+from   providerinformation a
+where  a.providernumber = #{providerNumber}
+and    a.code = #{code}
+and    date_format(curdate(),'%Y%m%d') between a.effectstartdate and a.effectenddate
+order by a.detailcode, a.seq
+</select>
+
+<select id="getProviderInformation" resultMap="providerInformation"  parameterType = "ProviderInformation" >
+select a.providernumber, a.code, a.detailcode, a.value1, a.value2, a.value3, a.optioncode, a.optionvalue1, a.optionvalue2, a.optionvalue3, a.description
+from   providerinformation a
+where  a.providernumber = #{providerNumber}
+and    a.code = #{code}
+and    a.detailcode = #{detailCode}
+<if test='!"N".equals(effectDateFlag)'>
+and    date_format(curdate(),'%Y%m%d') between a.effectstartdate and a.effectenddate
+</if>
+order by a.seq
+</select>
+
+<select id="getProviderInformationByValue" resultMap="providerInformation"  parameterType = "ProviderInformation" >
+select a.providernumber, a.code, a.detailcode, a.value1, a.value2, a.value3, a.optioncode, a.optionvalue1, a.optionvalue2, a.optionvalue3, a.description
+from   providerinformation a
+where  a.providernumber = #{providerNumber}
+and    a.code = #{code}
+and    a.detailcode = #{detailCode}
+and    a.value1 = #{value1}
+<if test='!"N".equals(effectDateFlag)'>
+and    date_format(curdate(),'%Y%m%d') between a.effectstartdate and a.effectenddate
+</if>
+order by a.seq
+</select>
+
+<select id="getProviderInformationDetail" resultMap="providerInformation"  parameterType = "ProviderInformation" >
+select a.providernumber, a.code, a.detailcode, a.value1, a.value2, a.value3, a.optioncode, a.optionvalue1, a.optionvalue2, a.optionvalue3, a.description
+from   providerinformation a
+where  1=1
+<if test="providerNumber != null and providerNumber != 0">
+and    a.providernumber = #{providerNumber}
+</if>
+<if test='code != null and !"".equals(code)'>
+and    a.code = #{code}
+</if>
+<if test='detailCode != null and !"".equals(detailCode)'>
+and    a.detailcode = #{detailCode}
+</if>
+<if test='value1 != null and !"".equals(value1)'>
+and    a.value1 = #{value1}
+</if>
+<if test='value2 != null and !"".equals(value2)'>
+and    a.value2 = #{value2}
+</if>
+<if test='!"N".equals(effectDateFlag)'>
+and    date_format(curdate(),'%Y%m%d') between a.effectstartdate and a.effectenddate
+</if>
+order by a.seq
+</select>
+
+</mapper>

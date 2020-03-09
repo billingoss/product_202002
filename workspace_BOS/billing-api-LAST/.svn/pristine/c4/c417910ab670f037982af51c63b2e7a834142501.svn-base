@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<header th:fragment="headerFragment">
+
+    <div style="border: 1px solid green">
+        <b th:inline="text"> [[${session.loginName}]]-[[${session.businessName}]]</b>님 안녕하세요.
+        <a href="/logout" >[Logout]</a>
+    </div>
+
+   <!-- <a th:href="@{/index}">index 페이지 이동</a>-->
+
+</header>
+
+</html>

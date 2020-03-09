@@ -1,0 +1,183 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+		$("#searchbarorder").load("/order/searchbarorder");
+		
+		$('#chkall').click(function(){
+			if ($('#chkall').prop('checked') == true){
+				$('#ordertbody input:checkbox').prop('checked', true);
+				$('#ordertbody tr').attr('style', 'background-color: #D9E5FF');
+			} else {
+				$('#ordertbody input:checkbox').prop('checked', false);
+				$('#ordertbody tr').attr('style', '');
+			}
+		});
+		
+		$('#ordertbody').on('click', 'tr', function(){
+			if (!$(this).attr('style')){
+				$('td input:checkbox',this).prop('checked',true);
+				$(this).attr('style','background-color: #D9E5FF');
+			} else {
+				$('td input:checkbox',this).prop('checked',false);
+				$(this).attr('style','');
+			}
+		});
+		
+		$('#deleteorder').click(function(){
+			if (!$('#ordertbody input[type=checkbox]:checked').val()){
+				  alert("삭제하실 주문을 선택하십시오.");
+				  return;
+			}
+			var connumber = new Array();
+			$('#ordertbody input[type=checkbox]:checked').each(function(){
+				connumber.push($(this).val());
+			});
+			
+			jQuery.ajaxSettings.traditional = true;
+
+			$.ajax({
+					method : 'post',
+		    		url : '/order/deletechannelcontract',
+		    		data : {connumber : connumber},
+					error: function(xhr, status, error){ 	
+						alert(error);
+					},
+					success : function(data){
+						alert("총 " + data.totalCnt + "건중 " + data.successCnt + "건 삭제되었습니다. \n" + (data.doneCnt>0?data.doneCnt + "건은 배송상태를 배송전으로 수정후 삭제하십시오.":""));
+						$('#ordersearchbutton').click();
+					}
+			});
+		});
+	
+		$('#deleteorderall').click(function(){
+			var param = new Object();
+			param.registrationdatetime = $('#registrationdatetime').val().replace('-','').replace('-','');
+			param.channelid = $('#channelid').val();
+			
+			$.ajax({
+					method : 'post',
+		    		url : '/order/deletechannelcontractall',
+		    		data : param,
+					error: function(xhr, status, error){ 	
+						alert(error);
+					},
+					success : function(data){
+						alert("총 " + data.totalCnt + "건중 " + data.successCnt + "건 삭제되었습니다. \n" + (data.doneCnt>0?data.doneCnt + "건은 배송상태를 배송전으로 수정후 삭제하십시오.":""));
+						$('#ordersearchbutton').click();
+					}
+			});
+		});
+	
+	
+	});
+</script>		
+<div class="row">
+	<div id="searchbarorder">
+	</div>
+</div>
+<div id="orderdiv">
+	<div class="row">
+		<div class="col-md-12">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+		    		<h2 class="panel-title">
+		     			<strong>주문내역 조회</strong>
+		    		</h2>
+		   		</div>
+		   		<div class="panel-body">
+		    		<div class="table-responsive">
+						<div class="form-group">
+							<b><span id="totalcount"></span></b>
+						</div>
+		     			<table class="table" id="ordertable" style="display:block; overflow-x:scroll; overflow-y:hidden; height:100%; white-space:nowrap;">
+			      			<thead  class="table-header-bg">
+			       				<tr>
+			        				<th><input name="chkall" id="chkall" type="checkbox" value=""/></th>
+			        				<th>번호</th>
+			        				<th>등록일</th>
+			        				<th>판매채널구분</th>
+			        				<th>회원구분</th>
+			        				<th>정기배송여부</th>
+			        				<th>수취인명</th>
+			        				<th>수취인연락처</th>
+			        				<th>상품명</th>
+			        				<th>신청수량</th>
+			        				<th>배송일</th>
+			        				<th>배송유형</th>
+			        				<th>우편번호</th>
+			        				<th>주소</th>
+			        				<th>배송메시지</th>
+			        				<th>배송시작일</th>
+			        				<th>종료일</th>
+			        				<th>이용기간(월)</th>
+			        				<th>배송주기</th>
+			        				<th>배송횟수</th>
+			        				<th>전체발송회차</th>
+			        				<th>현재발송회차</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">고객요청</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세1</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세2</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세3</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세4</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세5</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">빅이슈권수</th>
+			        				<th>신청일</th>
+			        				<th>고객명</th>
+			        				<th>연락처</th>
+			        				<th>결제일</th>
+			        				<th>결제수단</th>
+			        				<th>결제금액</th>
+			        				<th>배송비유형</th>
+			        				<th>배송비</th>
+								</tr>
+							</thead>
+							<tbody id="ordertbody" class="table-body-row">
+								<tr th:each="result : ${lists}">
+									<td></td>
+									<td style="vertical-align: middle" th:text="${result.registrationdatetime}"></td>
+									<td style="vertical-align: middle" th:text="${result.channelname}"></td>
+									<td style="vertical-align: middle" th:text="${result.recurringdeliveryyn}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverycustomername}"></td>
+									<td class="phone" style="vertical-align: middle" th:text="${result.deliveryphonenumber1}"></td>
+									<td style="vertical-align: middle" th:text="${result.productname}"></td>
+									<td style="vertical-align: middle" th:text="${result.quantity}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliveryday}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverytypename}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliveryzipcode}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliveryaddress}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliveryremark}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverystartdatetime}"></td>
+									<td style="vertical-align: middle" th:text="${result.effectenddatetime}"></td>
+									<td style="vertical-align: middle" th:text="${result.duration}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverycycle}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverytimes}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverytotalcount}"></td>
+									<td style="vertical-align: middle" th:text="${result.currentdeliverycount}"></td>
+									<td style="vertical-align: middle" th:text="${result.productoption}"></td>
+									<td style="vertical-align: middle" th:text="${result.productdescription1}"></td>
+									<td style="vertical-align: middle" th:text="${result.productdescription2}"></td>
+									<td style="vertical-align: middle" th:text="${result.productdescription3}"></td>
+									<td style="vertical-align: middle" th:text="${result.productdescription4}"></td>
+									<td style="vertical-align: middle" th:text="${result.productdescription5}"></td>
+									<td style="vertical-align: middle" th:text="${result.bigissuequantity}"></td>
+									<td style="vertical-align: middle" th:text="${result.subscribedatetime}"></td>
+									<td style="vertical-align: middle" th:text="${result.customername}"></td>
+									<td class="phone" style="vertical-align: middle" th:text="${result.customerphonenumber}"></td>
+									<td style="vertical-align: middle" th:text="${result.paymentday}"></td>
+									<td style="vertical-align: middle" th:text="${result.paymentmethodname}"></td>
+									<td style="vertical-align: middle" th:text="${result.paymentamount}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverychargetypename}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverychargeamount}"></td>
+								</tr>
+							</tbody>
+	     				</table>
+	    			</div>
+				</div>
+				<div  align="center">
+					<ul id="paginationorder" class="pagination"></ul>
+				    <button class="btn btn-primary pull-right" style="margin: 3px;" id="deleteorder">삭제</button>
+				    <button class="btn btn-primary pull-right" style="margin: 3px;" id="deleteorderall">일괄삭제</button>
+				</div>
+		  	</div>
+	 	</div>
+	</div>
+</div>

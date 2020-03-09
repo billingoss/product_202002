@@ -1,0 +1,219 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+		$("#searchbar-datepicker-delivery").load("searchbardelivery");
+	});
+</script>
+<div class="row">
+	<div id="searchbar-datepicker-delivery"></div>
+</div>
+<div class="row">
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h2 class="panel-title">
+					<strong>배송대상목록</strong>
+				</h2>
+			</div>
+			<div class="panel-body" >
+				<div class="table-responsive">
+					<table class="table" id="d1maintable">
+						<thead class="table-header-bg">
+							<tr>								
+								<th style="width: 10%;">배송일자</th>
+								<th style="width: 10%;">고객명</th>
+								<th style="width: 15%;">상품명</th>
+								<th style="width: 40%;">배송주소</th>
+								<th style="width: 10%;">전화번호</th>						
+							</tr>
+						</thead>
+						<tbody id="d1maintablebody" style="cursor: pointer;">
+						</tbody>						
+					</table>
+				</div>
+			</div>
+			<div align="center">
+				<!-- class="col-md-12" -->
+				<ul id="paginationdelivery" class="pagination">
+				</ul>
+				
+				 <button class="btn btn-primary pull-right"
+					    style="margin: 3px;" id="excelsave"
+					    onclick="fnExcelReport('d1maintable')">엑셀저장</button>
+				<!-- 페이지네이션 -->
+			</div>
+			<!--
+			<div class="panel-footer" style="padding-bottom: 40px;">
+				<button class="btn btn-small btn-info pull-right"
+					style="margin: 3px;" id="excelsave"
+					onclick="fnExcelReport('p1maintable')">엑셀저장</button>
+			</div>
+			-->
+		</div>
+	</div>
+	
+</div>
+
+<!-- <div class="row"> -->
+<!-- 	<div class="col-md-12"> -->
+<!-- 		<div class="panel panel-default"> -->
+<!-- 			<div class="panel-heading"> -->
+<!-- 				<h2 class="panel-title"> -->
+<!-- 					<strong>패키지구성품내역</strong> -->
+<!-- 				</h2> -->
+<!-- 			</div> -->
+<!-- 			<div class="panel-body height-250px" id="packageListResult" > -->
+<!-- 				<div class="table-responsive"> -->
+<!-- 					<table class="table"> -->
+<!-- 						<thead class="table-header-bg"> -->
+<!-- 							<tr> -->
+<!-- 								<th style="width: 15%;">구성상품명</th> -->
+<!-- 								<th style="width: 15%;">구성상품가격</th> -->
+<!-- 								<th style="width: 15%;">구성상품시작일</th> -->
+<!-- 								<th style="width: 15%;">구성상품종료일</th>								 -->
+<!-- 							</tr> -->
+<!-- 						</thead> -->
+<!-- 						<tbody id="packageListResultBody"> -->
+<!-- 						</tbody> -->
+<!-- 					</table> -->
+<!-- 				</div> -->
+<!-- 			</div> -->
+<!-- 			<div  align="center"> class="col-md-12" -->
+<!-- 			      <ul id="paginationpackage" class="pagination">페이징처리 자리</ul> -->
+<!-- 					          페이지네이션 -->
+<!-- 			</div> -->
+<!-- 		</div> -->
+<!-- 	</div> -->
+<!-- </div> -->
+<script type="text/javascript">
+$(document).ready(function() {
+
+	$(document).on("click", "#d1maintablebody tr", function() {
+		debugger;
+		var packageid      = $('td', this).eq(1).text();
+		var deliverydate   = $('td', this).eq(2).text();				
+		$('#d1maintablebody tr').not(this).removeClass('selectedbgcolor');
+		$(this).addClass('selectedbgcolor');
+
+		//getPackageData(1 ,packageid ,deliverydate );
+		//하단에 패키지구성품내역을 조회하기 위한 부분 
+
+	});
+});
+
+	function getPackageData(page, packageid ,deliverydate) {
+		debugger;
+		var param = new Object();
+		param.page = page;
+		param.perPageNum = 15; /*만약값을셋팅하지 않으면 기본 페이지당 row수 10*/
+		param.packageid = packageid;
+		param.deliverydate = deliverydate;
+		//alert(packageid );
+		//alert(deliverydate);		
+// 		param.invoicenumber = $('#consultdataForm').find('input[name=invoicenumber]').val();
+// 		param.customernumber = $('#consultdataForm').find('input[name=customernumber]').val();;
+// 		param.invoicedate = $('#consultdataForm').find('input[name=invoicedate]').val();
+// 		param.connumber = $('#consultdataForm').find('input[name=connumber]').val();;
+// 		$('#consultmsg').val("");
+		$.ajax({
+			method : 'get',
+			url : '/billing/getPackageData',
+			data : param,
+			dataType : 'json',
+			error : function(xhr, status, error) {
+				alert(error);
+			},
+			success : function(json) {
+				//alert(json.length);
+				handlegetPackageData(json);
+			}
+		});
+	}
+	function handlegetPackageData(data) {
+
+		json = data.lists; //hashmap의 list array데이타
+		pageMaker = data.pageMaker; //pageMaker 
+		if (json.length == 0) {
+			return;
+		}
+		$('#packageListResultBody').empty();
+		var trHTML = '';
+		$.each(json, function(i, item) {
+
+			trHTML += '<tr>' 
+			       + '<td>' + item.compositionProductName + '</td>' 
+			       + '<td>' + numberComma(item.priceAmount) + '</td>' 
+			       + '<td>'	+ item.stdt + '</td>' 
+			       + '<td>'	+ item.eddt + '</td>' 
+				   + '</tr>';
+		});
+		$('#packageListResultBody').append(trHTML);
+		pagingPackageDataProc(pageMaker);
+	}
+	function pagingPackageDataProc(pageMaker) {
+		//=============pagination 시작=====================
+		$("#paginationpackage").empty();
+		if (pageMaker.totalCount != 0) {
+			$("#paginationpackage").empty();
+			if (pageMaker.prev == true) {
+
+				/*<![CDATA[*///타임리프에서 부등호상용시 조심해야함 반드시 CDATA로 감싸야함
+				$("#paginationpackage").append(
+						'<li class="goBackPage"><a><<</a></li>'); //다음페이지로 가기 버튼 활성화
+				/*]]>*/
+			}
+
+			//아래는 타임리프사용시 조시매야한다. for하기와 같이 쓰지않음 에러발생함
+			/*<![CDATA[*/
+			for (var i = pageMaker.startPage; i <= pageMaker.endPage; i++) {
+				/*]]>*/
+				//alert(i);
+				if (pageMaker.cri.page == i) {
+					$("#paginationpackage").append(
+							'<li class="disabled active" style="color: red;"><a>'
+									+ i + "</a></li>"); //버튼 비활성화
+				} else {
+					$("#paginationpackage").append(
+							'<li class="goPage" data-page="' + i + '"><a>' + i
+									+ "</a></li>"); //버튼 활성화
+				}
+			}
+			if (pageMaker.next == true) {
+				$("#paginationpackage").append(
+						'<li class="goNextPage"><a>>></a></li>'); //다음페이지로 가기 버튼 활성화
+			}
+		}
+
+		//=============pagination 끝=====================
+	}
+
+	//===================페이지이벤트처리시작==========================
+	/* $(".goBackPage").click(function() { */
+	$(document).on("click", "#paginationpackage .goBackPage", function() {
+		debugger;
+		page = Number(pageMaker.startPage) - 1;
+		//pageFlag = 1;
+		//$("상단 ajax를 함수로 만들어 재귀호출");
+		getPackageData(page);
+		//pageFlag = 0;
+
+	});
+
+	$(document).on("click", "#paginationpackage .goPage", function() {
+		debugger;
+		page = $(this).attr("data-page");
+		//alert(page);
+		//pageFlag = 1;
+		getPackageData(page);
+		//pageFlag = 0;
+	});
+
+	$(document).on("click", "#paginationpackage .goNextPage", function() {
+		debugger;
+		page = Number(pageMaker.endPage) + 1;
+		//$("상단 ajax를 함수로 만들어 재귀호출");
+		getPackageData(page);
+		//pageFlag = 0;
+	});
+
+
+</script>

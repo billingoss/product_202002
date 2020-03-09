@@ -1,0 +1,341 @@
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.8/css/all.css" />
+<div class="modal-header modal-popup-header">
+	<h5 class="modal-title">
+	   &nbsp;
+		<button type="button" class="close" data-dismiss="modal">&times;</button>
+	</h5>
+</div>
+
+<div class="modal-body" style="padding-bottom: 0px; padding-top: 0px;">
+	<div class="row grid-columns" style="margin-top: 15px;">
+		<div class="col-md-6 col" style="padding-left: 20px;">
+			<div class="panel">
+					<div class="panel-heading" style = "border-bottom: 1px solid">
+						<h4 class="panel-title">
+							<strong>환불 기본정보</strong>
+						</h4>
+					</div>
+					<div class="panel-body">
+						<div class="form-horizontal" role="form">
+							<div class="form-group">
+								<div class="col-md-4">
+									<label for="inputType" class="control-label">고객명</label>
+								</div>
+								<div class="col-md-8">
+									<input type="text" id="refundCustomername" class="form-control" readonly="true" />
+								</div>
+							</div>
+							<div class="form-group">
+								<div class="col-md-4">
+									<label for="inputType" class="control-label">상품명</label>
+								</div>
+								<div class="col-md-8">
+									<input type="text" id="refundPackagename" class="form-control" readonly="true" />
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			<!-- <ul class="nav nav-pills rounded nav-fill ml-3" role="tablist">
+				<li class="active nav-item">
+					<a class="nav-link active" data-toggle="pill" href="#nav-tab-refundcard" style="margin-left: 10px;">
+						<i class="fa fa-credit-refundcard"></i> 카드 </a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" data-toggle="pill" href="#nav-tab-refundbank"> <i class="fa fa-university"></i> 계좌송금 </a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" data-toggle="pill" href="#nav-tab-refundcash"> <i class="fas fa-money-bill-alt"></i> 현금 </a>
+				</li>
+		        <li class="nav-item"><a class="nav-link" data-toggle="pill"
+					href="#nav-tab-11pay"> <i class="fab fa-paypal"></i> 11PAY
+				</a></li>
+			</ul>
+ -->
+			<div class="tab-content">
+				<div class="tab-pane fade in active" id="nav-tab-refundcard">
+					<div class="col-md-12" >
+					  <div class="panel-body" style="padding-top: 0px;">
+						<form role="form" name ="card-refund-form">
+						    <input type="hidden" class="form-control refundinvoicenumber" id="refundinvoicenumber" name="invoicenumber" />
+							<input type="hidden" class="form-control refundinvoicedate" id="refundinvoicedate" name="invoicedate" />		
+							<input type="hidden" class="form-control refundconnumber" id="refundconnumber" name="connumber" />
+							<input type="hidden" class="form-control refundpaymentamt" id="refundpaymentamt" name="paymentamt" />	
+							<input type="hidden" class="form-control cardapprovenumber" id="refundpaymentamt" name="cardapprovenumber" value="1234" />	
+							<input type="hidden" class="form-control cardcorporationcode" id="refundpaymentamt" name="cardcorporationcode" value="06"/>
+							<input type="hidden" class="form-control refundtypecode" name="paymenttypecode" value="CARD"/>										
+							<!-- <div class="form-group">
+								<label for="cardNumber"> 카드주명</label> <input type="text"
+									class="form-control" id="cardName" placeholder="카드주명" name="paymentownername" />
+							</div>
+							<div class="form-group">
+								<label for="cardNumber"> 카드번호</label>
+								<div class="input-group">
+									<input type="text" class="form-control" id="cardNumber"
+										placeholder="카드번호" /> <span class="input-group-addon"><span
+										class="glyphicon glyphicon-lock"></span></span>
+								</div>
+							</div>
+							<div class="input-group">
+								<label for="expityMonth"> 유효기간</label>
+								<div class="col-xs-6 col-lg-6 pl-ziro"
+									style="padding-left: 0px;">
+									<input type="text" class="form-control" id="expityMonth"
+										placeholder="MM" />
+								</div>
+								<div class="col-xs-6 col-lg-6 pl-ziro">
+									<input type="text" class="form-control" id="expityYear"
+										placeholder="YY" />
+								</div>
+							</div> -->
+						</form>
+						<button id="refundcardpaybt" class="btn btn-success btn-lg btn-block" role="button">환불</button>
+						<br></br>
+					  </div>
+					</div>
+				</div>
+				<div class="tab-pane fade" id="nav-tab-refundbank">
+					<div class="col-md-12" >
+					  <div class="panel-body" style="padding-top: 0px;">
+						<form role="form" name ="bank-refund-form">
+						    <input type="hidden" class="form-control refundinvoicenumber" name="invoicenumber" />
+							<input type="hidden" class="form-control refundinvoicedate" name="invoicedate" />		
+							<input type="hidden" class="form-control refundconnumber" name="connumber" />
+							<input type="hidden" class="form-control refundpaymentamt" name="paymentamt" />	
+							<input type="hidden" class="form-control cardapprovenumber" name="cardapprovenumber" value="" />	
+							<input type="hidden" class="form-control cardcorporationcode"  name="cardcorporationcode" value=""/>
+							<input type="hidden" class="form-control" name="paymenttypecode" value="BANK"/>	
+							<!-- <div class="form-group">
+								<label for="cardNumber"> 예금주명</label> <input type="text"
+									class="form-control" id="bankName" placeholder="예금주명" name="paymentownername" />
+							</div>
+							<div class="form-group">
+								<label for="cardNumber"> 은행명</label> <input type="text"
+									class="form-control" id="bankName" placeholder="은행명" />
+							</div>
+							<div class="form-group">
+								<label for="cardNumber"> 계좌번호</label>
+								<div class="input-group">
+									<input type="text" class="form-control" id="cardNumber"
+										placeholder="계좌번호" /> <span class="input-group-addon"><span
+										class="glyphicon glyphicon-lock"></span></span>
+								</div>
+							</div> -->
+						</form>
+						<button id="refundbankpaybt" class="btn btn-success btn-lg btn-block" role="button">환불</button>
+						<br></br>
+						</div>
+					</div>
+				</div>
+				<!-- tab-pane.// -->
+				<div class="tab-pane fade" id="nav-tab-11pay">
+					<p>11Pay!!</p>
+				</div>
+				<div class="tab-pane fade" id="nav-tab-refundcash">
+					<div class="col-md-12">
+					  <form role="form" name ="cash-refund-form">
+						    <input type="hidden" class="form-control refundinvoicenumber" name="invoicenumber" />
+							<input type="hidden" class="form-control refundinvoicedate" name="invoicedate" />		
+							<input type="hidden" class="form-control refundconnumber" name="connumber" />
+							<input type="hidden" class="form-control refundpaymentamt" name="paymentamt" />	
+							<input type="hidden" class="form-control cardapprovenumber" name="cardapprovenumber" value="" />	
+							<input type="hidden" class="form-control cardcorporationcode"  name="cardcorporationcode" value=""/>
+							<input type="hidden" class="form-control" name="paymenttypecode" value="CASH"/>
+							<input type="hidden" class="form-control" id="tid" name="tid" value=""/>
+<!-- 						<div class="form-group">
+							<label for="cardNumber"> 납부금액</label> <input type="text"
+								class="form-control" id="cardName" placeholder="금액" />
+						</div> -->
+						 <button id="refundcashpaybt" class="btn btn-success btn-lg btn-block" role="button">환불</button>
+					   </form>
+					</div>
+				</div>
+				<!-- tab-pane.// -->
+			</div>
+			<!-- tab-content .// -->
+		</div>
+		<!-- col-bamt text -->
+		<div class="col-md-6 col">
+			<div class="panel">
+				<div class="panel-heading" style = "border-bottom: 1px solid">
+					<h4 class="panel-title">
+						<strong>금액 정보</strong>
+					</h4>
+				</div>
+				<div class="panel-body">
+					<table class="table table-bordered">
+						<tbody>
+							<tr>
+								<td>환불일자</td>
+								<td id="refundDate"></td>
+							</tr>
+							<tr>
+								<td>금액</td>
+								<td id="refundTotalAmt">0</td>
+							</tr>
+							<tr>
+							   <td>메모</td>
+							   <td><div class="col-md-12">
+									<textarea id="refundmsg" class="form-control" style="height: 120px;"></textarea>
+					               </div>
+					           </td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+$(document).ready(function() {
+	$('#refundcardpaybt').click(function(){
+		var queryString = $("form[name=card-refund-form]").serialize() ;
+		/*<![CDATA[*/
+		 queryString = queryString.replace(/,/g, '') + "&memo=" + $('#refundmsg').val();
+		 /*]]>*/
+		// alert(queryString);
+		$.ajax({
+			   method : 'post',
+               url : '/billing/refundproc',
+               data : queryString,
+               dataType : 'json',
+               error: function(xhr, status, error){
+            	 Common.Dialog.alert({
+		    		  title:'ERROR'
+		            , content: error
+		        });
+               },
+               success : function(json){
+            	 var promise = Promise.resolve(true);
+              	 
+              	 promise = new Promise(function (resolve, reject) {
+              		 Common.Dialog.alert({
+  			    		  title:''
+  			            , content: '정상처리 되었습니다.'
+  			         });
+              		$('#customerrefund').prop("disabled", true);
+              		 return resolve();
+              	 });
+              	 promise = promise.then(function(res) {
+              		 
+              		 $("#customerrefundDialog").modal('hide'); 
+              		 $('#searchbt').click();
+              		 refreshPaymentHistory($("form[name=card-refund-form] .refundinvoicenumber").val(),$("form[name=card-refund-form] .refundinvoicedate").val(),$("form[name=card-refund-form] .refundconnumber").val());
+              	 });
+               }
+            });
+	});
+	
+	$('#refundbankpaybt').click(function(){
+		var queryString = $("form[name=bank-refund-form]").serialize() ;
+		 //queryString = queryString.replace(/-/g, '');
+		/*<![CDATA[*/
+		 queryString = queryString.replace(/,/g, '') + "&memo=" + $('#refundmsg').val();
+		 /*]]>*/
+		// alert(queryString);
+		$.ajax({
+			   method : 'post',
+               url : '/billing/refundproc',
+               data : queryString,
+               dataType : 'json',
+               error: function(xhr, status, error){
+            	 Common.Dialog.alert({
+		    		  title:'ERROR'
+		            , content: error
+		        });
+               },
+               success : function(json){
+            	 var promise = Promise.resolve(true);
+            	 
+            	 promise = new Promise(function (resolve, reject) {
+            		 Common.Dialog.alert({
+			    		  title:''
+			            , content: '정상처리 되었습니다.'
+			         });            		 
+            		 $('#customerrefund').prop("disabled", true);
+            		 return resolve();
+            	 });
+            	 promise = promise.then(function(res) {
+            		 
+            		 $("#customerrefundDialog").modal('hide'); 
+            		 $('#searchbt').click();
+            		// refreshPaymentHistory($("form[name=bank-refund-form] .refundinvoicenumber").val(),$("form[name=bank-refund-form] .refundinvoicedate").val(),$("form[name=bank-refund-form] .refundconnumber").val());
+            	 });            	 
+               }               
+            });
+	});
+	
+	$('#refundcashpaybt').click(function(){
+		var queryString = $("form[name=cash-refund-form]").serialize() ;
+		 //queryString = queryString.replace(/-/g, '');
+		/*<![CDATA[*/
+		 queryString = queryString.replace(/,/g, '') + "&memo=" + $('#refundmsg').val();
+		 /*]]>*/
+		// alert(queryString);
+		$.ajax({
+			   method : 'post',
+               url : '/billing/refundproc',
+               data : queryString,
+               dataType : 'json',
+               error: function(xhr, status, error){
+            	 Common.Dialog.alert({
+		    		  title:'ERROR'
+		            , content: error
+		        });
+               },
+               success : function(json){
+            	 var promise = Promise.resolve(true);
+            	 
+            	 promise = new Promise(function (resolve, reject) {
+            		 Common.Dialog.alert({
+			    		  title:''
+			            , content: '정상처리 되었습니다.'
+			         });
+            		 $('#customerrefund').prop("disabled", true);
+            		 return resolve();
+            	 });
+            	 promise = promise.then(function(res) {            		 
+            		 $("#customerrefundDialog").modal('hide'); 
+            		 $('#searchbt').click();
+            		// refreshPaymentHistory($("form[name=bank-refund-form] .refundinvoicenumber").val(),$("form[name=bank-refund-form] .refundinvoicedate").val(),$("form[name=bank-refund-form] .refundconnumber").val());
+            	 });            	 
+               }               
+            });
+	});
+	/*
+	function refreshPaymentHistory(invoicenumber,invoicedt,connumber){
+		$.ajax({
+			method : 'get',
+            url : '/billing/getpaymentdetail/'+invoicenumber + '/' + invoicedt + '/' + connumber,
+            dataType : 'json',
+            error: function(xhr, status, error){
+                alert(error);
+            },
+            success : function(json){
+            	//alert(json.length);
+               if(json.length == 0){
+            		return;
+            	}
+         	   $('#PaymentCustomermaintablebody').empty();
+         	   var trHTML = '';
+                $.each(json, function (i, item) {
+                	if(item.paymentdatetime == null)return null;
+                	
+             	     trHTML += '<tr>' 
+                           + '<td>' + item.paymentdatetime + '</td>'
+                           + '<td>' + item.paymenttypecodename + '</td>'
+                           + '<td>' + item.paymentmethodcodename + '</td>'
+                           + '<td>' + numberComma(item.paymentamount) + '</td>'
+                           + '<td>' + item.employeename + '</td>'
+                           + '<td>' + item.reason + '</td>'
+                           + '<td>' + item.etc + '</td>'
+                           + '</tr>';
+                });
+                $('#PaymentCustomermaintablebody').append(trHTML);
+            }
+        });
+	}*/
+})
+</script>

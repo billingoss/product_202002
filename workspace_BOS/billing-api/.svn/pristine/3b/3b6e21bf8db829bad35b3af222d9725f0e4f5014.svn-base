@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.api.repository.CustomerRepository">
+
+<resultMap id="customerSearch" type="com.api.model.customer.Customer"> 
+	<result property="customerNumber" column="customernumber"/> 
+	<result property="customerName" column="customername"/>
+	<result property="phoneNumber" column="phonenumber"/>
+	<result property="baseAddress" column="baseaddress"/> 
+	<result property="detailAddress" column="detailaddress"/> 
+	<result property="totalCount" column="totalcount"/>
+</resultMap>
+<select id="getCustomerSearch" resultMap="customerSearch"  parameterType = "Customer" >
+select a.customernumber, a.customername, a.phonenumber, b.baseaddress, b.detailaddress, sum(1) over() as totalcount
+from   customer a, address b
+where  a.providernumber = #{providerNumber}
+<if test='!"".equals(customerName)'>
+and    a.customername = #{customerName}
+</if>
+<if test='!"".equals(phoneNumber)'>
+and    a.phonenumber = #{phoneNumber}
+</if>
+and    a.addressid = b.addressid
+order by a.customername, a.phonenumber
+limit #{pageStart}, #{perPageNum}
+</select>
+
+<resultMap id="customerList" type="com.api.model.customer.Customer"> 
+	<result property="customerNumber" column="customernumber"/> 
+	<result property="customerName" column="customername"/>
+	<result property="phoneNumber" column="phonenumber"/>
+	<result property="baseAddress" column="baseaddress"/> 
+	<result property="detailAddress" column="detailaddress"/> 
+	<result property="totalCount" column="totalcount"/>
+	<result property="cousellingCount" column="cousellingcount"/>
+	<result property="createDate" column="createdate"/>
+</resultMap>
+<select id="getCustomerList" resultMap="customerList"  parameterType = "Customer" >
+select a.customernumber, a.customername, a.phonenumber, a.baseaddress, a.detailaddress, a.totalcount, a.createdate,
+      (select count(*) from counsellinghistory b where b.customernumber = a.customernumber and b.state = 'PROGRESS') as counsellingcount 
+from  (select a.customernumber, a.customername, a.phonenumber, a.createdate, b.baseaddress, b.detailaddress, sum(1) over() as totalcount
+       from   customer a, address b
+       where  a.providernumber = #{providerNumber}
+<if test='!"".equals(customerName)'>
+       and    a.customername = #{customerName}
+</if>
+<if test='!"".equals(phoneNumber)'>
+       and    a.phonenumber = #{phoneNumber}
+</if>
+       and    a.addressid = b.addressid
+       order by a.customername, a.phonenumber
+<if test='"Y".equals(pagingYn)'>
+       limit #{pageStart}, #{perPageNum}
+</if>
+       ) a
+</select>
+</mapper> 

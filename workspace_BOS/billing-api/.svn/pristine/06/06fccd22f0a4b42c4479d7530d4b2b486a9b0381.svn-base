@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout" layout:decorator="layout/default">
+<!-- index.html 고유 CSS 추가 -->
+<th:block layout:fragment="css">
+</th:block>
+<!-- index.html 고유 스크립트 추가 -->
+<th:block layout:fragment="script">
+<script type="text/javascript">
+/*<![CDATA[*/
+function getData(page) {
+
+	if ($('#startDate').val() == ''){
+		alert('주문시작일을 입력하십시오.');
+		$('#startDate').focus();
+		return;
+	}
+	if ($('#endDate').val() == ''){
+		alert('주문종료일을 입력하십시오.');
+		$('#endDate').focus();
+		return;
+	}
+	if($('#startDate').val().replace(/-/g, '') > $('#endDate').val().replace(/-/g, '')){
+    	alert('조회시작일자가 종료일자보다 큽니다.');
+    	return;
+    }
+	
+	var queryString = $("form[name=searchForm]").serialize();
+	queryString = queryString + '&page='+page+'&perPageNum=10&pagingYn=Y';
+	queryString = queryString.replace(/-/g, '');
+	
+	$.ajax({
+		method : 'get',
+		url : '/contractlist/getcontractlist',
+		data : queryString, 
+		dataType : 'json',
+		error : function(xhr, status, error) {
+			alert(error);
+		},
+		success : handleData
+	});
+}
+
+function handleData(data) {
+	debugger;
+	
+	//PageMaker정보를 Json으로부터 분리한다.
+	json = data.lists; //hashmap의 list array데이타
+	pageMaker = data.pageMaker; //pageMaker 
+
+	$('#totalCount').html(pageMaker.totalCount);
+	$('#contractTbody').empty();
+	var trHTML = '';
+
+	if (json.length == 0) {
+		trHTML = '<tr class="no_empty"><td colspan=11><div class="data-empty"><img src="/resources/images/common/img_no_empty.png" alt="데이터 없음" /><span class="txt_empty">검색 결과가 없습니다.</span></div></td></tr>';
+	} else {
+		$.each(json, function(i, item) {
+			trHTML += '<tr>'
+			       +  '<td><span class="trp radio-box"><input type="radio" id="conNumber'+item.conNumber+'" name="chk" value="'+item.conNumber+'|'+item.contractState+'"/><i></i><label for="table1"></label></span></td>'
+			       +  '<td>' + ((pageMaker.cri.page-1)*10+i+1) + '</td>'
+			       +  '<td>' + item.channelName + '</td>'
+			       +  '<td>' + item.conNumber + '</td>'
+			       +  '<td>' + item.customerName + '</td>'
+			       +  '<td class="phone">' + item.phoneNumber + '</td>'
+			       +  '<td>' + item.productName + '</td>'
+				   +  '<td>' + numberComma(item.quantity) + '</td>'
+			       +  '<td>' + (item.recurringDeliveryYn=='Y'?'정기배송':'일반배송') + '</td>'
+			       +  '<td>' + (item.recurringInvoiceYn=='Y'?'자동정기결제':'일괄결제') + '</td>'
+			       +  '<td>' + item.contractStateName + '</td>'
+			       +  '<td>' + formatDate(item.registrationDateTime) + '</td>'
+			       +  '</tr>';
+		});
+	}
+
+	$('#contractTbody').append(trHTML);
+	formatPhone();
+	pagingProc(pageMaker);
+}
+
+function getPagingData(page){
+	getData(page);
+}
+
+$(document).ready(function(){
+	
+	var today = getToday();
+	
+	$('#startDate').val(today);
+	$('#endDate').val(today);
+	
+	//조회기간 라디어 클릭
+    $('input[name=searchDate]').click(function(){
+    	var endDate = $('#endDate').val().replace(/-/g, '');
+    	var startDate;
+    	if ($(this).val() == 31){
+        	startDate = dateAddDel(dateAddDel(endDate,-1,'m'),1,'d');
+    	} else {
+        	startDate = dateAddDel(endDate,-1*parseInt($(this).val()),'d');
+    	}
+    	$('#startDate').val(startDate);
+    });
+	
+	//조회버튼 클릭
+	$('#searchButton').click(function(){
+		getData(1);
+	});
+	
+	//초기화버튼 클릭
+	$('#resetButton').click(function(){
+		$('#customerName').val('');
+		$('#phoneNumber').val('');
+		$('#productName').val('');
+		$('#recurringDeliveryYn').val('');
+		$('#recurringInvoiceYn').val('');
+		$('#contractState1').prop('checked',true);
+		$('#startDate').val(today);
+		$('#endDate').val(today);
+		$('#searchDate1').prop('checked',true);
+
+	    $(".select2Basic").select2({            
+	        minimumResultsForSearch: Infinity
+	    });
+	});
+	
+	//업로드버튼 클릭
+	$('#uploadButton').click(function(){
+		alert('준비중입니다.');
+	});
+	
+	//엑셀다운로드 버튼 클릭
+	$('#excelButton').click(function(){
+		if($('#startDate').val().replace(/-/g, '') > $('#endDate').val().replace(/-/g, '')){
+	    	alert('조회시작일자가 종료일자보다 큽니다.');
+	    	return;
+	    }
+		var f = document.searchForm;
+		f.method = 'post';
+		f.action = '/contractlist/getcontractlistexcel';
+		f.submit();
+	});
+	
+	//해지버튼 클릭
+	$('#terminationButton').click(function(){
+		if ($('input[name=chk]:checked').length == 0){
+			alert("해지처리할 주문내역을 선택하십시오.");
+			return;
+		}
+		
+		var conNumber = $('input[name=chk]:checked').val().split('|')[0];
+		var contractState = $('input[name=chk]:checked').val().split('|')[1];
+		
+		if (contractState != 'ACTIVATION' && contractState != 'SUSPEND'){
+			alert('사용중/정지상태 주문만 해지할 수 있습니다.');
+			return;
+		}
+			
+		var param = new Object();
+		param.conNumber = conNumber;
+		param.contractState = 'TERMINATION';
+		
+		$.ajax({
+			method : 'post',
+			url : '/contractlist/updatecontract',
+			data : param, 
+			error : function(xhr, status, error) {
+				alert(error);
+			},
+			success : function(data) {
+				alert('저장되었습니다.');
+				$('#searchButton').click();
+			}
+		});
+		
+	});
+	
+	//정지버튼 클릭
+	$('#suspendButton').click(function(){
+		if ($('input[name=chk]:checked').length == 0){
+			alert("정지처리할 주문내역을 선택하십시오.");
+			return;
+		}
+
+		var conNumber = $('input[name=chk]:checked').val().split('|')[0];
+		var contractState = $('input[name=chk]:checked').val().split('|')[1];
+		
+		if (contractState != 'ACTIVATION'){
+			alert('사용중인 주문만 정지해제할 수 있습니다.');
+			return;
+		}
+			
+		var param = new Object();
+		param.conNumber = conNumber;
+		param.contractState = "SUSPEND";
+		
+		$.ajax({
+			method : 'post',
+			url : '/contractlist/updatecontract',
+			data : param, 
+			error : function(xhr, status, error) {
+				alert(error);
+			},
+			success : function(data) {
+				alert('저장되었습니다.');
+				$('#searchButton').click();
+			}
+		});
+	});
+
+	//정지해제버튼 클릭
+	$('#activationButton').click(function(){
+		if ($('input[name=chk]:checked').length == 0){
+			alert("정지해제처리할 주문내역을 선택하십시오.");
+			return;
+		}
+
+		var conNumber = $('input[name=chk]:checked').val().split('|')[0];
+		var contractState = $('input[name=chk]:checked').val().split('|')[1];
+		
+		if (contractState != 'SUSPEND'){
+			alert('정지상태 주문만 정지해제할 수 있습니다.');
+			return;
+		}
+			
+		var param = new Object();
+		param.conNumber = conNumber;
+		param.contractState = "ACTIVATION";
+		
+		$.ajax({
+			method : 'post',
+			url : '/contractlist/updatecontract',
+			data : param, 
+			error : function(xhr, status, error) {
+				alert(error);
+			},
+			success : function(data) {
+				alert('저장되었습니다.');
+				$('#searchButton').click();
+			}
+		});
+	});
+	
+	$('#contractTbody').on('click', 'td', function(){
+		if (!$(this).find('input[name=chk]').val()) {
+			var conNumber = $(this).parents('tr').find('input[name=chk]').val().split('|')[0];
+			movePage('/billing/contractPaymentList/'+conNumber,1,1);
+			//movePage('/contractlist/contractdeliverylist/'+conNumber,1,1);
+		} 
+	});
+});
+/*]]>*/
+</script>
+</th:block>
+<!-- container -->
+<div id="container" layout:fragment="contentFragment">
+    <div id="contents" class="sale">
+        <h2 class="h2">판매관리</h2>
+		<section th:include="fragments/topMenu::topMenuFragmemt"></section>
+        <section>
+            <div class="cont-box wfull">
+			<form name="searchForm" onsubmit="return false;">
+                <table class="form_table">
+                    <colgroup>
+                        <col width="170px" />
+                        <col width="*" />
+                        <col width="170px" />
+                        <col width="*" />
+                    </colgroup>
+                    <tbody>
+                        <tr>
+                            <th>고객명</th>
+                            <td>
+                                <input type="text" class="w_lg_s" id="customerName" name="customerName" value="" placeholder=""/>
+                            </td>
+                            <th>전화번호</th>
+                            <td>
+                                <input type="text" class="w_lg_s" id="phoneNumber" name="phoneNumber" value="" placeholder="-없이 입력"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>상품명</th>
+                            <td>
+                                <input type="text" class="w_lg_s" id="productName" name="productName" value="" placeholder=""/>
+                            </td>
+                            <th>배송방식</th>
+                            <td>
+                                <div class="select-box w_mm">
+                                    <select class="select2Basic" id="recurringDeliveryYn" name="recurringDeliveryYn">
+										<option value="">전체</option>
+										<option value="Y">정기배송</option>
+										<option value="N">일반배송</option>
+									</select>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>결제방식</th>
+                            <td>
+                                <div class="select-box w_mm">
+                                    <select class="select2Basic" id="recurringInvoiceYn" name="recurringInvoiceYn">
+										<option value="">전체</option>
+										<option value="Y">자동정기결제</option>
+										<option value="N">일괄결제</option>
+									</select>
+                                </div>
+                            </td>
+                            <th>주문상태</th>
+                            <td>
+                                <span class="trp radio-box">
+									<input type="radio" id="contractState1" name="contractState" value="ACTIVATION" th:checked="${contractState==null?'true':'false'}"/>
+									<i></i>
+									<label for="contractState1">사용중</label>
+								</span>
+						        <span class="trp radio-box">
+									<input id="contractState2" type="radio" name="contractState" value="DONE" th:checked="${contractState=='DONE'?'true':'false'}"/>
+									<i></i>
+									<label for="contractState2">정지/해지/종료</label>
+								</span>
+						        <span class="trp radio-box">
+									<input id="contractState3" type="radio" name="contractState" value="UNSETTLED" th:checked="${contractState=='UNSETTLED'?'true':'false'}"/>
+									<i></i>
+									<label for="contractState3">미결</label>
+								</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>주문기간</th>
+                            <td colspan="3">
+                                <div class="calendar mr20">
+                                    <span class="datepicker-box w_ms">
+										<input type="text" class="js-datepicker" id="startDate" name="startDate"/>
+									</span>
+                                    <span class="ml5 mr5">~</span>
+                                    <span class="datepicker-box w_ms">
+									<input type="text" class="js-datepicker" id="endDate" name="endDate"/>
+									</span>
+                                </div>
+                                <span class="trp radio-box">
+									<input type="radio" id="searchDate1" name="searchDate" th:checked="true" value="0"/>
+									<i></i>
+									<label for="searchDate1">오늘</label>
+								</span>
+						        <span class="trp radio-box">
+									<input id="searchDate2" type="radio" name="searchDate" value="7"/>
+									<i></i>
+									<label for="searchDate2">7일</label>
+								</span>
+	                                <span class="trp radio-box">
+									<input id="searchDate3" type="radio" name="searchDate" value="15"/>
+									<i></i>
+									<label for="searchDate3">15일</label>
+								</span>
+	                                <span class="trp radio-box">
+									<input id="searchDate4" type="radio" name="searchDate" value="31"/>
+									<i></i>
+									<label for="searchDate4">한달</label>
+								</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                </form>
+                <div class="btn_set-center mt30">
+                    <a class="btn btn_green btn_m radius mr5" role="button" href="#none" id="searchButton">검색</a>
+                    <a class="btn btn_default btn_m radius" href="#none" role="button" id="resetButton">초기화</a>
+                </div>
+
+                <!--주문관리리스트//-->
+                <div class="table-wrap mt80">
+                    <div class="table-header ">
+                        <div class="con_title">총 <em id="totalCount">0</em>건</div>
+                        <div class="ab-r">
+                            <div class="btn_set">
+                            	<!-- 
+                                <a class="btn btn_default" id="uploadButton"><i class="icon_upload">주문업로드</i></a>
+                                <div class="tooltip mr10">
+                                    <i class="icon_tooltip js-tooltip_sendstate" data-geo=".js_tooltip_sendstate"></i>
+                                    <div class="js_tooltip_sendstate" style="display: none;">
+                                        <p class="tip_inner">
+                                            Billing OSS 또는 다른 판매채널의 주문을 엑셀로 작성 후 일괄 업로드하여 통합관리 할 수 있습니다.
+                                        </p>
+                                    </div>
+                                </div>
+                                 -->
+                                <a class="btn btn_default" id="excelButton"><i class="icon_down">엑셀다운로드</i></a>
+                            </div>
+                        </div>
+                    </div>
+                    <table class="table_list">
+                        <colgroup>
+                            <col style="width:4%"/>
+                            <col style="width:4%"/>
+                            <col style="width:10%"/>
+                            <col style="width:10%"/>
+                            <col style="width:7%"/>
+                            <col style="width:12%"/>
+                            <col style="width:auto"/>
+                            <col style="width:4%"/>
+                            <col style="width:8%"/>
+                            <col style="width:10%"/>
+                            <col style="width:8%"/>
+                            <col style="width:8%"/>
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>선택</th>
+                                <th>번호</th>
+                                <th>판매채널</th>
+                                <th>주문번호</th>
+                                <th>고객명</th>
+                                <th>전화번호</th>
+                                <th>상품명</th>
+                                <th>수량</th>
+                                <th>배송방식</th>
+                                <th>결제방식</th>
+                                <th>주문상태</th>
+                                <th>주문일</th>
+                            </tr>
+                        </thead>
+                        <tbody id="contractTbody">
+                        </tbody>
+                    </table>
+
+                    <div class="paging-area">
+                        <div class="btn_set">
+                            <div class="fl">
+                                <button class="btn btn_gray btn_w mr5" type="button" id="terminationButton">해지</button>
+                                <button class="btn btn_gray btn_w mr5" type="button" id="suspendButton">정지</button>
+                                <button class="btn btn_gray btn_w" type="button" id="activationButton">정지해제</button>
+                            </div>
+                        </div>
+                        <div class="paging" id="pagination">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+<!-- //container -->
+</html>

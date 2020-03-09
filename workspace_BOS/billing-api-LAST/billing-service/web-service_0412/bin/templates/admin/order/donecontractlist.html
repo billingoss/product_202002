@@ -1,0 +1,237 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+		$("#searchbardonecontract").load("/order/searchbardonecontract");
+		
+		$('#contracttbody').on('click', 'tr', function(){
+			$('#contracttbody input[type=checkbox]').prop('checked',false);
+			$('td input:checkbox',this).prop('checked',true);
+			$('#contracttbody tr').attr('style','');
+			$(this).attr('style','background-color: #D9E5FF');
+		});
+		
+		$('#suspendcontract').click(function(){
+			if (!$('input[type=checkbox]:checked').val()){
+				  alert("정지하실 주문을 선택하십시오.");
+				  return;
+			}
+			var contract = $('input[type=checkbox]:checked').val().split('|');
+			if (contract[1] != 'SUSPEND'){
+				  alert("정지해제할 수 있는 상태가 아닙니다.");
+				  return;
+			}
+
+			var param = new Object();
+			param.connumber = contract[0];
+			param.contractstate = 'ACTIVATION';
+			$.ajax({
+					method : 'post',
+		    		url : '/order/updatecontract/',
+		    		data : param,
+					error: function(xhr, status, error){ 	
+						alert(error);
+					},
+					success : function(data){
+						alert("저장되었습니다.");
+						$('#searchbutton').click();
+					}
+			});
+		});
+		
+		$('#deliverydetail').click(function(){
+			if (!$('input[type=checkbox]:checked').val()){
+				  alert("조회하실 배송일정을 선택하십시오.");
+				  return;
+			}
+			var param = new Object();
+			param.connumber = $('input[type=checkbox]:checked').val().split('|')[0];
+			
+			$.ajax({
+					method : 'get',
+		    		url : '/order/deliverydetailpopup',
+		    		data : param,
+					error: function(xhr, status, error){ 	
+					  alert("조회하실 배송일정을 선택하십시오.");
+					},
+					success : function(data){
+						 $('#savedialog .modal-content').html(data);
+		            	 $("#savedialog").modal('show'); 
+					}
+			});
+		});
+		
+		$('#excelcontract').click(function(){
+			var param = new Object();
+			param.effectenddatetime = $("#deliveryyear").val() + $('#deliverymonth').val();
+			param.contractstate = $("#contractstate").val();
+			param.recurringdeliveryyn = $('#recurringdeliveryyn').val();
+			param.pagingyn = 'N';
+
+			$.ajax({
+				method : 'get',
+				url : '/order/getdonecontractlist',
+				data : param, //JSON.stringify(paramData) , /* queryString, */
+				dataType : 'json',
+				error : function(xhr, status, error) {
+					alert(error);
+				},
+				success : handleDataExcel
+			});
+		});
+
+		function handleDataExcel(data) {
+			
+			json = data.lists; //hashmap의 list array데이타
+			displayproductdescription = data.displayproductdescription;
+			
+			if (json.length == 0) {
+				Common.Dialog.alert({
+					title : '',
+					content : '데이터가 없습니다.'
+				});
+			}
+			
+			$('#exceltbody').empty();
+			var trHTML = '';
+
+			$.each(json, function(i, item) {
+				 trHTML += '<tr>';          
+				 trHTML += setDataContract(i, item, 0, displayproductdescription);
+				 trHTML += '</tr>';
+			});
+			$('#exceltbody').append(trHTML);
+			formatPhone();
+			
+			fnExcelReport('exceltable','종료해지정지리스트_'+$('#deliveryyear').val()+$('#deliverymonth').val()+'.xls');
+		}
+	});
+</script>		
+<section class="page container">
+<div class="row">
+	<div id="searchbardonecontract">
+	</div>
+</div>
+<div id="deliverydiv">
+	<div class="row">
+		<div class="col-md-12">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+		    		<h2 class="panel-title">
+		     			<strong>종료/해지/정지 내역 리스트</strong>
+		    		</h2>
+		   		</div>
+		   		<div class="panel-body">
+		    		<div class="table-responsive">
+						<div class="form-group">
+							<b><span id="totalcount"></span></b>
+						</div>
+ 		     			<table class="table" id="contracttable" style="display:block; overflow-x:scroll; overflow-y:hidden; height:100%; white-space:nowrap;"> 
+			      			<thead  class="table-header-bg">
+			       				<tr>
+			        				<th>선택</th>
+			        				<th>번호</th>
+			        				<th>등록일</th>
+			        				<th>판매채널구분</th>
+			        				<th>회원구분</th>
+			        				<th>정기배송여부</th>
+			        				<th>주문상태</th>
+			        				<th>수취인명</th>
+			        				<th>수취인연락처</th>
+			        				<th>상품명</th>
+			        				<th>신청수량</th>
+			        				<th>배송일</th>
+			        				<th>배송유형</th>
+			        				<th>우편번호</th>
+			        				<th>주소</th>
+			        				<th>배송메시지</th>
+			        				<th>배송시작일</th>
+			        				<th>종료일</th>
+			        				<th>이용기간(월)</th>
+			        				<th>배송주기</th>
+			        				<th>배송횟수</th>
+			        				<th>전체발송회차</th>
+			        				<th>현재발송회차</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">고객요청</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세1</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세2</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세3</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세4</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세5</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">빅이슈권수</th>
+			        				<th>신청일</th>
+			        				<th>고객명</th>
+			        				<th>연락처</th>
+			        				<th>결제일</th>
+			        				<th>결제수단</th>
+			        				<th>결제금액</th>
+			        				<th>배송비유형</th>
+			        				<th>배송비</th>
+								</tr>
+							</thead>
+							<tbody id="contracttbody" class="table-body-row">
+							</tbody>
+	     				</table>
+	    			</div>
+				</div>
+				<div  align="center">
+					<ul id="paginationcontract" class="pagination"></ul>
+				    <button class="btn btn-primary pull-right" style="margin: 3px;" id="excelcontract">다운로드</button>
+				    <button class="btn btn-primary pull-right" style="margin: 3px;" id="deliverydetail">상세정보</button>
+				    <button class="btn btn-primary pull-right" style="margin: 3px;" id="suspendcontract">정지해제</button>
+				</div>
+				<div>
+	     			<table class="table" id="exceltable" style="display:none;"> 
+	      			<thead  class="table-header-bg">
+	       				<tr>
+	        				<th>번호</th>
+	        				<th>등록일</th>
+	        				<th>판매채널구분</th>
+	        				<th>회원구분</th>
+	        				<th>정기배송여부</th>
+	        				<th>주문상태</th>
+	        				<th>수취인명</th>
+	        				<th>수취인연락처</th>
+	        				<th>상품명</th>
+	        				<th>신청수량</th>
+	        				<th>배송일</th>
+	        				<th>배송유형</th>
+	        				<th>우편번호</th>
+	        				<th>주소</th>
+	        				<th>배송메시지</th>
+	        				<th>배송시작일</th>
+	        				<th>종료일</th>
+	        				<th>이용기간(월)</th>
+	        				<th>배송주기</th>
+	        				<th>배송횟수</th>
+	        				<th>전체발송회차</th>
+	        				<th>현재발송회차</th>
+	        				<th th:if="${displayproductdescription.equals('Y')}">고객요청</th>
+	        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세1</th>
+	        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세2</th>
+	        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세3</th>
+	        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세4</th>
+	        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세5</th>
+	        				<th th:if="${displayproductdescription.equals('Y')}">빅이슈권수</th>
+	        				<th>신청일</th>
+	        				<th>고객명</th>
+	        				<th>연락처</th>
+	        				<th>결제일</th>
+	        				<th>결제수단</th>
+	        				<th>결제금액</th>
+	        				<th>배송비유형</th>
+	        				<th>배송비</th>
+						</tr>
+					</thead>
+					<tbody id="exceltbody" class="table-body-row">
+					</tbody>
+					</table>
+				</div>
+		  	</div>
+	 	</div>
+	</div>
+	<div class="modal" id="savedialog" role="dialog">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content"></div>
+		</div>
+	</div>	
+</div>
+</section>

@@ -1,0 +1,184 @@
+<div class="col-md-12">
+	<div class="panel panel-heading"
+		style="vertical-align: middle; text-align: center; margin-left: auto; margin-right: auto; padding-bottom: 0px;">
+		<div class="form-section">
+			<div class="row" style="text-align: center">
+				<form id="dataForm" name="dataForm" class="form-inline" role="form" onsubmit="return false;" style="margin-bottom: 10px;">
+					<div class="col-md-3">
+						<div class="form-group">
+					       <span>상품유형</span>          
+					         <select name="productType" class="form-control">
+					           <option value="">전체</option>
+					           <option value="NORMAL">일반</option>
+					           <option value="PACKAGE">패키지</option>
+					           <option value="COUPONCOUNT">쿠폰횟수형</option>
+					           <option value="COUPONPRICE">쿠폰금액형</option>					           
+					         </select>       
+					      </div> 
+					</div>
+					<div class="col-md-4">
+						<div class="form-group">
+							<span>상품명</span> <input type="text" class=" form-control" name ="productName"/>
+						</div>
+					</div>
+					<div class="col-md-4">
+						<button id="searchbt" type="button" class="btn btn-primary">조회</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+$(document).ready(function() {
+	
+	$('#searchbt').click(function() {
+		$("#paginationproduct").empty();
+		$("#Productlistmaintablebody").empty();
+		getProductData(1);
+	});
+	
+	function getProductData(page) {
+		var param = new Object();
+		param.page = page;
+		param.perPageNum = 10; /*만약값을셋팅하지 않으면 기본 페이지당 row수 10*/
+		param.productType =   $("select[name=productType]").val();
+		param.productName =   $("input[name=productName]").val();
+	  
+	  $.ajax({
+		   method : 'get',
+           url : '/product/getproductlist',
+           data : param,
+           dataType : 'json',
+           error: function(xhr, status, error){
+               alert(error);
+           },
+           success : function(json){
+        	  handleData(json);
+           }
+       });
+	}		
+	
+  	function handleData(data){
+
+		json = data.lists; //hashmap의 list array데이타
+		pageMaker = data.pageMaker; //pageMaker 
+		if (json.length == 0) {
+			return;
+		}
+	
+		$('#Productlistmaintablebody').empty();
+			var trHTML = '';
+			
+			if(json.length == 0){
+				Common.Dialog.alert(
+						{
+							title:''
+							, content: '데이터가 없습니다.'
+							});
+			}
+			
+			$.each(json, function (i, item) {
+				// 상품상태 지정
+				var today = new Date().getTime(); // 현재시간
+				var prdStdt = new Date(item.subscribeStartDateTime+" 00:00:00").getTime();	//판매가능일
+				var prdEndt = new Date(item.subscribeEndDateTime+" 23:59:59").getTime();	//판매종료일
+				var prdState = '';	//상태
+				
+          		if(today > prdStdt) {
+	          			if(prdEndt > today){
+	          				prdState = '판매가능';
+	          			}else{
+	          				prdState = '판매종료';
+	          			}
+	          		}else if(prdStdt > today){
+	          			prdState = '상품출시전';
+          		}
+          		console.log(today, prdStdt, prdEndt, prdState);
+          		
+				trHTML += '<tr data-id="' + item.productId + '">'
+						+ '<td><input class="tot_amount" type="checkbox" value=""/></td>'
+                        + '<td>' + item.productType + '</td>'
+                        + '<td>' + item.productName + '</td>'
+                        + '<td>' + item.packagePriceReferenceYn + '</td>'
+                        + '<td style="text-align:right">' + item.priceAmount + '</td>'
+                        + '<td>' + prdState + '</td>'
+                        + '<td>' + item.subscribeStartDateTime + '</td>'
+                        + '<td>' + item.subscribeEndDateTime + '</td>'                       
+                        /* + '<td>' + item.packagePriceBandwidth + '</td>' */
+                        + '<td>' + item.productDescription + '</td>'	                             
+                        + '</tr>';
+			});
+			$('#Productlistmaintablebody').append(trHTML);
+			pagingproductlist(pageMaker);
+  }
+		  
+  function pagingproductlist(pageMaker){
+	//=============pagination 시작=====================
+		$("#paginationproduct").empty();
+		if (pageMaker.totalCount != 0) {
+			$("#paginationproduct").empty();
+			if (pageMaker.prev == true) {
+
+				/*<![CDATA[*///타임리프에서 부등호상용시 조심해야함 반드시 CDATA로 감싸야함
+				$("#paginationproduct")
+						.append(
+								'<li class="goBackPage"><a><<</a></li>'); //다음페이지로 가기 버튼 활성화
+				/*]]>*/
+			}
+
+			//아래는 타임리프사용시 조시매야한다. for하기와 같이 쓰지않음 에러발생함
+			/*<![CDATA[*/
+			for (var i = pageMaker.startPage; i <= pageMaker.endPage; i++) {
+				/*]]>*/
+				//alert(i);
+				if (pageMaker.cri.page == i) {
+					$("#paginationproduct").append(
+							'<li class="disabled active" style="color: red;"><a>'
+									+ i + "</a></li>"); //버튼 비활성화
+				} else {
+					$("#paginationproduct").append(
+							'<li class="goPage" data-page="' + i + '"><a>'
+									+ i + "</a></li>"); //버튼 활성화
+				}
+			}
+			if (pageMaker.next == true) {
+				$("#paginationproduct")
+						.append(
+								'<li class="goNextPage"><a>>></a></li>'); //다음페이지로 가기 버튼 활성화
+			}
+		}
+
+	//=============pagination 끝=====================
+  	}
+		   
+	//===================페이지이벤트처리시작==========================
+	/* $(".goBackPage").click(function() { */
+	$(document).on("click",
+			"#paginationproduct .goBackPage", function() {
+				//debugger;
+				page = Number(pageMaker.startPage) - 1;
+				//pageFlag = 1;
+				//$("상단 ajax를 함수로 만들어 재귀호출");
+				getProductData(page);
+				//pageFlag = 0;
+	});
+	$(document).on("click", "#paginationproduct .goPage",
+			function() {
+				//debugger;
+				page = $(this).attr("data-page");
+				//alert(page);
+				//pageFlag = 1;
+				getProductData(page);
+				//pageFlag = 0;
+	});
+	$(document).on("click",
+			"#paginationproduct .goNextPage", function() {
+				//debugger;
+				page = Number(pageMaker.endPage) + 1;
+				//$("상단 ajax를 함수로 만들어 재귀호출");
+				getProductData(page);
+				//pageFlag = 0;
+	});
+});		
+</script>

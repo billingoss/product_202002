@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.api.repository.BizRepository">
+
+	<!-- 회원사 등록 -->
+	<insert id="insertBusiness" parameterType="com.api.billing.model.biz.BusinessInput">
+		INSERT INTO business 
+		( 
+			businessregistrationnumber
+			, businessname
+			, representativename
+			, residentregistrationnumber
+			, businessaddressid
+			, businesstype
+			, businessitem
+			, auditid
+			, auditdatetime
+		) VALUES	(
+			  #{businessregistrationnumber}		/*사업자등록번호*/
+			, #{businessname}						/*사업자명*/
+			, #{representativename}				/*대표자명*/
+			, #{residentregistrationnumber}		/*주민등록번호 - 입력하지 않음*/
+			, #{businessaddressid}					/*사업자주소ID*/
+			, #{businesstype}						/*업태 - 입력하지 않음*/
+			, #{businessitem}						/*업종 - 입력하지 않음*/
+			, #{auditid}							/*작성자ID*/    
+			, NOW()									/*작성일시*/   	
+		)
+	</insert>
+	
+	<!-- 회원사 수정 -->
+	<update id="updateBusiness" parameterType="com.api.billing.model.biz.BusinessInput">
+		UPDATE business SET 
+			 businessname					= #{businessname}						/*사업자명*/            
+			, representativename         	= #{representativename}				/*대표자명*/                
+			, residentregistrationnumber	= #{residentregistrationnumber}		/*주민등록번호 - 입력하지 않음*/    
+			, businessaddressid          	= #{businessaddressid}				/*사업자주소ID*/         
+			, businesstype               	= #{businesstype}						/*업태 - 입력하지 않음*/    
+			, businessitem               	= #{businessitem}						/*업종 - 입력하지 않음*/    
+			, managerid		               	= #{managerid}							/*관리자 ID*/    
+			, auditid                    		= #{auditid}								/*작성자ID*/           
+			, auditdatetime              		=  NOW()									/*작성일시*/   	        
+		WHERE businessregistrationnumber = #{businessregistrationnumber}
+	</update>	
+	
+	<!-- 제공자 등록 -->
+	<insert id="insertProvider" parameterType="com.api.billing.model.biz.BusinessInput"  useGeneratedKeys="true" keyProperty="providernumber" keyColumn="providernumber">
+		INSERT INTO provider 
+		( 
+			providername
+			, businessregistrationnumber
+			, createdate
+			, auditid
+			, auditdatetime
+		) VALUES(
+			  #{providername}						/*제공자 명*/
+			, #{businessregistrationnumber}		/*사업자등록번호*/
+			, #{createdate}							/*생성일자*/			
+			, #{auditid}							/*작성자ID*/    
+			, NOW()									/*작성일시*/   	
+		)
+		
+		<selectKey keyProperty="providernumber" resultType="int" order="AFTER"> 
+		<!-- pk가 아닐땐, 키컬럼도 넣어 설정할 수 있음 -->
+            select LAST_INSERT_ID()
+        </selectKey>		
+	</insert>
+	
+	<!-- 제공자 수정 -->
+	<update id="updateProvider" parameterType="com.api.billing.model.biz.BusinessInput" >
+		UPDATE provider SET
+			providername                  		= #{providername}					/*제공자 명*/
+			, auditid                      			= #{auditid}							/*작성자ID*/
+			, auditdatetime                		=  NOW()									/*작성일시*/
+		WHERE  providernumber 				= #{providernumber}
+		   AND businessregistrationnumber = #{businessregistrationnumber}
+	</update>	
+	
+	<!-- 사원 등록 -->
+	<insert id="insertEmployee" parameterType="com.api.billing.model.biz.BusinessInput" useGeneratedKeys="true" keyProperty="employeenumber" keyColumn="employeenumber">
+		INSERT INTO employee 
+		(
+			employeename
+			, providernumber
+			, organizationnumber
+			, effectstartdatetime
+			, effectenddatetime
+			, adminyn
+			, auditid
+			, auditdatetime
+		) VALUES (
+			  #{employeename}				/*사원명*/
+			, #{providernumber}			/*소속번호*/
+			, #{organizationnumber}		/*조적번호 - 등록하지 않음*/
+			, #{effectstartdatetime}			/*유효시작일자*/
+			, #{effectenddatetime}			/*유효종료일자*/
+			, #{adminyn}					/*관리자여부*/
+			, #{auditid}					/*작성자ID*/    
+			, NOW()							/*작성일시*/ 	
+		)
+		
+		<selectKey keyProperty="employeenumber" resultType="int" order="AFTER"> 
+		    SELECT LAST_INSERT_ID()
+        </selectKey>		
+	</insert>
+	
+	<!-- 사원 수정 -->
+	<update id="updateEmployee" parameterType="com.api.billing.model.biz.BusinessInput">
+		UPDATE employee SET
+			employeename          = #{employeename}			/*사원명*/
+			, organizationnumber  = #{organizationnumber}		/*조직번호 - 등록하지 않음*/         
+			, effectstartdatetime		= #{effectstartdatetime}			/*유효시작일자*/         
+			, effectenddatetime		= #{effectenddatetime}			/*유효종료일자*/             
+			, adminyn					= #{adminyn}					/*관리자여부*/              
+			, auditid					= #{auditid}						/*작성자ID*/              
+			, auditdatetime			= NOW()							/*작성일시*/
+		WHERE employeenumber = #{employeenumber}
+		  AND providernumber    = #{providernumber}	
+	</update>
+	
+	<!-- Login 정보 등록-->
+	<insert id="insertLogin" parameterType="com.api.billing.model.biz.BusinessInput">
+		INSERT INTO login
+		 (
+		 	loginid
+		 	, password
+		 	, employeenumber
+		 	, email
+		 	, createdate
+		 	, auditid
+		 	, auditdatetime
+		 	, isAccountNonExpired
+		 	, isAccountNonLocked
+		 	, isCredentialsNonExpired
+		 	, isEnabled
+		 ) VALUES(
+		 	  #{loginid}						/*로그인 ID*/
+		 	, #{password}					/*비밀번호*/
+		 	, #{employeenumber}			/*사원번호*/
+		 	, #{email}							/*이메일*/
+		 	, NOW()						/*생성일자*/
+			, #{auditid}					/*작성자ID*/    
+			, NOW()							/*작성일시*/ 	
+		 	, #{isAccountNonExpired}		/**/
+		 	, #{isAccountNonLocked}		/**/
+		 	, #{isCredentialsNonExpired}	/**/
+		 	, #{isEnabled}					/**/
+		 )
+	</insert>
+	
+	<!-- Login 정보 수정-->
+	<update id="updateLogin" parameterType="com.api.billing.model.biz.BusinessInput">
+		UPDATE login SET		 	
+		 	 email                      	= #{email}						/*이메일*/   
+		 	, auditid                   	= #{auditid}						/*작성자ID*/                      
+		 	, auditdatetime           	= NOW()							/*작성일시*/ 	     
+		<if test='isAccountNonExpired != null and !"".equals(isAccountNonExpired)'>		 	    
+		 	, isAccountNonExpired		= #{isAccountNonExpired}		/**/
+		 </if>                 
+		<if test='isAccountNonExpired != null and !"".equals(isAccountNonExpired)'>		 	    
+		 	, isAccountNonLocked		= #{isAccountNonExpired}		/**/                     
+		 </if>                 
+		<if test='isCredentialsNonExpired != null and !"".equals(isCredentialsNonExpired)'>		 	    
+		 	, isCredentialsNonExpired	= #{isCredentialsNonExpired}	/**/                 
+		 </if>                 
+		<if test='isEnabled != null and !"".equals(isEnabled)'>		 	    
+		 	, isEnabled					=	#{isEnabled}					/**/                 
+		 </if>                 
+		WHERE loginid = #{loginid} 		   
+ 		   AND employeenumber = #{employeenumber}
+	</update>
+	
+	<!-- Login 정보 수정-->
+	<update id="updateLoginPassword" parameterType="com.api.billing.model.biz.BusinessInput">
+		UPDATE login SET		 	
+			password = #{newPassword}  
+			, auditid                   	= #{auditid}						/*작성자ID*/                      
+		 	, auditdatetime           	= NOW()							/*작성일시*/               
+		WHERE loginid = #{loginid} 		   
+ 		   AND email = #{email}
+	</update>
+	
+	<!-- 회원사 정보 조회 -->                   	
+	<select id="selectAddressId" resultType="String">
+		SELECT CONCAT('BIZ',NEXTVAL(addressid_seq)) AS addressId
+	</select>
+	
+	<!-- 회원사 주소 정보 등록-->
+	<insert id="insertAddress" parameterType="com.api.billing.model.biz.BusinessInput" >
+		INSERT INTO   address
+		(
+          addressid
+		    , zipcode
+		    , baseaddress
+		    , detailaddress
+		    , auditid
+		    , auditdatetime
+		) VALUES (
+			  #{businessaddressid}
+			, #{zipcode}
+			, #{baseaddress}
+			, #{detailaddress}
+			, #{auditid}
+			, NOW()
+		)		
+	</insert>
+	
+	<!-- 회원사 주소 정보 등록-->
+	<update id="updateAddress" parameterType="com.api.billing.model.biz.BusinessInput" >
+		UPDATE address 
+		SET    zipcode = #{zipcode}
+			   , baseaddress = #{baseaddress}
+			   , detailaddress = #{detailaddress}
+			   , auditid = #{auditid}
+			   , auditdatetime = NOW()  
+		WHERE  addressid = #{addressId}
+	</update>
+	
+	<!-- 회원사 정보 조회 -->                   	
+	<select id="selectBusiness" resultType="com.api.billing.model.biz.Business" parameterType="String">
+		SELECT
+				businessregistrationnumber
+				, businessname
+				, representativename
+				, residentregistrationnumber
+				, businessaddressid
+				, businesstype
+				, businessitem
+				, auditid
+				, auditdatetime
+		FROM business biz
+	  WHERE biz.businessregistrationnumber = #{businessregistrationnumber}
+	</select> 
+	
+	<!-- 회원사 정보 상세 조회 -->                   	
+	<select id="selectBusinessDetail" resultType="com.api.billing.model.biz.BusinessInput" parameterType="String">
+		SELECT
+				biz.businessregistrationnumber
+				, biz.businessname
+				, biz.representativename
+				, biz.residentregistrationnumber
+				, biz.businessaddressid
+				, biz.businesstype
+				, biz.businessitem
+				, biz.managerid
+				, biz.auditid
+				, biz.auditdatetime
+				, prov.providernumber
+				, prov.providername
+				, prov.createdate
+				, prov.currentdate
+				, prov.deletedate
+				, zip.addressid
+				, zip.zipcode
+				, zip.baseaddress
+				, zip.detailaddress
+				, emp.employeenumber
+				, emp.effectstartdatetime
+				, emp.effectenddatetime
+				, emp.adminyn
+				, logid.loginid
+				, logid.email
+		FROM business biz
+			, provider prov
+			, address zip
+			, login logid
+			, employee emp
+	  WHERE biz.businessregistrationnumber = #{businessregistrationnumber}
+	    AND biz.businessregistrationnumber = prov.businessregistrationnumber
+	    AND biz.businessaddressid = zip.addressid
+	    AND biz.managerid = logid.loginid
+	    AND logid.employeenumber = emp.employeenumber
+	</select>
+	 
+	<!-- 사원 목록 조회 -->
+	<select id="selectEmplyee" resultType="com.api.billing.model.biz.Employee" parameterType="com.api.billing.model.biz.Employee">
+		SELECT
+				emp.employeename
+				, emp.employeenumber
+				, emp.effectstartdatetime
+				, emp.effectenddatetime
+				, emp.adminyn
+				, emp.providernumber
+				, us.loginid
+				, us.password
+				, us.email
+				, emp.auditid
+				, emp.auditdatetime
+			FROM employee emp
+				, login	us
+		  WHERE emp.employeenumber = us.employeenumber
+		<if test='expiredSearchFlag == true'>		  
+		    AND us.isAccountNonExpired = 1
+		    AND us.isAccountNonLocked = 1
+		    AND us.isCredentialsNonExpired = 1
+		    AND us.isEnabled = 1
+		    AND NOW() BETWEEN  emp.effectstartdatetime AND emp.effectenddatetime
+		</if>		    
+		    AND emp.providernumber = #{providernumber}	
+	</select>
+	
+	<!-- 사원  상세 조회 -->
+	<select id="selectEmplyeeDetail" resultType="com.api.billing.model.biz.BusinessInput" parameterType="String">
+		SELECT
+				emp.employeenumber
+				, emp.employeename
+				, emp.providernumber
+				, emp.organizationnumber
+				, emp.effectstartdatetime
+				, emp.effectenddatetime
+				, emp.adminyn
+				, logid.loginid
+				, logid.password
+				, logid.email
+				, logid.createdate
+				, logid.isAccountNonExpired
+				, logid.isAccountNonLocked
+				, logid.isCredentialsNonExpired
+				, logid.isEnabled
+			FROM employee emp
+				, login logid
+		  WHERE emp.employeenumber = logid.employeenumber
+		    AND logid.loginid = #{loginid}
+	</select>
+	
+</mapper>

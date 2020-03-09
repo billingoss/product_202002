@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" >
+
+<head>
+    <!-- header -->
+    <meta charset="UTF-8"/>
+    <title>login | SKT Billing OSS</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" id="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,initial-scale=1.0"/>
+    <link rel="stylesheet" href="/resources/css/library/csslibrary.css"/>
+    <link rel="stylesheet" href="/resources/css/screen.css"/>
+    <!--[if lt IE 9]>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js" type="text/javascript" charset="utf-8"></script>
+<![endif]-->
+    <script src="/resources/js/library/jquery.min.js"></script>
+    <script src="/resources/js/library/jquerylibrary.min.js"></script>
+    <script src="/resources/js/screen.js"></script>
+    <script src="/js/commonlib.js" type="text/javascript" ></script>
+
+    <!-- //header -->
+    
+    <script type="text/javascript">
+		$(document).ready(function() {
+			//아이디 focus 설정
+			$('#username').focus();	
+			
+			//저장된 쿠기값 가져오기
+			var userInputId = getCookie("userInputId");		    
+			if(typeof userInputId == "undefined" || userInputId == null || userInputId == ""){		    	
+				userInputId = "";
+			}
+			
+			//저장된 쿠기값  아이디 설정
+			$("input[name='username']").val(userInputId); 
+		     
+			// 그 전에 ID를 저장해서 처음 페이지 로딩
+			if($("input[name='username']").val() != ""){
+				// 아이디 저장하기 체크되어있을 시,
+				$("#idSaveCheck").attr("checked", true); // ID 저장하기를 체크 상태로 두기.
+			}
+		 	// 체크박스에 변화가 발생시
+			$("#idSaveCheck").change(function(){ 
+				if($("#idSaveCheck").is(":checked")){ // ID 저장하기 체크했을 때,
+					var userInputId = $("input[name='username']").val();
+					setCookie("userInputId", userInputId, 7); // 7일 동안 쿠키 보관
+				}else{ // ID 저장하기 체크 해제 시,
+					deleteCookie("userInputId");
+				}
+			});
+		     
+		    // ID 저장하기를 체크한 상태에서 ID를 입력하는 경우, 이럴 때도 쿠키 저장.
+			$("input[name='username']").keyup(function(){ // ID 입력 칸에 ID를 입력할 때,
+				if($("#idSaveCheck").is(":checked")){ // ID 저장하기를 체크한 상태라면,
+					var userInputId = $("input[name='username']").val();
+					setCookie("userInputId", userInputId, 7); // 7일 동안 쿠키 보관
+				}
+			});
+		    
+			/*********************************
+			비밀번호 찾기 Link버튼
+			**********************************/	 
+	        var popup_findPassWord = $("#findPassLinkBtn").trpLayerFixedPopup("#popup_findPassWord");
+	        $(popup_findPassWord.getBtn).on("click", function($e) {
+	            $e.preventDefault();
+	            $('#findPasswordForm')[0].reset();
+	            popup_findPassWord.open(this);
+	            $('#findLoginId').focus();
+	        });
+	        $("body").on("click", "#popup_findPassWord .btn_close, #popup_findPassWord .btn_cancel", function($e) {
+	            $e.preventDefault();
+	            popup_findPassWord.close();
+	        });
+	        
+			/*********************************
+			비밀번호 찾기 (팝업 Ok 버튼)
+			**********************************/	        
+	        $('#findPasswordBtn').click(function(){
+	        	//loginid
+				if (isEmpty($('#findLoginId').val())) {					
+					showAlert('Login ID는 필수 입력입니다.',$('#findLoginId'));
+					$('#findLoginId').focus();
+					return false;
+				} 
+	        	
+				//email
+				if (isEmpty($('#findEmail').val())) {					
+					showAlert('이메일은 필수 입력입니다.',$('#findEmail'));
+					$('#findEmail').focus();
+					return false;
+				} 
+				
+				if (!validateEmail($('#findEmail').val())) {					
+					showAlert('e-mail주소가 잘못 입력 되었습니다.',$('#findEmail'));
+					$('#findEmail').focus();					
+					return false;
+				}			
+			
+				var result = confirm('비밀번호 찾기를 진행 하시겠습니까?');
+				if(!result){											
+					return false;
+				}				
+				
+				var queryString = $("form[name=findPasswordForm]").serialize();
+				//alert(queryString );
+				$.ajax({
+						method:'post',
+						url: '/business/tempPasswordProc',
+						data: queryString,
+						error: function(xhr, status, error){
+							idDupFlag = false;
+						},
+						success : function(json){
+							debugger;
+							var msg = "";
+							if(json.errMsg == null || json.errMsg == ""){
+								msg = '임시 비밀번호가 Email로 발송 되었습니다. ';
+								$('#passCloseBtn').trigger('click');						
+								//form clear							
+							}else {
+								msg = json.errMsg;
+							}
+							/* Common.Dialog.alert({
+					    		  title:titleStr
+					            , content: msg
+					        });					 */				
+					        showAlert(msg);
+					        return false;
+						}					
+				});
+	        	
+	        });
+		});		
+		
+		/*********************************
+		쿠키 설정
+		**********************************/
+		function setCookie(cookieName, value, exdays){
+			var exdate = new Date();
+			exdate.setDate(exdate.getDate() + exdays);
+			var cookieValue = escape(value) + ((exdays==null) ? "" : "; expires=" + exdate.toGMTString());
+			document.cookie = cookieName + "=" + cookieValue;
+		}
+		
+		/*********************************
+		쿠키 삭제
+		**********************************/		 
+		function deleteCookie(cookieName){
+			var expireDate = new Date();
+			expireDate.setDate(expireDate.getDate() - 1);
+			document.cookie = cookieName + "= " + "; expires=" + expireDate.toGMTString();
+		}
+		 
+		/*********************************
+		쿠키 가져오기
+		**********************************/
+		function getCookie(cookieName) {
+			cookieName = cookieName + '=';
+			var cookieData = document.cookie;
+			var start = cookieData.indexOf(cookieName);
+			var cookieValue = '';
+			if(start != -1){
+				start += cookieName.length;
+				var end = cookieData.indexOf(';', start);
+				if(end == -1)end = cookieData.length;
+				cookieValue = cookieData.substring(start, end);
+			}
+			return unescape(cookieValue);
+		}		
+	</script>
+</head>
+
+<body>
+    <div class="wrapper login">
+        <!-- container -->
+        <div id="container">
+            <div id="contents" class="login">
+				<form th:action="@{/login}" method="post">
+                <div class="login_area">
+                    <div class="logo_txt">
+                        <h1><img src="/resources/images/common/login_logo.png" alt="Billing OSS" /></h1>
+                        <P class="txt">정기구독 서비스 관리의 기준을 세우다.</P>
+                    </div>
+
+                    <ul class="input-list">
+                        <li>
+                            <span class="trp check_validity icon_id">
+								<input type="text" placeholder="아이디를 입력하세요." class="input_success" required="required"  id="username" name="username"/>
+								<i></i>
+							</span>
+                            <!-- <p class="error-msg mt10" style="display: block">입력하신 아이디가 정확하지 않습니다. </p> -->
+                        </li>
+                        <li>
+                            <span class="trp check_validity icon_password">
+								<input type="password" placeholder="비밀번호를 입력하세요." class="input_error" required="required"  id="password" name="password"/>
+								<i></i>
+							</span>
+                            <p class="error-msg mt10" style="display: block" th:text="${errorMsg}">입력하신 비밀번호가 정확하지 않습니다. </p>
+                        </li>
+                        <li class="mt20">
+                            <span class="trp checkbox-box">
+								<input id="idSaveCheck" type="checkbox" name="idSaveCheck"/>
+								<i></i>
+								<label for="idSaveCheck">아이디저장</label>
+							</span>
+                        </li>
+                        <li class="mt30">
+                            <div class="btn_set-single">
+                                <div class="btn_item">
+                                    <button class="btn btn_gradient btn_lg radius" type="submit" name="login-submit" id="login-submit">로그인</button>
+                                </div>
+                            </div>
+                        </li>
+                    </ul> 
+                                        
+					<p class="member_join-text">
+                        <!-- <a th:href="@{/business/createBusiness}">회원가입</a> -->
+                        <a href="javascript:void(0)" id="findPassLinkBtn" >비밀번호 찾기</a>
+					</p>
+                </div>
+				</form>
+            </div>
+        </div>
+        <!-- //container -->
+    </div> 
+    <div id="popup_findPassWord" class="trp popupfixed-wrap">
+    <form id="findPasswordForm" name="findPasswordForm">
+        <div class="popup-dim"></div>
+        <div class="popup-align">
+            <div class="popup-vertical">
+                <div class="popup-layer option ws">
+                    <a class="btn_close" href="#">X</a>
+                    <div class="pop_tit">비밀번호찾기</div>
+                    <!-- 알림 mode0 -->
+                    <section class="section">
+                        <div class="table-wrap ">
+                            <p class="tac mb30">
+                                비밀번호를 잊어버리셨나요?<br/> 가입하신 메일주소로 임시비밀번호를 발송해 드립니다.
+                            </p>
+                            <table class="form_table">
+                                <colgroup>
+                                    <col width="140px" />
+                                    <col width="*" />
+                                </colgroup>
+                                <tbody>
+                                    <tr>
+                                        <th>아이디</th>
+                                        <td>
+                                            <input type="text" class="" value="" placeholder="아이디 입력" id="findLoginId" name="loginId" />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>이메일</th>
+                                        <td>
+                                            <input type="text" class="" value="" placeholder="이메일 주소 입력" id="findEmail" name="email"/>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="btn_set-center mt30">
+                            <a class="btn btn_green btn_wm radius mr5" role="button" href="javascirpt:void(0)" id="findPasswordBtn">확인</a>
+                            <a class="btn btn_default btn_wm radius btn_cancel" href="#none" role="button" id="passCloseBtn">취소</a>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+	</form>
+	<div id="divloading"></div>
+    </div>   
+    
+</body>
+
+</html>

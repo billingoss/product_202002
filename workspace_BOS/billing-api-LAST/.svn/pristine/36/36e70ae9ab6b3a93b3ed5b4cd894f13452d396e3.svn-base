@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout" layout:decorator="layout/default">
+<!-- index.html 고유 CSS 추가 -->
+<th:block layout:fragment="css">
+</th:block>
+<!-- index.html 고유 스크립트 추가 -->
+<th:block layout:fragment="script">
+<script type="text/javascript">
+/*<![CDATA[*/
+var today = getToday();
+
+function getData(page) {
+
+	if ($('#startDate').val() == ''){
+		showAlert('배송시작일 입력하십시오.',$('#startDate'));
+		return;
+	}
+	if ($('#endDate').val() == ''){
+		showAlert('배송종료일을 입력하십시오.',$('#endDate'));
+		return;
+	}
+	if($('#startDate').val().replace(/-/g, '') > $('#endDate').val().replace(/-/g, '')){
+		showAlert('조회시작일자가 종료일자보다 큽니다.');
+		return;
+	}
+	
+	var queryString = $("form[name=searchForm]").serialize();
+	queryString = queryString + '&page='+page+'&perPageNum=10&pagingYn=Y';
+	queryString = queryString.replace(/-/g, '');
+	
+	$.ajax({
+		method : 'get',
+		url : '/contractlist/getdeliverylist',
+		data : queryString, 
+		dataType : 'json',
+		success : handleData
+	});
+}
+
+function handleData(data) {
+	json = data.lists;
+	pageMaker = data.pageMaker; 
+
+	$('#totalCount').html(pageMaker.totalCount);
+	$('#deliveryTbody').empty();
+	var trHTML = '';
+	
+	if (json.length == 0) {
+		trHTML = '<tr class="no_empty"><td colspan=15><div class="data-empty"><img src="/resources/images/common/img_no_empty.png" alt="데이터 없음" /><span class="txt_empty">검색 결과가 없습니다.</span></div></td></tr>';
+	} else {
+		$.each(json, function(i, item) {
+			trHTML += '<tr>'
+			       +  '<td><span class="trp checkbox-box"><input id="checkbox_all'+(i+1)+'" class="js_item" type="checkbox" name="chk" value="'+item.deliveryNumber+'|'+item.deliveryState+'|'+item.conNumber+'"><i></i><label for="checkbox_all"'+(i+1)+'"></label></span></td>'
+				   +  '<td>' + ((pageMaker.cri.page-1)*10+i+1) + '</td>'
+				   +  '<td>' + formatDate(item.deliveryDate) + '</td>'
+				   +  '<td>' + item.customerName + '</td>'
+				   +  '<td class="phone">' + item.phoneNumber + '</td>';
+			if ($('input[name=productYn]:checked').val() == 'Y') {
+				trHTML += '<td class="tal ellipsis" title="' + item.productName + '">' + item.productName + '</td>';
+				
+			} else {
+				trHTML += '<td class="tal ellipsis" title="' + item.productName + (item.productCount>1?'외 '+(item.productCount-1)+'건':'') + '">' + item.productName + (item.productCount>1?'외 '+(item.productCount-1)+'건':'') + '</td>';
+			}
+			trHTML += '<td>' + numberComma(item.quantity) + '</td>'
+				   +  '<td>' + (item.productCount>1?'Y':'N') + '</td>'
+				   +  '<td class="tal ellipsis" title="' + item.baseAddress + ' ' + item.detailAddress + '">' + item.baseAddress + ' ' + item.detailAddress + '</td>'
+				   +  '<td>' + (item.recurringDeliveryYn=='Y'?'정기배송':'일반배송') + '</td>'
+				   +  '<td>' + item.deliveryTypeName + '</td>'
+				   +  '<td>' + item.deliveryCompanyName + '</td>'
+				   +  '<td>' + (item.deliveryDate<today.replace(/-/g, '')&&item.deliveryState=='BEFORE'?'<span class="fail">미배송</span>':item.deliveryStateName) + '</td>'
+				   +  '<td>' + item.contractStateName + '</td>'
+				   +  '<td>' + (item.deliverySeq==0?'':item.deliverySeq) + '</td>'
+				   +  '<td class="tal ellipsis" title="' + item.customerRemark + '">' + item.customerRemark + '</td>'
+				   +  '<td class="tal ellipsis" title="' + item.remark + '">' + item.remark + '</td>'
+			       +  '<td>' + formatDateTime(item.auditDateTime) + '</td>'
+			       +  '<td>' + item.employeeName + '</td>'
+				   +  '</tr>';
+		});
+	}
+
+	$('#deliveryTbody').append(trHTML);
+	formatPhone();
+	pagingProc(pageMaker);
+}
+
+function getPagingData(page){
+	getData(page);
+}
+
+$(document).ready(function(){
+	
+    $('#startDate').val(today);
+	$('#endDate').val(today);
+
+	//조회기간 라디어 클릭
+	$('input[name=searchDate]').click(function(){
+		var startDate = $('#startDate').val().replace(/-/g, '');
+		var endDate;
+		if ($(this).val() == 31){
+			endDate = dateAddDel(dateAddDel(startDate,1,'m'),-1,'d');
+			$('#endDate').val(endDate);
+    	} else if ($(this).val() == 365){
+    		endDate = dateAddDel(dateAddDel(startDate,1,'y'),-1,'d');
+           	$('#endDate').val(endDate);
+    	} else if ($(this).val() == 0) {
+    		$('#startDate').val(today);
+    		$('#endDate').val(today);
+    	} else {
+			endDate = dateAddDel(startDate,parseInt($(this).val()),'d');
+			$('#endDate').val(endDate);
+		}
+	});
+	
+	//조회버튼 클릭
+	$('#searchButton').click(function(){
+		getData(1);
+	});
+	
+	//초기화버튼 클릭
+	$('#resetButton').click(function(){
+		$('#startDate').val(today);
+		$('#endDate').val(today);
+		$('#recurringDeliveryYn').val('');
+		$('#deliveryCompany').val('');
+		$('#deliveryState').val('');
+		$('#contractState1').prop('checked',true);
+		$('#customerName').val('');
+		$('#phoneNumber').val('');
+		$('#searchDate1').prop('checked',true);
+
+		$(".select2Basic").select2({			
+			minimumResultsForSearch: Infinity
+		});
+	});
+
+    var popupDelivery = $(".js-popup10").trpLayerFixedPopup("#popupDeliveryDiv");
+
+    //간편배송관리 버튼 클릭
+    $('#deliveryButton').click(function($e){
+    	var param = new Object();
+    	param.startDate = $('#startDate').val().replace(/-/g, '');
+    	param.endDate = $('#endDate').val().replace(/-/g, '');
+    	
+    	$.ajax({
+    		method : 'get',
+    	 	url : '/contractlist/deliverymanagement',
+    	 	data : param,
+    		success : function(data){
+    			var trHTML = "";
+    			json = data.deliveryDateList;
+    			if (json.length == 0) {
+    				showAlert("배송대기 내역이 없습니다.<br/>배송기간을 수정하십시오.");
+    				return;
+    			}
+   				$.each(json, function(i, item) {
+   					trHTML += '<option value="'+item.deliveryDate+'">'+item.deliveryDate.substring(0,4)+'-'+item.deliveryDate.substring(4,6)+'-'+item.deliveryDate.substring(6,8)+'</option>';
+   				});
+   				$('#popDeliveryDate').html(trHTML);
+   				
+    			trHTML = "";
+    			json = data.deliveryCompanyList;
+   				$.each(json, function(i, item) {
+   					trHTML += '<option value="'+item.value1+'">'+item.description+'</option>';
+   				});
+   				$('#popDeliveryCompany').html(trHTML);
+   				
+		        $e.preventDefault();
+		        popupDelivery.open(this);
+
+		        // 팝업 선택박스 index 높이기
+   			    $(".select2Basic_pop").select2({   
+   			        dropdownCssClass : 'increasedzindexclass_pop',
+   			        minimumResultsForSearch: Infinity,
+   			        width:"100%"
+   			    });    
+    		}
+    	});
+	});
+	
+    $("body").on("click", "#popupDeliveryDiv .btn_close, #popupDeliveryDiv .btn_cancel", function($e) {
+        $e.preventDefault();
+        popupDelivery.close();
+    });
+	
+	//엑셀다운로드 버튼 클릭
+	$('#excelButton').click(function(){
+		if($('#startDate').val().replace(/-/g, '') > $('#endDate').val().replace(/-/g, '')){
+			showAlert('조회시작일자가 종료일자보다 큽니다.');
+			return;
+		}
+		var f = document.searchForm;
+		f.method = 'post';
+		f.action = '/contractlist/getdeliverylistexcel';
+		f.submit();
+	});
+	
+	//배송취소 클릭
+	$('#cancelButton').click(function(){
+		var deliveryNumber;
+		var deliveryState;
+		var conNumber;
+		var deliveryNumberArray = new Array();
+		var deliveryStateArray = new Array();
+		var conNumberArray = new Array();
+		var flag = true;
+		
+		$('input[name=chk]:checked').each(function(){
+			deliveryNumber = $(this).val().split('|')[0];
+			deliveryState = $(this).val().split('|')[1];
+			conNumber = $(this).val().split('|')[2];
+
+			if (deliveryState != 'BEFORE'){
+				showAlert('배송대기 상태만 배송취소 처리할 수 있습니다.',$(this));
+				flag = false;
+				return false;
+			}
+			
+			deliveryNumberArray.push(deliveryNumber);
+			deliveryStateArray.push('CANCEL');
+			conNumberArray.push(conNumber);
+		});
+		
+		if (flag == true){
+			if (deliveryNumberArray.length == 0){
+				showAlert('배송취소할 배송내역을 선택하십시오.');
+				return;
+			}
+
+			jQuery.ajaxSettings.traditional = true;
+			$.ajax({
+				method : 'post',
+				url : '/contractlist/updatedeliverydetail',
+				data : {conNumber : conNumberArray, deliveryNumber : deliveryNumberArray, deliveryState : deliveryStateArray}, 
+				success : function(data) {
+					showAlert('저장되었습니다.');
+					$('#searchButton').click();
+				}
+			});
+		}
+	});
+	
+	//배송완료 버튼 클릭
+	$('#doneButton').click(function(){
+		var deliveryNumber;
+		var deliveryState;
+		var conNumber;
+		var deliveryNumberArray = new Array();
+		var deliveryStateArray = new Array();
+		var conNumberArray = new Array();
+		var flag = true;
+		
+		$('input[name=chk]:checked').each(function(){
+			deliveryNumber = $(this).val().split('|')[0];
+			deliveryState = $(this).val().split('|')[1];
+			conNumber = $(this).val().split('|')[2];
+
+			if (deliveryState != 'BEFORE'){
+				showAlert('배송대기 상태만 배송완료 처리할 수 있습니다.',$(this));
+				flag = false;
+				return false;
+			}
+			
+			deliveryNumberArray.push(deliveryNumber);
+			deliveryStateArray.push('DONE');
+			conNumberArray.push(conNumber);
+		});
+		
+		if (flag == true){
+			if (deliveryNumberArray.length == 0){
+				showAlert('배송완료할 배송내역을 선택하십시오.');
+				return;
+			}
+			
+			jQuery.ajaxSettings.traditional = true;
+			$.ajax({
+				method : 'post',
+				url : '/contractlist/updatedeliverydetail',
+				data : {conNumber : conNumberArray, deliveryNumber : deliveryNumberArray, deliveryState : deliveryStateArray}, 
+				success : function(data) {
+					showAlert('저장되었습니다.');
+					$('#searchButton').click();
+				}
+			});
+		}
+	});
+	
+	$('#sortingFlagButton').click(function(){
+		if ($('#sortingFlag').val() == 'A'){
+			$('#sortingFlag').val('D');
+		} else {
+			$('#sortingFlag').val('A');
+		}
+		getData(1);
+	});
+
+	// 상세 옵션닫기버튼
+	$('.hide_field').hide();
+	$('.hide_btn').click(function() {
+		$('.hide_field').toggle();
+		$(this).toggleClass('open');
+		// $('#det_opt').slideToggle(300);
+		if ($(this).hasClass('open')) {
+			$('.txt').html("더보기<em></em>");
+		} else {
+			$('.txt').html("접기<em></em>");
+		}
+	});
+	
+    $(".check-all").click(function() {
+        $(".js_item").prop("checked", $(this).is(":checked"));
+        if ($(this).is(":checked")) {
+            $(".js_item:not(.check-all)").parents("tr").addClass("selected");
+        } else {
+            $(".js_item:not(.check-all)").parents("tr").removeClass("selected");
+        }
+    });
+
+    $(".js_item").click(function() {
+        if ($(this).is(":checked")) {
+            $(this).parents("tr").addClass("selected");
+        } else {
+            $(this).parents("tr").removeClass("selected");
+        }
+        if ($(".js_item:not(.check-all)").length == $(".js_item:not(.check-all):checked").length) {
+            $(".check-all").prop("checked", true);
+        } else {
+            $(".check-all").prop("checked", false);
+        }
+    });
+    
+    var popupDeliveryDateChangeDiv = $("#updateDeliveryDateButton").trpLayerFixedPopup("#popupDeliveryDateChangeDiv");
+
+    $('#updateDeliveryDateButton').click(function($e){
+		$e.preventDefault();
+		popupDeliveryDateChangeDiv.open(this);
+	});
+	
+	$("body").on("click", "#popupDeliveryDateChangeDiv .btn_close, #popupDeliveryDateChangeDiv .btn_cancel", function($e) {
+		$e.preventDefault();
+		popupDeliveryDateChangeDiv.close();
+	});
+});
+/*]]>*/
+</script>
+</th:block>
+<!-- container -->
+<div id="container" layout:fragment="contentFragment">
+	<div id="contents" class="sale">
+		<h2 class="h2">판매관리</h2>
+		<section th:include="fragments/topMenu::topMenuFragmemt"></section>
+		<section>
+			<div class="cont-box wfull">
+			<form name="searchForm" onsubmit="return false;">
+			<input type="hidden" id="sortingFlag" name="sortingFlag" value="A"/>
+				<table class="form_table">
+					<colgroup>
+						<col width="170px" />
+						<col width="*" />
+						<col width="170px" />
+						<col width="*" />
+					</colgroup>
+					<tbody>
+						<tr>
+							<th>배송기간</th>
+							<td colspan="3">
+								<div class="calendar mr20">
+									<span class="datepicker-box w_ms">
+										<input type="text" class="js-datepicker" id="startDate" name="startDate"/>
+									</span>
+									<span class="ml5 mr5">~</span>
+									<span class="datepicker-box w_ms">
+									<input type="text" class="js-datepicker" id="endDate" name="endDate"/>
+									</span>
+								</div>
+								<span class="trp radio-box">
+									<input type="radio" id="searchDate1" name="searchDate" th:checked="true" value="0"/>
+									<i></i>
+									<label for="searchDate1">오늘</label>
+								</span>
+								<span class="trp radio-box">
+									<input id="searchDate2" type="radio" name="searchDate" value="7"/>
+									<i></i>
+									<label for="searchDate2">7일</label>
+								</span>
+								<span class="trp radio-box">
+									<input id="searchDate3" type="radio" name="searchDate" value="15"/>
+									<i></i>
+									<label for="searchDate3">15일</label>
+								</span>
+								<span class="trp radio-box">
+									<input id="searchDate4" type="radio" name="searchDate" value="31"/>
+									<i></i>
+									<label for="searchDate4">한달</label>
+								</span>
+								<span class="trp radio-box">
+									<input id="searchDate5" type="radio" name="searchDate" value="365"/>
+									<i></i>
+									<label for="searchDate5">1년</label>
+								</span>
+							</td>
+						</tr>
+						<tr class="hide_field">
+							<th>배송방식</th>
+							<td>
+								<div class="select-box w_mm">
+									<select class="select2Basic" id="recurringDeliveryYn" name="recurringDeliveryYn">
+										<option value="">전체</option>
+										<option value="Y">정기배송</option>
+										<option value="N">일반배송</option>
+									</select>
+								</div>
+							</td>
+							<th>배송업체</th>
+							<td>
+								<div class="select-box w_mm">
+									<select class="select2Basic" id="deliveryCompany" name="deliveryCompany">
+										<option value="">전체</option>
+										<option th:each="result : ${deliveryCompanyList}" th:value="${result.value1}" th:text="${result.description}"/>
+									</select>
+								</div>
+							</td>
+						</tr>
+						<tr class="hide_field">
+							<th>배송상태</th>
+							<td>
+								<div class="select-box w_mm">
+									<select class="select2Basic" id="deliveryState" name="deliveryState">
+										<option value="">전체</option>
+										<option th:each="result : ${deliveryStateList}" th:value="${result.code}" th:text="${result.codeName}"/>
+									</select>
+								</div>
+							</td>
+							<th>주문상태</th>
+							<td>
+								<span class="trp radio-box">
+									<input type="radio" id="contractState1" name="contractState" th:checked="true" value="ACTIVATION"/>
+									<i></i>
+									<label for="contractState1">사용중</label>
+								</span>
+								<span class="trp radio-box">
+									<input id="contractState2" type="radio" name="contractState" value="DONE"/>
+									<i></i>
+									<label for="contractState2">정지/해지/종료</label>
+								</span>
+								<!-- 
+								<span class="trp radio-box">
+									<input id="contractState3" type="radio" name="contractState" value="UNSETTLED"/>
+									<i></i>
+									<label for="contractState3">미결</label>
+								</span>
+								 -->
+							</td>
+						</tr>
+						<tr class="hide_field">
+							<th>고객명</th>
+							<td>
+								<input type="text" class="w_lg_s" id="customerName" name="customerName" value="" placeholder=""/>
+							</td>
+							<th>전화번호</th>
+							<td>
+								<input type="text" class="w_lg_s" id="phoneNumber" name="phoneNumber" value="" placeholder="-없이 입력"/>
+							</td>
+						</tr>
+						<tr class="hide_field">
+							<th>조회구분</th>
+							<td colspan="3">
+								<span class="trp radio-box">
+									<input id="productYnY" type="radio" name="productYn" value="Y" th:checked="true" />
+									<i></i>
+									<label for="productYnY">배송상품별</label>
+								</span>
+								<span class="trp radio-box">
+									<input type="radio" id="productYnN" name="productYn" value="N"/>
+									<i></i>
+									<label for="productYnN">배송별</label>
+								</span>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				</form>
+				<div class="hide_btn open">
+					<a href="#none"><span class="txt">더보기<em></em></span></a>
+				</div>
+				<div class="btn_set-center mt30">
+					<a class="btn btn_green btn_m radius mr5" role="button" href="#none" id="searchButton">검색</a>
+					<a class="btn btn_default btn_m radius" href="#none" role="button" id="resetButton">초기화</a>
+				</div>
+
+				<!--주문관리리스트//-->
+				<div class="table-wrap mt80">
+					<div class="table-header ">
+						<div class="con_title">총 <em id="totalCount">0</em>건</div>
+						<div class="ab-r">
+							<div class="btn_set">
+								<a class="btn btn_default" id="deliveryButton"><i class="icon_list">간편배송관리</i></a>
+								<div class="tooltip mr10">
+									<i class="icon_tooltip js-tooltip_sendstate" data-geo=".js_tooltip_list"></i>
+									<div class="js_tooltip_list" style="display: none;">
+										<p class="tip_inner">일별로 배송대기 상태의 주문을 일괄 배송완료 처리할 수 있습니다.</p>
+									</div>
+								</div>
+								<a class="btn btn_default" id="excelButton"><i class="icon_down">엑셀다운로드</i></a>
+							</div>
+						</div>
+					</div>
+                    <div class="scroll_box-y">
+						<table class="table_list" id="check_table" style="width: 150%;">
+							<colgroup>
+								<col style="width:3%"/>
+								<col style="width:3%"/>
+								<col style="width:5%"/>
+								<col style="width:5%"/>
+								<col style="width:6%"/>
+								<col style="width:10%"/>
+								<col style="width:3%"/>
+								<col style="width:3%"/>
+								<col style="width:auto"/>
+								<col style="width:4%"/>
+								<col style="width:4%"/>
+								<col style="width:5%"/>
+								<col style="width:4%"/>
+								<col style="width:4%"/>
+								<col style="width:3%"/>
+								<col style="width:6%"/>
+								<col style="width:6%"/>
+	                            <col style="width:7%"/>
+	                            <col style="width:5%"/>
+							</colgroup>
+							<thead>
+								<tr>
+									<th>
+										<span class="trp checkbox-box">
+											<input id="checkbox_all1" class="js_item check-all" type="checkbox" name=""/>
+											<i></i>
+											<label for="checkbox_all1"></label>
+										</span>
+									</th>
+									<th>번호</th>
+									<th><a href="#none" class="align_icon on" id="sortingFlagButton">배송일</a></th>
+									<th>고객명</th>
+									<th>전화번호</th>
+									<th>상품명</th>
+									<th>수량</th>
+									<th>다건<br/>주문</th>
+									<th>배송주소</th>
+									<th>배송방식</th>
+									<th>배송유형</th>
+									<th>배송업체</th>
+									<th>배송상태</th>
+									<th>주문상태</th>
+									<th>배송<br/>회차</th>
+									<th>고객메모</th>
+									<th>비고</th>
+					                <th>처리일시</th>
+					                <th>처리자</th>
+								</tr>
+							</thead>
+							<tbody id="deliveryTbody">
+							</tbody>
+						</table>
+					</div>
+
+					<div class="paging-area">
+						<div class="btn_set">
+							<div class="fl">
+								<button class="btn btn_gray btn_w mr5" type="button" id="updateDeliveryDateButton">배송일변경</button>
+								<button class="btn btn_gray btn_w mr5" type="button" id="cancelButton">배송취소</button>
+								<button class="btn btn_gray btn_w mr5" type="button" id="doneButton">배송완료</button>
+							</div>
+						</div>
+						<div class="paging" id="pagination">
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+</div>
+<!-- //container -->
+<span id="popupSpan" layout:fragment="popupFragment" >      
+  	<div th:replace="online/contract/deliverymanagement::deliveryManagementPop"></div>
+  	<div th:replace="online/contract/deliverydatechange::deliveryDateChangePop"></div>
+</span>        
+</html>

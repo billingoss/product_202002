@@ -1,0 +1,45 @@
+<style>
+table td {
+	vertical-align: middle;
+}
+</style>
+<script type="text/javascript">
+	$(document).ready(function() {
+		$("#deliverylist").load("deliverylist");
+		
+		$("#tabdeliverylist").click(function(){
+			$("#donecontractlist").empty();
+			$("#deliverylist").load("deliverylist");
+		});
+
+		$("#tabdonecontractist").click(function(){
+			$("#deliverylist").empty();
+			$("#donecontractlist").load("donecontractlist");
+		});
+	});
+	
+	function emptyElement(elementid){
+		$('.modal-content').empty();
+	}
+</script>
+<section class="page container">
+	<!-- tab line start -->
+	<div class="span16" id="ordermaintab">
+		<ul class="nav nav-tabs font-size18px">
+			<li class="active" id="tabdeliverylist">
+		  		<a data-toggle="tab" href="#deliverylist" onclick="emptyElement('deliverylist')">배송일정 조회</a>
+			</li>
+			<li id="tabdonecontractist">
+				<a data-toggle="tab" href="#donecontractlist" onclick="emptyElement('donecontractlist')">종료/해지/정지 주문 조회</a>
+			</li>
+		</ul>
+
+		<div class="span16 tab-content">
+			<div id="deliverylist" class="tab-pane fade in active">
+			</div>
+			<div id="donecontractlist" class="tab-pane fade">
+			</div>
+		</div>	
+	</div>	
+	<!-- tab line start -->
+</section>

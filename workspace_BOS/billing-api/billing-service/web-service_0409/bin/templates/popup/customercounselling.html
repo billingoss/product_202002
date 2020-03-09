@@ -1,0 +1,302 @@
+<!-- modal list KKH추가 -->
+<!-- Modal -->
+<script type="text/javascript">
+	$(document).ready(function() {
+		debugger;
+		var CHARACTERISTICCodeGroupId = 'CHARACTERISTIC';
+  	$.ajax({
+      url : '/code/findcode/' + CHARACTERISTICCodeGroupId,
+      type : 'get',
+      dataType : 'json',
+      error : function(xhr, status, error) {
+        alert("error = " + error);
+      },
+      success : function(data) {      	
+      	$("#codeCharacteristic").empty();
+     	  var trHTML = '';
+     	  trHTML += '<select id="inputCharacteristic" class="form-control" name="characteristic">';
+    		$.each(data, function (i, item) {
+    		  trHTML += '<option value="' + item.code + '">' + item.codeName + '</option>'
+    		});
+     	  trHTML += '</select>';
+        $('#codeCharacteristic').append(trHTML);
+      }
+		});
+  	
+		var CATEGORYCodeGroupId = 'CATEGORY';
+  	$.ajax({
+      url : '/code/findcode/' + CATEGORYCodeGroupId,
+      type : 'get',
+      dataType : 'json',
+      error : function(xhr, status, error) {
+        alert("error = " + error);
+      },
+      success : function(data) {      	
+      	$("#codeCategory").empty();
+     	  var trHTML = '';
+     	  trHTML += '<select id="inputCategory" class="form-control" name="category">';
+    		$.each(data, function (i, item) {
+    		  trHTML += '<option value="' + item.code + '">' + item.codeName + '</option>'
+    		});
+     	  trHTML += '</select>';
+        $('#codeCategory').append(trHTML);
+      }
+		});
+  	
+		var INBOUNDPATHCodeGroupId = 'INBOUNDPATH';
+  	$.ajax({
+      url : '/code/findcode/' + INBOUNDPATHCodeGroupId,
+      type : 'get',
+      dataType : 'json',
+      error : function(xhr, status, error) {
+        alert("error = " + error);
+      },
+      success : function(data) {      	
+      	$("#codeInboundPath").empty();
+     	  var trHTML = '';
+     	  trHTML += '<select id="inputInboundpath" class="form-control" name="inboundPath" >';
+    		$.each(data, function (i, item) {
+    		  trHTML += '<option value="' + item.code + '">' + item.codeName + '</option>'
+    		});
+     	  trHTML += '</select>';
+        $('#codeInboundPath').append(trHTML);
+      }
+		});
+		
+		$('#saveCustomerCharacteristic').click(function() {
+			if ($('#inputCustomerCharacteristicMemo').val() == "") {
+				alert("해당 값은 필수 입력입니다.");
+				$('#inputCustomerCharacteristicMemo').focus();
+				false;
+			} else {
+				var queryString = $("form[name=customerCharacteristicInputForm]").serialize();
+				//alert("queryString = " + queryString);
+			  debugger;
+				$.ajax({
+	        url : '/contract/saveCustomerCharacteristic',
+	        data : queryString,
+	        type : 'post',
+	        error : function(xhr, status, error) {
+	          alert("error = " + error);
+	        },
+	        success : function(data) {
+	        	alert("고객 특성 저장 완료");
+	    			$.ajax({
+	    				method : 'get',
+	    	      url : '/contract/customercounselling' + '/' + customerNumber,
+	    	      //data : customerNumber,
+	    	      error: function(xhr, status, error) {
+	    	      	//alert(error);
+	    	      },
+	    	      success : function(json){
+	    	      	$('#customerCounsellingDialog .modal-content').html(json);
+	    	      	$("#customerCounsellingDialog").modal('show');
+	    				}
+	    			});
+	        }
+				});
+			}
+		});
+		
+		$('#saveCounsellingHistory').click(function() {
+			if ($('#inputCounsellingHistoryMemo').val() == "") {
+				alert("해당 값은 필수 입력입니다.");
+				$('#inputCounsellingHistoryMemo').focus();
+				false;
+			} else {
+				var queryString = $("form[name=counsellingHistoryInputForm]").serialize();
+				//alert("queryString = " + queryString);
+			  debugger;
+				$.ajax({
+	        url : '/contract/saveCounsellingHistory',
+	        data : queryString,
+	        type : 'post',
+	        error : function(xhr, status, error) {
+	          alert("error = " + error);
+	        },
+	        success : function(data) {
+	        	alert("상담 이력 저장 완료");
+	    			$.ajax({
+	    				method : 'get',
+	    	      url : '/contract/customercounselling' + '/' + customerNumber,
+	    	      //data : customerNumber,
+	    	      error: function(xhr, status, error) {
+	    	      	//alert(error);
+	    	      },
+	    	      success : function(json){
+	    	      	$('#customerCounsellingDialog .modal-content').html(json);
+	    	      	$("#customerCounsellingDialog").modal('show');
+	    				}
+	    			});
+	        }
+				});
+			}
+		});
+		
+		$('#closecustomercounselling').click(function() {
+			debugger;
+			$('#customercreatepopuplDialog').modal('hide');
+			$("#counsellingListResult").empty();
+			$('#counsellingListResult').load("counsellinginformation" + "/" + customerNumber);
+			//alert("reload");
+		});
+ 	});
+</script>
+
+<div class="modal-header modal-popup-header">
+	<h5 class="modal-title">
+		▶ 상담 등록
+		<button id="closecustomercounselling" type="button" class="close" data-dismiss="modal">&times;</button>
+	</h5>
+</div>
+<div class="modal-body">
+  
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="panel-title">
+				<strong>고객 특성 등록</strong>
+			</h4>
+		</div>
+	</div>
+  <form id="customerCharacteristicInputForm" name="customerCharacteristicInputForm" class="form-horizontal">
+  
+		<div class="panel-body">
+			<div class="table-responsive">
+				<table class="table">
+					<thead  class="table-header-bg">
+						<tr>
+							<th style="width: 8%;">일시</th>
+							<th style="width: 8%;">고객특성</th>
+							<th style="width: 8%;">특성내용</th>
+						</tr>
+					</thead>
+					<tbody class="table-body-row">	
+						<tr th:each="result : ${customerCharacteristicResult}">
+							<td style="vertical-align: middle" th:text="${result.createDate} + ' ' + ${result.createTime}"></td>
+							<td style="vertical-align: middle" th:text="${result.characteristic}"></td>
+							<td style="vertical-align: middle" th:text="${result.memo}"></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+		
+    <div class="form-group" hidden="true">
+      <label class="col-sm-3 control-label" for="inputCustomerNumber">고객번호</label>
+      <div class="col-sm-6">
+        <input class="form-control" id="inputCustomerNumber" type="text" name="customerNumber" placeholder="고객번호" readonly="true" th:value="${customerResult.customerNumber}"></input>
+      </div>
+    </div>
+    
+    <div class="row">
+    	<div class="col-md-6">
+	    	<div class="form-group">
+		      <label class="col-sm-4 control-label" for="inputCharacteristic">고객특성</label>
+		      <div class="col-sm-8" id="codeCharacteristic">
+		      </div>
+		    </div>
+    	</div>
+	    <div class="col-md-6">
+	    	<div class="form-group">
+		      <label class="col-sm-3 control-label" for="inputMemo">메모</label>
+		      <div class="col-sm-6">
+		        <textarea id="inputCustomerCharacteristicMemo" class="form-control" style="height: 40px; width: 250px" name="memo"></textarea>
+		      </div>
+		    </div>
+    	</div>
+    </div>
+    
+    <div class="form-group">
+      <div class="col-sm-12 text-center">
+        <button id="saveCustomerCharacteristic" class="btn btn-primary" type="button">저장
+          <i class="fa fa-check spaceLeft"></i>
+        </button>
+      </div>
+    </div>
+  </form>   
+
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="panel-title">
+				<strong>상담 등록</strong>
+			</h4>
+		</div>
+	</div>
+  <form id="counsellingHistoryInputForm" name="counsellingHistoryInputForm" class="form-horizontal">
+    
+    <div class="form-group" hidden="true">
+      <label class="col-sm-3 control-label" for="inputCounsellingHistoryCustomerNumber">고객번호</label>
+      <div class="col-sm-6">
+        <input class="form-control" id="inputCounsellingHistoryCustomerNumber" type="text" name="customerNumber" placeholder="고객번호" readonly="true" th:value="${customerResult.customerNumber}"></input>
+      </div>
+    </div> 
+    
+    <div class="row">
+    	<div class="col-md-6">
+    		<div class="form-group">
+	    		<label class="col-sm-4 control-label" for="inputCategory">상담유형</label>
+	    		<div class="col-sm-8" id="codeCategory">
+	      	</div>
+	      </div>
+	      <div class="form-group">
+	      	<label class="col-sm-4 control-label" for="inputInboundpath">문의경로</label>
+	      	<div class="col-sm-8" id="codeInboundPath">
+	      	</div>
+      	</div>
+    	</div>
+    	<div class="col-md-6">
+    		<div class="form-group">
+	    		<label class="col-sm-3 control-label" for="inputMemo">상담내용</label>
+		    	<div class="col-sm-8">
+		        <textarea id="inputCounsellingHistoryMemo" class="form-control" style="height: 80px; width: 250px" name="memo"></textarea>
+		      </div>
+		    </div>  
+    	</div>
+    </div>
+
+    <div class="form-group">
+      <div class="col-sm-12 text-center">
+        <button id="saveCounsellingHistory" class="btn btn-primary" type="button">저장
+          <i class="fa fa-check spaceLeft"></i>
+        </button>
+      </div>
+    </div>
+  </form>   
+	
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="panel-title">
+				<strong>상담 이력</strong>
+			</h4>
+		</div>
+	</div>
+	<div style="overflow:auto;height:260px;">
+		<table class="table" id="customercounsellinglistmaintable">
+			<thead class="table-header-bg">
+				<tr>
+					<th style="width: 20%;">상담일시</th>
+					<th style="width: 20%;">상담분류</th>
+					<th style="width: 20%;">인입경로</th>
+					<th style="width: 20%;">상담내용</th>
+				</tr>
+			</thead>
+			<tbody class="table-body-row">	
+				<tr th:each="result : ${counsellingHistoryListResult}">
+					<td style="vertical-align: middle" th:text="${result.counsellingDate} + ' ' + ${result.counsellingTime}"></td>
+					<td style="vertical-align: middle" th:text="${result.category}"></td>
+					<td style="vertical-align: middle" th:text="${result.inboundPath}"></td>
+					<td style="vertical-align: middle" th:text="${result.memo}"></td>
+				</tr>
+			</tbody>
+			<tfoot>
+				<tr>
+					<td class="no-line"></td>
+					<td class="no-line"></td>
+					<td class="no-line"></td>
+					<td class="no-line"></td>
+				</tr>
+			</tfoot>
+		</table>
+	</div>
+</div>
+<!-- modal list END -->

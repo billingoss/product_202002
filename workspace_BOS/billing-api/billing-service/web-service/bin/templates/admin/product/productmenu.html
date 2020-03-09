@@ -1,0 +1,41 @@
+<style>
+table td {
+	vertical-align: middle;
+}
+</style>
+<script type="text/javascript">
+	$(document).ready(function() {
+		$("#product-productlist").load("product-productlist");
+		$('#tabdiscountupdate').click(function() {
+			$("#discountupdate").load("discountupdate");
+		});	
+	});
+	
+	function emptyElement(elementid){
+		$('.modal-content').empty();
+	}
+
+</script>
+
+<section class="page container">
+
+	<!-- tab line start -->
+		<div class="span16">
+			<ul class="nav nav-tabs font-size18px">
+			    <li class="active">
+			    <a data-toggle="tab" href="#product-productlist" onclick="emptyElement('product-productlist')" >
+			    	상품등록/조회</a></li>
+			    <li id="tabdiscountupdate" >
+			  	<a data-toggle="tab" href="#discountupdate">할인기준등록/조회</a></li>
+			</ul>
+		
+
+		<div class="span16 tab-content">
+		    <div id="product-productlist" class="tab-pane fade in active">
+			</div>
+			<div id="discountupdate" class="tab-pane fade">
+			</div>
+		</div>	
+		</div>
+	   <!-- tab line start -->
+</section>

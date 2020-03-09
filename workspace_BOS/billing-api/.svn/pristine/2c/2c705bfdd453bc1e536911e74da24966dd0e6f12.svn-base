@@ -1,0 +1,252 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+		debugger;
+		$('#inputCustomerAddressId').hide();
+		$('#customeraddress').hide();
+		
+		$('#buttonAddressId').click(function() {
+			//$("#customeraddress").load("findAddressId");
+		});
+		
+		$('#saveCustomer').click(function() {
+			if ($('#inputCustomerName').val() == "") {
+				alert("해당 값은 필수 입력입니다.");
+				$('#inputCustomerName').focus();
+				false;
+			} else if ($('#inputPhoneNumber').val() == "") {
+				alert("해당 값은 필수 입력입니다.");
+				$('#inputPhoneNumber').focus();
+				false;
+			} else {
+				var queryString3 = $("form[name=customerInputForm]").serialize();
+				alert(queryString3);
+				$.ajax({
+					url : '/contract/findCustomer',
+					method : 'get', 
+					data : queryString3,
+					error : function(xhr, status, error) {
+						alert(error);
+					},
+					success : function(data){
+						if (data.customerNumber != 0){
+							alert("기등록된 고객입니다. 수정 후 저장하십시오.");
+							$("#customerupdate").load("/contract/customerupdate" + "/" + data.customerNumber);
+						} else {
+							$.ajax({
+								url : '/contract/findAddressId',
+								method : 'get', 
+								error : function(xhr, status, error) {
+									alert(error);
+								},
+								success : function(data){
+									//alert(data);
+									$('#customeraddress').html(data);
+									//alert($('#inputAddressId').val());
+									$('#inputCustomerAddressId').val($('#inputAddressId').val());
+									//alert($('#inputCustomerAddressId').val());
+					
+									var queryString = $("form[name=addressInputForm]").serialize();
+									//alert("queryString = " + queryString);
+									debugger;
+									$.ajax({
+										url : '/contract/saveAddress',
+										data : queryString,
+										type : 'post',
+										error : function(xhr, status, error) {
+											alert("error = " + error);
+										},
+										success : function(data) {
+										//alert("data = " + data);
+										}
+									});
+					
+									var queryString2 = $("form[name=customerInputForm]").serialize();
+									/*<![CDATA[*/
+									queryString2 = queryString2 + '&' + $("form[name=customerInputForm2]").serialize()
+									/*]]>*/
+									//alert("queryString2 = " + queryString2);
+									debugger;
+									$.ajax({
+										url : '/contract/saveCustomer',
+										data : queryString2,
+										type : 'post',
+										error : function(xhr, status, error) {
+											alert("error = " + error);
+										},
+										success : function(data) {
+											alert("신규 고객 생성 완료");
+											$("#customerupdate").load("/contract/customerupdate" + "/" + data.customerNumber);
+										}
+									});
+								}
+							});
+						}
+					}
+				});
+			}
+		});
+		
+		$('#cancel').click(function() {
+			window.location.reload();
+			//alert("reload");
+		});
+		
+		$('#radioBtnSex a').on('click', function(){
+	    var sel = $(this).data('title');
+	    var tog = $(this).data('toggle');
+	    $('#'+tog).prop('value', sel);
+	    
+	    $('a[data-toggle="'+tog+'"]').not('[data-title="'+sel+'"]').removeClass('active').addClass('notActive');
+	    $('a[data-toggle="'+tog+'"][data-title="'+sel+'"]').removeClass('notActive').addClass('active');
+		})
+		
+		$('#radioBtnCustType a').on('click', function(){
+	    var sel = $(this).data('title');
+	    var tog = $(this).data('toggle');
+	    $('#'+tog).prop('value', sel);
+	    
+	    $('a[data-toggle="'+tog+'"]').not('[data-title="'+sel+'"]').removeClass('active').addClass('notActive');
+	    $('a[data-toggle="'+tog+'"][data-title="'+sel+'"]').removeClass('notActive').addClass('active');
+		})
+		
+		/*
+		$('#inputBirthday').datepicker().on('click', function(ev){                 
+		    $('#inputBirthday').datepicker('show');
+		});
+		$('#inputBirthday').datepicker().on('changeDate', function(ev){                 
+		    $('#inputBirthday').datepicker('hide');
+		});
+		*/
+		
+ 	});
+</script>
+
+<article class="container">
+  <div class="col-md-12">
+    <div class="page-header">
+      <h1>고객정보</h1>
+    </div>
+    <form id="customerInputForm" name="customerInputForm" class="form-horizontal" onsubmit="return false;">
+      <div class="form-group" hidden="true">
+        <label class="col-sm-3 control-label" for="inputCustomerNumber">고객번호</label>
+        <div class="col-sm-6">
+          <input class="form-control" id="inputCustomerNumber" type="text" name="" placeholder="고객번호" readonly="true"></input>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-sm-3 control-label" for="inputCustomerName">고객명</label>
+        <div class="col-sm-6">
+          <input class="form-control" id="inputCustomerName" type="text" name="customerName" placeholder="고객명"></input>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-sm-3 control-label" for="inputPhoneNumber">전화번호</label>
+        <div class="col-sm-6">
+          <input type="tel" class="form-control" id="inputPhoneNumber" name="phoneNumber" placeholder="- 없이 입력해 주세요"></input>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-sm-3 control-label" for="inputPhoneNumber">핸드폰번호</label>
+        <div class="col-sm-6">
+          <input type="tel" class="form-control" id="inputCellPhoneNumber" name="cellPhoneNumber" placeholder="- 없이 입력해 주세요"></input>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-sm-3 control-label" for="inputEmail">E-mail</label>
+        <div class="col-sm-6">
+          <input type="tel" class="form-control" id="inputEmail" name="email"></input>
+        </div>
+      </div>
+      <div class="form-group" hidden="true">
+        <label class="col-sm-3 control-label" for="inputCreateDate">생성일자</label>
+        <div class="col-sm-6">
+          <input class="form-control" id="inputCreateDate" type="text" name="" placeholder="YYYYMMDD" readonly="true"></input>
+        </div>
+      </div>
+      <div class="form-group" hidden="true">
+        <label class="col-sm-3 control-label" for="inputCreateDate">최종변경일자</label>
+        <div class="col-sm-6">
+          <input class="form-control" id="inputCreateDate" type="text" name="" placeholder="YYYYMMDD" readonly="true"></input>
+        </div>
+      </div>
+    	<div class="form-group">
+        <div class="col-sm-6">
+          <input class="form-control" id="inputCustomerAddressId" type="text" name="addressId" placeholder="주소를 입력 후 주소ID 조회 버튼 클릭"></input>
+        </div>
+      </div>
+    </form>
+    
+    <form id="addressInputForm" name="addressInputForm" class="form-horizontal" onsubmit="return false;">
+      <div class="form-group">
+        <label class="col-sm-3 control-label" for="inputZipcode">우편번호</label>
+        <div class="col-sm-6">
+          <input class="form-control" id="inputZipcode" type="number" name="zipcode" placeholder="우편번호"></input>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-sm-3 control-label" for="inputBaseAddress">기본주소</label>
+        <div class="col-sm-6">
+          <input class="form-control" id="inputBaseAddress" type="text" name="baseAddress" placeholder="기본주소"></input>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-sm-3 control-label" for="inputDetailAddress">상세주소</label>
+        <div class="col-sm-6">
+          <input class="form-control" id="inputDetailAddress" type="text" name="detailAddress" placeholder="상세주소"></input>
+        </div>
+      </div>
+      <div id="customeraddress">
+	      <div class="form-group">
+	        <label class="col-sm-3 control-label" for="inputAddressId">주소ID</label>
+	        <div class="col-sm-6">
+	          <div class="input-group">
+	            <input class="form-control" id="inputAddressId" type="text" name="addressId" placeholder="주소를 입력 후 주소ID 조회 버튼 클릭"></input>
+	            <span class="input-group-btn">
+	              <button type="button" id="buttonAddressId" class="btn btn-success">주소ID 조회
+		                <i class="fa fa-mail-forward spaceLeft"></i>
+		            </button>
+	            </span>
+	          </div>
+	        </div>
+	      </div>
+      </div>
+    </form>
+    
+    <form id="customerInputForm2" name="customerInputForm2" class="form-horizontal" onsubmit="return false;">
+      <div class="form-group">
+        <label class="col-sm-3 control-label" for="inputBirthday">생년월일</label>
+        <div class="col-sm-6">
+          <input type="text" class=" form-control" id="inputBirthday" name="birthday" data-date-format="yyyymmdd"></input>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-sm-3 control-label" for="inputSex">성별</label>
+        <div class="col-sm-6">
+			<select class="form-control" name="sex" id="inputSex">
+				<option value="">선택</option>
+				<option value="MALE">남</option>
+				<option value="FEMAIL">여</option>
+			</select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-sm-3 control-label" for="inputRemark">비고</label>
+        <div class="col-sm-6">
+          <input type="text" class=" form-control" id="inputRemark" name="remark"></input>
+        </div>
+      </div>
+	</form>
+
+    <div class="form-group">
+      <div class="col-sm-12 text-center">
+        <button id="saveCustomer" class="btn btn-primary" type="submit">저장
+          <i class="fa fa-check spaceLeft"></i>
+        </button>
+        <button id="cancel" class="btn btn-table-default" type="submit">취소
+          <i class="fa fa-times spaceLeft"></i>
+        </button>
+      </div>
+    </div>
+    
+  </div>
+</article>

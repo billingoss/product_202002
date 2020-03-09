@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout" layout:decorator="layout/default">
+<!-- index.html 고유 CSS 추가 -->
+<th:block layout:fragment="css">
+</th:block>
+<!-- index.html 고유 스크립트 추가 -->
+<th:block layout:fragment="script">
+<script type="text/javascript">
+/*<![CDATA[*/
+function getData(page) {
+
+	if ($('#customerNumber').val() == '' && $('#phoneNumber').val()){
+		alert('고객명이나 전화번호를 입력하십시오.');
+		$('#customerNumber').focus();
+		return;
+	}
+	
+	var queryString = $("form[name=searchForm]").serialize();
+	queryString = queryString + '&page='+page+'&perPageNum=10&pagingYn=Y';
+	queryString = queryString.replace(/-/g, '');
+	
+	$.ajax({
+		method : 'get',
+		url : '/customer/getcustomerlist',
+		data : queryString, 
+		dataType : 'json',
+		error : function(xhr, status, error) {
+			alert(error);
+		},
+		success : handleData
+	});
+}
+
+function handleData(data) {
+	debugger;
+	
+	//PageMaker정보를 Json으로부터 분리한다.
+	json = data.lists; //hashmap의 list array데이타
+	pageMaker = data.pageMaker; //pageMaker 
+
+	$('#totalCount').html(pageMaker.totalCount);
+	$('#customerTbody').empty();
+	var trHTML = '';
+
+	if (json.length == 0) {
+		trHTML = '<tr class="no_empty"><td colspan=11><div class="data-empty"><img src="/resources/images/common/img_no_empty.png" alt="데이터 없음" /><span class="txt_empty">검색 결과가 없습니다.</span></div></td></tr>';
+	} else {
+		$.each(json, function(i, item) {
+			trHTML += '<tr>'
+			       +  '<td>' + ((pageMaker.cri.page-1)*10+i+1) + '</td>'
+			       +  '<td>' + item.customerName + '</td>'
+			       +  '<td class="phone">' + item.phoneNumber + '</td>'
+			       +  '<td class="tal ellipsis">' + item.baseAddress + ' ' + item.detailAddress + '</td>'
+			       //+  '<td>' + (item.counsellingCount > 0?item.counsellingCount+'건':'-') + '</td>'
+			       +  '<td>' + formatDate(item.createDate) + '</td>'
+			       +  '</tr>';
+		});
+	}
+
+	$('#customerTbody').append(trHTML);
+	formatPhone();
+	pagingProc(pageMaker);
+}
+
+function getPagingData(page){
+	getData(page);
+}
+$(document).ready(function(){
+	
+	//조회버튼 클릭
+	$('#searchButton').click(function(){
+		getData(1);
+	});
+	
+	//초기화버튼 클릭
+	$('#resetButton').click(function(){
+		$('#customerName').val('');
+		$('#phoneNumber').val('');
+	});
+	
+	//엑셀다운로드 버튼 클릭
+	$('#excelButton').click(function(){
+		var f = document.searchForm;
+		f.method = 'post';
+		f.action = '/customer/getcustomerlistexcel';
+		f.submit();
+	});
+});
+/*]]>*/
+</script>
+</th:block>
+        <!-- container -->
+        <div id="container" layout:fragment="contentFragment">
+		<form name="searchForm" onsubmit="return false;">
+            <div id="contents" class="customer">
+                <h2 class="h2">고객관리</h2>
+
+                <section>
+                    <div class="cont-box wfull">
+                        <!--상품관리//-->
+                        <table class="form_table">
+                            <colgroup>
+                                <col width="170px" />
+                                <col width="*" />
+                                <col width="170px" />
+                                <col width="*" />
+                            </colgroup>
+                            <tbody>
+                                <tr>
+                                    <th>고객명</th>
+                                    <td>
+                                        <input type="text" class="w_lg_s" value="" placeholder="" id="customerName" name="customerName"/>
+                                    </td>
+                                    <th>전화번호</th>
+                                    <td>
+                                        <input type="text" class="w_lg_s" value="" placeholder="-없이 입력" id="phoneNumber" name="phoneNumber"/>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="btn_set-center mt30">
+                            <a class="btn btn_green btn_m radius mr5" role="button" href="#none" id="searchButton">검색</a>
+                            <a class="btn btn_default btn_m radius" href="#none" role="button" id="resetButton">초기화</a>
+                        </div>
+
+                        <!--리스트//-->
+                        <div class="table-wrap mt80">
+                            <div class="table-header ">
+                                <div class="con_title">총 <em id="totalCount">0</em>건</div>
+                                <div class="ab-r">
+                                    <div class="btn_set">
+                                        <a class="btn btn_default"><i class="icon_down" id="excelButton">엑셀다운로드</i></a>
+                                    </div>
+                                </div>
+                            </div>
+                            <table class="table_list" id="check_table">
+                                <colgroup>
+                                    <col style="width:6%"/>
+                                    <col style="width:10%"/>
+                                    <col style="width:12%"/>
+                                    <col style="width:auto"/>
+                                    <!-- <col style="width:12%"/> -->
+                                    <col style="width:10%"/>
+                                </colgroup>
+                                <thead>
+                                    <tr>
+                                        <th>번호</th>
+                                        <th>고객명</th>
+                                        <th>전화번호</th>
+                                        <th>주소</th>
+                                        <!-- <th>처리중 상담건수</th> -->
+                                        <th>등록일</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="customerTbody">
+                                </tbody>
+                            </table>
+
+                            <div class="paging-area">
+                            	<!-- 
+                                <div class="btn_set">
+                                    <div class="fr">
+                                        <button class="btn btn_default btn_w" type="button"><i class="icon_add">등록</i></button>
+                                    </div>
+                                </div>
+                                 -->
+		                        <div class="paging" id="pagination">
+		                        </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+            </div>
+        </form>
+        </div>
+        <!-- //container -->
+</html>

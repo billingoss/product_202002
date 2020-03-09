@@ -1,0 +1,375 @@
+   <!--할인등록//-->
+        <div id="popup_create_discount" class="trp popupfixed-wrap" th:fragment="createDiscountPop">       
+        <form id="createDiscountForm" name="createDiscountForm" onsubmit="return false;">         	
+			<div class="popup-dim"></div>
+			<div class="popup-align">
+	            <div class="popup-vertical">
+	                <div class="popup-layer option wm">
+	                    <a class="btn_close" href="#">X</a>
+	                    <div class="pop_tit">할인정보</div>
+	                    <!-- 알림 mode0 -->
+	                    <section class="section">
+	                        <div class="table-wrap">
+	                            <p class="comparison_text mb10 tar"><em>*</em> 필수입력정보</p>
+	                            <table class="form_table">
+	                                <colgroup>
+	                                    <col width="145px" />
+	                                    <col width="*" />
+	                                </colgroup>
+	                                <tbody>
+	                                    <tr>
+	                                        <th>할인유형 <i>*</i></th>
+	                                        <td>
+	                                            <div class="select-box w_mm">
+	                                                <select class="select2Basic_pop" id="discountTypeCreate" name="discountType">
+														<option value="">전체</option>
+													</select>													
+	                                            </div>
+	                                            	<input type="hidden" id="discountIdCreate"  name="discountId"/>
+													<input type="hidden" id="updateDiscountFlag" name="updateDiscountFlag"/>
+	                                        </td>
+	                                    </tr>
+	                                    <tr>
+	                                        <th>적용대상 <i>*</i></th>
+	                                        <td>
+	                                            <div class="select-box w_mm">
+	                                                <select class="select2Basic_pop" id="discountTargetCreate" name="discountTarget">
+														<option value="">전체</option>
+													</select>													
+	                                            </div>	                                            	
+	                                        </td>
+	                                    </tr>
+	                                    <tr>
+	                                        <th>할인명 <i>*</i></th>
+	                                        <td>
+	                                            <input type="text" class="w_lg" value="" placeholder="" id="discountNameCreate" name="discountName"  maxlength="25"/>
+	                                        </td>
+	                                    </tr>
+	                                    <tr>
+	                                        <th>적용회차 <i>*</i></th>
+	                                        <td>
+	                                            <input type="text"  class="w_mm tar"  value="" placeholder="" id="discountApplyCountCreateTemp"  maxlength="4"/>
+	                                            <input type="hidden" id="discountApplyCountCreate" name="discountApplyCount"/>까지
+	                                        </td>
+	                                    </tr>
+<!-- 	                                    <tr>
+	                                        <th>상태 <i>*</i></th>
+	                                        <td>
+	                                            <div class="select-box w_mm">
+	                                                <select class="select2Basic_pop" id="discountStateCreate" name="discountState">
+														<option value="">전체</option>
+													</select>													
+	                                            </div>
+	                                        </td>
+	                                    </tr> -->
+	                                    <tr>
+	                                        <th>할인율/금액 <i>*</i></th>
+	                                        <td>
+	                                            <input type="text" class="w_mm tar" value="" placeholder="" id="discountValueCreateTemp"  maxlength="10"/>
+	                                            <input type="hidden" id="discountValueCreate" name="discountValue"/>% / 원
+	                                        </td>
+	                                    </tr>
+	                                    <tr>
+	                                        <th>할인기간 <i>*</i></th>
+	                                        <td>
+	                                            <span class="datepicker-box w_ms">
+													<input type="text" class="js-datepicker" readonly="" id="subscribeStartDateTimeDiscCreate" name="subscribeStartDateTime"/>
+												</span>
+	                                            <span class="ml5 mr5">~</span>
+	                                            <span class="datepicker-box w_ms">
+													<input type="text" class="js-datepicker" readonly="" id="subscribeEndDateTimeDiscCreate" name="subscribeEndDateTime"/>
+												</span>
+	                                        </td>
+	                                    </tr>
+	                                    <tr>
+	                                        <th>할인설명</th>
+	                                        <td>
+	                                            <input type="text" class="" value="" placeholder="" id="discountDescriptionCreate" name="discountDescription"  maxlength="25"/>
+	                                            <!-- <div class="textarea-box min">
+                                                	<textarea name="discountDescription" id="discountDescriptionCreate" cols="30" rows="20" placeholder=""></textarea>
+                                            	</div> -->
+	                                        </td>
+	                                    </tr>
+	                                </tbody>
+	                            </table>
+	                        </div>
+	                        <div class="btn_set-center mt30">
+	                            <a class="btn btn_green btn_wm radius mr5" role="button" href="#none" id="saveDiscountBtn">저장</a>
+	                            <a class="btn btn_default btn_wm radius btn_cancel" href="#none" role="button" id="popDiscountCancelBtn">취소</a>
+	                        </div>
+	
+	                    </section>
+	                </div>
+	            </div>
+	        </div>
+		</form>
+	        
+	<script type="text/javascript">
+	/*<![CDATA[*/	
+		var packTrIndex = 0;
+		/***************************************************
+		할인등록 popup event
+		***************************************************/		
+		var updateDiscountFlag = false;
+		var useContractCnt = 0;			//현재 할인 계약에서 사용 건수
+		var createDiscountBtnEvent = function (btnClass){				
+			var btnId;
+			var popId ='popup_create_discount';	
+			if(isEmpty(btnClass)){
+				btnClass = '.createDiscountBtn'
+			}
+			$(btnClass).each(function(index, item){				
+				btnId = $(this).prop('id');				
+				var popup_warp = $("#"+btnId).trpLayerFixedPopup("#"+popId);	
+				$("#"+btnId).on("click", function($e) {				
+					//할인 아이디 유무에 따라 수정 또는 신규 등록 모드를 분기 한다.
+					if (!isEmpty($(this).attr('value'))){
+						updateDiscountFlag = true;
+						$('#discountIdCreate').val($(this).attr('value'));
+						$('#saveDiscountBtn').text("수정");
+					}else {
+						updateDiscountFlag = false;
+						$('#discountIdCreate').val('');
+						$('#saveDiscountBtn').text("등록");
+					}
+					
+					/*********************************************************************
+					//입력 폼 초기화
+					***********************************************************************/
+					$('#createDiscountForm')[0].reset();					
+					
+					/*********************************************************************					
+					//판매기간 설정
+					***********************************************************************/
+					$('#subscribeStartDateTimeDiscCreate').val(getToday());
+					$('#subscribeEndDateTimeDiscCreate').val('9999-12-31');					
+							
+					/*********************************************************************
+					//화면 사용 상태로 설정
+					***********************************************************************/
+              		setFormDisabled(updateDiscountFlag);
+					              		
+              		/*********************************************************************					
+					//할인유형
+					***********************************************************************/								
+					makeSelectCode('discountType', 'discountTypeCreate','N');
+              		
+              		/*********************************************************************					
+					//적용대상
+					***********************************************************************/								
+					makeSelectCode('discountTarget', 'discountTargetCreate','N');
+              		
+              		/*********************************************************************					
+					//할인적용상태
+					***********************************************************************/								
+					makeSelectCode('discountState', 'discountStateCreate','N');
+              		
+              		/*********************************************************************					
+					//수정일 경우 해당 discountId 상세 정보를 조회 한다.
+					***********************************************************************/
+					if (updateDiscountFlag){									
+						searchDiscountDetail();
+					}else {
+						$('#discountApplyCountCreate').val('9999');
+						$('#discountApplyCountCreateTemp').val('9999');
+						$('#discountApplyCountCreateTemp').trigger('keyup');
+					}
+              		
+					$e.preventDefault();
+					popup_warp.open(this);
+					
+				});
+				$("body").on("click", "#"+popId+" .btn_close, #"+popId+" .btn_cancel", function($e) {
+					$e.preventDefault();
+					popup_warp.close();
+				});
+			});
+		}
+		
+		/***************************************************
+		할인 등록 버튼 Event
+		***************************************************/	
+		createDiscountBtnEvent();
+		
+		/***************************************************
+		상품금액 입력
+		***************************************************/	
+		$('#discountValueCreateTemp, #discountApplyCountCreateTemp').keyup(function (){
+			var tempVal = $(this).val();
+			if(isEmpty(tempVal)){
+				tempVal = 0;
+			}
+			tempVal = numberComma(getNumber(tempVal));
+			
+			$(this).val(tempVal);
+		});
+		
+		
+		/***************************************************
+		할인 상세 내역 조회 및 화면 수정 가능 상태 설정
+		***************************************************/	
+		var searchDiscountDetail = function(){
+			
+			var param = new Object();
+			param.discountId = $('#discountIdCreate').val(); 			
+			$.ajax({
+				   method : 'post',
+				   url: '/discount/selectDiscountDetail',
+	               data : param,
+	               dataType : 'json',
+	               error: function(xhr, status, error){			            	
+	            	   $('#popDiscountCancelBtn').trigger('click');
+	               },
+	               success : function(json){		       			
+	            	   var promise = Promise.resolve(true);              	 
+		              	 promise = new Promise(function (resolve, reject) {             		
+	              			//showAlert(json.resultMsg);
+		              		 return resolve();
+		              	 });
+		              	 promise = promise.then(function(res) {
+		              		//상품정보 화면 설정
+		              		if(json.discountDetail != null){
+		              			var item = json.discountDetail;
+		              			$('#discountTypeCreate').val(item.discountType);
+		              			$('#discountNameCreate').val(item.discountName);
+		              			$('#discountStateCreate').val(item.discountState);
+		              			$('#discountValueCreateTemp').val(numberComma(item.discountValue));
+		              			$('#subscribeStartDateTimeDiscCreate').val(formatDate(item.subscribeStartDateTime));
+		              			$('#subscribeEndDateTimeDiscCreate').val(formatDate(item.subscribeEndDateTime));
+		              			$('#discountApplyCountCreate').val(item.discountApplyCount);
+		              			$('#discountApplyCountCreateTemp').val(item.discountApplyCount);
+		              			$('#discountTargetCreate').val(item.discountTarget);
+		              			var tempText = item.discountDescription;
+		              			tempText = tempText.replace(/(<br>|<br\/>|<br \/>)/g, '\r\n');
+		              			$('#discountDescriptionCreate').val(tempText);
+			              		//화면 불가 상태로 설정
+			              		useContractCnt = item.useContractCnt;		
+			              		setSelect2BasicPopClass();
+			              		setFormDisabled(true);
+
+		              		}
+		              	 });       			              	 
+	               }
+			});
+		}				
+		
+		/***************************************************
+		화면 disabled 상태 변경
+		***************************************************/
+		var setFormDisabled = function(updateFlag){           			
+      		if(updateFlag){
+	      		if(useContractCnt == 0){
+           			//상품을 계약에서 사용하지 않을 경우
+           			$('#createDiscountForm').find('select').attr( 'disabled', false);
+		      		$('#createDiscountForm').find('input').attr( 'disabled', false);
+		      		$('#createDiscountForm').find('button').attr( 'disabled', false);
+
+           			//패키지정보
+	      		}else {
+           			//상품을 계약에서 사용 할 경우
+					$('#createDiscountForm').find('select').attr( 'disabled', true);
+		      		$('#createDiscountForm').find('input').attr( 'disabled', true);
+		      		$('#createDiscountForm').find('button').attr( 'disabled', true);
+           			           			
+           			           			 
+           			$('#subscribeEndDateTimeDiscCreate').attr( 'disabled', false);
+           			 
+           			//$('#productDescriptionCreate').attr( 'disabled', !flag);
+           			
+	      		}
+      		}else {
+				$('#createDiscountForm').find('select').attr( 'disabled', false);
+	      		$('#createDiscountForm').find('input').attr( 'disabled', false);
+	      		$('#createDiscountForm').find('button').attr( 'disabled', false);      			
+      		}      		
+		}
+		
+		/***************************************************
+		할인 저장
+		***************************************************/		
+		$('#saveDiscountBtn').click(function (){
+			
+			//validation check
+			if(isEmpty($('#discountTypeCreate').val())){
+				showAlert("할인 유형을 선택하세요.",$('#discountTypeCreate'));
+				return false;
+			}
+			
+			if(isEmpty($('#discountNameCreate').val())){
+				showAlert("할인명을 입력 하십시오.",$('#discountNameCreate'));
+				return false;
+			}
+
+			if(isEmpty($('#discountApplyCountCreateTemp').val()) || $('#discountApplyCountCreateTemp').val() < 1){
+				showAlert("적용 회차를 입력 하십시오.<br/>(최소 1회차)",$('#discountApplyCountCreateTemp'));
+				$('#discountApplyCountCreateTemp').val(1);
+				return false;
+			}
+			$('#discountApplyCountCreate').val(getNumber($('#discountApplyCountCreateTemp').val()));
+			
+			if(isEmpty($('#discountValueCreateTemp').val())){
+				showAlert("할인율/금액을 입력 하십시오.",$('#discountValueCreateTemp'));
+				return false;
+			}
+			$('#discountValueCreate').val(getNumber($('#discountValueCreateTemp').val()));
+			
+			//수정일 경우 상품 상태 필수 선택 체크
+		/* 	if(updateDiscountFlag && isEmpty($('#discountStateCreate').val())){
+				showAlert("할인 상태를 선택하세요.",$('#discountStateCreate'));
+				return false;
+			} */
+			
+			if(!checkDateTerm($('#subscribeStartDateTimeDiscCreate').val(), $('#subscribeEndDateTimeDiscCreate').val())){			    	
+				$('#subscribeEndDateTimeDiscCreate').val(getToday());
+				return false;
+		    }
+									
+	    	if (isHtmlTag($('#discountDescriptionCreate').val())){
+				showAlert("입력 불가한 내용을 삭제 했습니다.\n내용을 확인 하세요.",$('#discountDescriptionCreate'));
+				$('#discountDescriptionCreate').val(removeHtmlTag($('#discountDescriptionCreate').val()));
+				return false;
+			}
+	    	
+	    	
+			$('#updateDiscountFlag').val(updateDiscountFlag);
+	    		
+			
+			//화면의 모든 상태를 변경 한다
+			setFormDisabled(false);
+			
+			//상품저장 			  			 
+ 			var queryString = $("form[name=createDiscountForm]").serialize();			
+ 			queryString = queryString.replace(/-/g, '');
+			$.ajax({
+				   method : 'post',
+				   url: '/discount/saveDiscount',
+	               data : queryString,
+	               dataType : 'json',
+	               error: function(xhr, status, error){			            	
+	            	   var result = JSON.parse(xhr.responseText);								
+				        showAlert(result.message);	
+				        setFormDisabled(updateDiscountFlag);
+	               },
+	               success : function(json){		       			
+	            	   var promise = Promise.resolve(true);              	 
+		              	 promise = new Promise(function (resolve, reject) {             		
+	              			showAlert(json.resultMsg);
+	              			setFormDisabled(updateDiscountFlag);
+		              		 return resolve();
+		              	 });
+		              	 promise = promise.then(function(res) {
+		              		if (json.resultCnt > 0){				              			
+								//성공일 경우 창 닫기
+		              			$('#popDiscountCancelBtn').trigger('click');	
+		              		}
+		              		//조회
+		              		getPagingData(currPage);
+		              	 });       			              	 
+	               }
+			});
+			
+		});
+		/*]]>*/
+	</script>
+		
+    </div>

@@ -1,0 +1,423 @@
+<script type="text/javascript">
+$(document).ready(function() {
+	
+	$.fn.datepicker.defaults = {
+		    autoclose: true,
+		    beforeShowDay: $.noop,
+		    calendarWeeks: false,
+		    clearBtn: false,
+		    daysOfWeekDisabled: [],
+		    endDate: Infinity,
+		    forceParse: true,
+		    format: 'yyyy-mm-dd',
+		    keyboardNavigation: true,
+		    language: 'kr',
+		    minViewMode: 0,
+		    orientation: 'auto',
+		    rtl: false,
+		    startDate: -Infinity,
+		    startView: 3,
+		    todayBtn: true,
+		    todayHighlight: false,
+		    weekStart: 0
+	};
+	
+	$("input:checkbox[name='maintenanceId']").prop('checked', true);
+	//var mainproductid2 =  $("#packageproductupdateDialog").data('prdid');
+	//var mainproductid =  $('#productId').val();
+	var deletedata = '';
+	var gl_packageId = '';
+	var gl_packageName = '';
+	
+	console.log("선택한 productID = " + check_productid);
+
+	var productLists = '';
+	$.ajax({
+		method : 'get',
+		url : '/product/getProductselectlist',
+		dataType : 'json',
+		async:false,
+		error: function(xhr, status, error){
+		    alert(error);
+		},
+		success : function(json){
+		    productLists = json;	    
+		}
+	});
+
+	function makeSelect(name, data) {
+		if(name == 'undefined') name = 'name';
+		var html = '<select name="'+name+'" class="form-control">';
+			html += '<option value="">선택</option>';
+			$.each(data, function(idx, obj) {
+				html += '<option value="'+ obj.productId +'">'+ obj.productName +'</option>';
+			});
+		html += '<option value="NEW">직접입력</option>';	
+		html += '</select>';
+		
+		return html;
+	}	
+	
+	$.ajax({
+		method : 'get',
+   		url : '/product/getpackageproduct/'+check_productid,
+   		dataType : 'json',
+   		error: function(xhr, status, error)
+   		{
+       		alert("신규패키지 상품을 등록하세요. " + error);
+   		},
+   		success : function(json){
+   			$('#Packageproductmaintablebody2').empty();
+    			if(json.length == 0)
+    			{
+    				return;
+ 			}         	   		
+  			var trHTML = '';
+	
+	       	$.each(json, function (i, item) {
+		 			gl_packageId = item.packageId;
+		 			gl_packageName = item.packageName;
+	          	 if(item.packageId == null)return null;
+	          	
+	       	     trHTML += '<tr id="' + item.compositionProductId + '">'
+	       	    	   + '	<td><input type="checkbox" name="_selected_" value="' + item.compositionProductId + '"/>'
+	       	    	   + '		<input type="hidden" name="mainProductId" value="'+ item.mainProductId + '"/>'
+	       	    	   + '		<input type="hidden" name="compositionProductId" value="' + item.compositionProductId + '"/>'
+	       	    	   + '		<input type="hidden" name="packageId" value="'+ item.packageId + '"/></td>'
+	                   + '<td><input type="text" class="form-control" disabled="disabled" name="packageName" value="'+ item.packageName + '"/></td>'
+	                   + '<td><input type="text" class="form-control" disabled="disabled" name="compositionproductName" value="' + item.compositionproductName + '"/></td>'
+	                   + '<td></td>'
+	                   + '<td><input type="text" style="text-align:right" class="form-control" name="productPrice" readonly="true" value="' + numberComma(item.priceamount) + '"/></td>'
+	                   + '<td><input type="text" class="form-control date" disabled="disabled" name="effectStartDateTime" value="' + item.effectStartDateTime + '"/></td>'
+	                   + '<td><input type="text" class="form-control date" disabled="disabled" name="effectEndDateTime" value="' + item.effectEndDateTime + '"/></td>'
+	                   + '<td></td>' 
+	                   + '</tr>';
+			});
+	      	
+	       	$('#Packageproductmaintablebody2').append(trHTML);
+	       	$('.date').datepicker();
+		}
+	});
+	var pkgPrdChk = function(obj) { //체크박스 활성화
+		//$('input[name="_selected_"]').not(obj).prop('checked', false);
+		//$(obj).parents('tbody').find('input[type="text"], select').prop('disabled', true);
+    	if(obj.checked) {
+    		$(obj).parents('tr').find('[name*="DateTime"], select').prop('disabled', false);
+    	} else {
+    		$(obj).parents('tr').find('[name*="DateTime"], select').prop('disabled', true);
+    	}
+	}
+	$('#Packageproductmaintablebody2').on('click', 'input[name="_selected_"]', function() {
+		pkgPrdChk(this);
+    });
+	
+	//추가 버튼
+	$('#packageproductadd').click(function(){
+		/*
+		if($('#Packageproductmaintable2 tbody tr.append').is(':visible')) {
+			alert('추가는 하나씩 가능합니다.');
+			return false;
+		}
+		*/
+		debugger;
+		if(gl_packageId == ''){
+			makepackageid();
+		}else {
+			maketablepkid('g');
+		}
+		
+	});
+	function maketablepkid(l_packageId){
+		console.log("선택한 gl_packageId = " + gl_packageId);
+		console.log("선택한 gl_packageName = " + gl_packageName);
+		prdSelect = makeSelect('compositionProductId', productLists);
+		if(l_packageId == 'g'){
+			l_packageId = gl_packageId;
+		}
+		
+		/*<![CDATA[*/
+		var data =  '<tr class="append">'+
+            '   <td><input type="checkbox" name="_selected_" checked />' +
+            '		<input type="hidden" name="add" value="true"/>' + 
+            '		<input type="hidden" name="mainProductId" value ="'+ check_productid + '"/>' + 
+            '		<input type="hidden" name="packageId" value="'+ l_packageId + '"/></td>' +
+            '   <td><input type="text" class="form-control" name="packageName" disabled="disabled" value="' + $('#productName').val() + '"/></td>' + 
+            '   <td>'+ prdSelect + '</td>' +
+            '   <td><input type="hidden" class="form-control" name="compositionproductName"/></td>' +
+            '   <td><input type="text" class="form-control" name="productPrice" readonly="true" placeholder="자동세팅됩니다."/></td>' +
+            '   <td><input type="text" class="form-control date" name="effectStartDateTime" id="fromDate" />'+'</td>' +
+            '   <td><input type="text" class="form-control date" name="effectEndDateTime" id="toDate" value="9999-12-31" />'+'</td>' +
+            '   <td><button class="btn btn-small btn-table-default" style="margin: 3px;" name="delStaff">삭제</button>'+'</td>'+
+            '</tr>';
+        /*]]>*/
+		$("input:checkbox[name='maintenanceId']").prop('checked', true); // 기존계약 적용여부 체크
+		
+    	var $data = $(data); 
+    	//$('#Packageproductmaintable2 > tbody').append($data).find('.append input:checkbox').trigger('click');
+    	$('#Packageproductmaintable2 > tbody').append($data);
+    	$('.date').datepicker();
+	}
+    
+    function makepackageid(){
+    	debugger;
+    	var gl_packageId;
+    	var gl_packageName;
+    	$.ajax({
+			url : '/product/findProductPackageid',
+			method : 'get',
+			error : function(xhr, status, error) {
+				alert("신규패키지상품ID 생성이 실패했습니다. 오류사유= "+error);
+			},
+			success : function(data) {
+				//$('#ProductPackageidset').html(data);
+				//gl_packageId = $('#packageId2').val();
+				//gl_packageName = $('#productName').val();
+				//console.log(gl_packageId, gl_packageName);
+				maketablepkid(data);
+			}
+		});
+    }    
+	//삭제 버튼
+	$(document).on("click","button[name=delStaff]",function(){
+		var trHtml = $(this).parent().parent();
+		trHtml.remove(); //tr 테그 삭제
+	});     
+
+	var gl_productId = '';
+
+       
+       /* 저장버튼 클릭  */
+	$('#packageproductsave').click(function() {
+		
+		/* 기존상품에 Update  */
+		$("input:checkbox[name='maintenanceId']").prop('checked', true);
+		var url = '';
+		var totalCnt = 0;
+		var successCnt = 0;
+		var errorCnt = 0;
+		
+		$('input[name="_selected_"]:checked').each(function(){
+			
+			var $tr = $(this).parents('tr');
+			var sDate = $('[name="effectStartDateTime"]', $tr).val();
+			var eDate = $('[name="effectEndDateTime"]', $tr).val();
+
+			var itemObj = new Object();
+			itemObj.packageInsert = $('[name="add"]', $tr).val();
+			itemObj.packageId = $('[name="packageId"]', $tr).val();
+			itemObj.packageName = $('[name="packageName"]', $tr).val();
+			itemObj.mainProductId = $('[name="mainProductId"]', $tr).val();
+			itemObj.compositionProductId  = $('[name="compositionProductId"]', $tr).val();
+			itemObj.compositionproductName = $('[name="compositionproductName"]', $tr).val();
+			itemObj.effectStartDateTime = $('[name="effectStartDateTime"]', $tr).val();
+			itemObj.effectEndDateTime = $('[name="effectEndDateTime"]', $tr).val();
+			if ($('[name="compositionProductId"]', $tr).val() == 'NEW'){
+				itemObj.priceamount = $('[name="productPrice"]', $tr).val();
+			}
+			
+			if(itemObj.packageInsert == 'true'){
+				url = 'savepackageProduct'
+				//alert("기존패키지에 신규상품을 추가합니다."); 
+			}else{
+				url = 'updatepackageProduct'
+				//alert("기존패키지의 기존상품을 수정합니다.");
+			}
+			
+			totalCnt = totalCnt + 1;
+			
+			$.ajax({
+				url : '/product/'+url,
+				data : itemObj,
+				type : 'post',
+				error : function(xhr, status, error) {
+					alert("error = " + error);
+					errorCnt = errorCnt + 1;
+				},
+				success : function(data) {
+					successCnt = successCnt + 1;
+					$(':checkbox', $tr).prop('checked', false);
+					$('input:not(:checkbox)', $tr).prop("disabled", "disabled");
+		        	$('#packageproductsave').prop("disabled", "disabled");
+		        	$('#packageproductadd').prop("disabled", "disabled");
+		        	
+		        	if (totalCnt == successCnt + errorCnt){
+		    			alert("처리가 완료되었습니다."); 
+		    			$('#packageproductupdateDialog').modal('hide');
+		    			$("#product-productlist").load("product-productlist");
+		    			$('#searchbt').click();
+		        	}
+				}
+			});			
+		});
+	});
+       
+	//datepicker사용
+	$("#fromDate").datepicker({
+		dateFormat: "yy-mm-dd"
+	}).datepicker("setDate", new Date()); // 오늘날짜로 세팅
+	
+	$('#fromDate').datepicker().on('click', function(ev){                 
+		$('#fromDate').datepicker('show');
+	});
+	$('#fromDate').datepicker().on('changeDate', function(ev){                 
+	    $('#fromDate').datepicker('hide');
+	});
+	$('#toDate').datepicker().on('click', function(ev){                 
+	    $('#toDate').datepicker('show');
+	});
+	$('#toDate').datepicker().on('changeDate', function(ev){                 
+	    $('#toDate').datepicker('hide');
+	});
+	$('#toDate').change(function() { 
+		if($('#fromDate').val().replace(/-/g, '') > $('#toDate').val().replace(/-/g, '')){
+	    	if($('#fromDate').val().replace(/-/g, '') != ""){
+	    		$('#toDate').val("");
+		    	Common.Dialog.alert({
+		    		title:''
+		            , content: '시작일자보다 클 수 없습니다.'
+		        });
+	    	}
+	    }
+	});
+	
+	$('#Packageproductmaintable2').on('change', 'select[name="compositionProductId"]', function(){
+		if ($(this).val() == 'NEW'){
+			$(this).parents('tr').find('input[name=compositionproductName]').prop('type', 'text');
+			$(this).parents('tr').find('input[name=productPrice]').prop('readonly', false);
+			$(this).parents('tr').find('input[name=productPrice]').prop('placeholder', "입력하십시오.");
+		} else {
+			$(this).parents('tr').find('input[name=compositionproductName]').prop('type', 'hidden');
+			$(this).parents('tr').find('input[name=productPrice]').prop('readonly', true);
+			$(this).parents('tr').find('input[name=productPrice]').prop('placeholder', "자동세팅됩니다.");
+		}
+	});
+}); 
+
+</script>
+<div class="modal-header modal-popup-header">
+	<h5 class="modal-title">
+		<strong>▶ 구성정보 등록/변경</strong>
+		<button type="button" class="close" data-dismiss="modal">&times;</button>
+	</h5>
+</div>
+<!--팝업메인-->
+<div class="panel panel-default">
+	<div class="panel-heading">
+		<h4 class="panel-title">
+			<strong>상품 정보</strong>
+		</h4>
+	</div>
+	<div class="panel-body">	
+		<div class="modal-body" style="padding-bottom: 0px; padding-top: 0px;">
+			<form role="form" name="updatepackageproductform" th:each="checkproduct: ${checkproduct}">
+				<div class="row">	
+			      	<div class="col-6 col-md-6">	
+						<div class="form-group ">
+						<label for="productType">상품분류</label> 
+							<input type="text" class="form-control" id="productType"  readonly="true" th:value="${checkproduct.productType}"
+								name="productType" />
+				      	</div>
+			      	</div>
+			      	<div class="col-6 col-md-6">	
+							<div class="form-group">
+							<label for="productName"> 상품명 </label> 
+							<input type="text" class="form-control" id="productName" readonly="true" th:value="${checkproduct.productName}" 
+								name="productName" />
+						</div>
+					</div>
+				</div>
+				<div class="row">
+			      	<div class="col-6 col-md-6">				
+						<div class="form-group"> 
+					       <label for="packagePriceReferenceYn"> 패키지유형 </label> 
+							<input type="text" class="form-control" id="packagePriceReferenceYn" readonly="true" th:value="${checkproduct.packagePriceReferenceYn} "
+								name="packagePriceReferenceYn" />	
+						</div>
+					</div>	
+					<div class="col-6 col-md-6">		
+						<div class="form-group">
+							<label for="priceAmount"> 가격 </label> 
+							<input type="text" class="form-control" id="priceAmount" readonly="true" th:value="${checkproduct.priceAmount} " placeholder="ex) 500(숫자만 입력하세요.)"
+								name="priceAmount" />									
+						</div>
+					</div>
+					<div class="col-6 col-md-6">
+	      					<div class="form-group">
+								<input class="form-control" id="productId" type="hidden" name="productId" th:value="${checkproduct.productId}"></input>
+							</div>
+					</div>	
+				</div>
+				<div class="row">	
+			      	<div class="col-6 col-md-6">
+						<div class="form-group">
+							<label for="subscribeStartDateTime"> 판매가능일 </label> 
+							<input type="text" class="form-control" id="subscribeStartDateTime" readonly="true" th:value="${checkproduct.subscribeStartDateTime}" placeholder="ex) 20180801" 
+								name="subscribeStartDateTime" />
+						</div>
+					</div>
+					<div class="col-6 col-md-6">
+						<div class="form-group">
+							<label for="subscribeEndDateTime"> 판매종료일 </label> 
+							<input type="text" class="form-control" id="subscribeEndDateTime" readonly="true" th:value="${checkproduct.subscribeEndDateTime}" placeholder="ex) 20180831" 
+								name="subscribeEndDateTime" />							
+						</div>
+					</div>
+				</div>
+				<div class="row">	
+					<div class="col-12 col-md-12"> 				
+						<div class="form-group">
+							<label for="productDescription"> 상품설명 </label> 
+							<input type="text" class="form-control" id="productDescription" readonly="true" th:value="${checkproduct.productDescription}" 
+								name="productDescription" />
+						</div>
+					</div>
+				</div>
+				<!-- <div id="productidset">
+					<div class="form-group">
+						<label for="productId"></label> 상품ID (신규등록을 원하시면 아래 "신규 상품ID 생성" 버튼을 클릭하세요.) </label> 
+						<input class="form-control" id="productId" type="hidden" readonly="true"
+							name="productId" th:value="${checkproduct.productId}" placeholder="신규 상품으로 등록하시려면  ID생성을 하세요."></input>
+					</div>
+				</div>	 -->
+			</form>
+		</div>
+	</div>
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="panel-title">
+				<strong>패키지 구성정보</strong>
+			</h4>
+		</div>
+		<div class="panel-body">
+			<div class="table-responsive">
+				<table class="table " id="Packageproductmaintable2">
+					<thead class="table-header-bg">
+						<tr>
+							<th style="width: 50px;"></th>
+							<!-- <th style="width: 16%;">패키지번호</th> -->
+							<th style="width:120px;">상품명</th>
+							<th colspan="2">구성상품명</th>
+							<th>구성상품가격</th>
+							<th>시작일</th>
+							<th>종료일</th>
+							<th style="width: 66px;"></th>
+							<!-- <th style="width: 10%;">최종이력여부</th> -->								
+						</tr>
+					</thead>
+					<tbody id="Packageproductmaintablebody2" class="table-body-row">		
+						
+					</tbody>
+				</table>
+				<div>
+   					<button class="btn btn-primary pull-right" style="margin: 3px;" id="packageproductsave">저장</button>
+	   			</div>
+	   			<div>
+	    			<button class="btn btn-primary pull-right" style="margin: 3px;" id="packageproductadd">추가</button>
+	    		</div>
+	    		<!-- <div>
+	    			<input type="checkbox" name="maintenanceId" value="" /> 기존계약 적용여부		
+	    		</div> -->
+			</div>
+		</div>
+	</div>
+</div>

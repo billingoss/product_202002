@@ -1,0 +1,13 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+<head th:replace="fragments/config :: configFragment"></head>
+<!-- <header th:replace="fragments/header :: headerFragment"></header> -->
+	<div class="wrapper">
+		<header th:replace="fragments/leftmenu :: leftFragment"></header>
+		<div layout:fragment="contentFragment"></div>	
+		<footer th:replace="fragments/footer :: footerFragment"></footer>
+	</div>
+	<div id="divloading"></div>
+	<span layout:fragment="popupFragment"></span>
+</html>

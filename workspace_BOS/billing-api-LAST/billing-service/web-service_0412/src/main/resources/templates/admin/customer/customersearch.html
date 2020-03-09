@@ -1,0 +1,346 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+		debugger;
+  	$("#customersearchbar").load("searchbar");
+
+  	getCustomerData(1);
+ 	});
+	
+	function getCustomerData(page) {
+		debugger;
+		//alert("getCustomerData()");
+		var param = new Object();
+		param.page = page;
+		param.perPageNum = 5; /*만약값을셋팅하지 않으면 기본 페이지당 row수 10*/
+
+		$.ajax({
+			method : 'get',
+			url : '/customer/customerlistsearch',
+			data : param, 
+			dataType : 'json',
+			error : function(xhr, status, error) {
+				//alert("error");
+				alert(error);
+			},
+			success : handleCustomerData
+		});
+	}
+	
+  function handleCustomerData(data) {
+  	//alert("handleCustomerData");
+		json = data.lists; //hashmap의 list array데이타
+		pageMaker = data.pageMaker; //pageMaker 
+    debugger;
+		//alert(json);
+		if (json.length == 0) {
+			Common.Dialog.alert({
+				title : '',
+				content : '데이터가 없습니다.'
+			});
+		}
+
+		$("#customerlisttablebody").empty();
+ 	  var trHTML = '';
+		$.each(json, function (i, item) {
+		 trHTML += '<tr>'
+			       +    '<td style="vertical-align: middle" hidden="true">' + item.customerNumber + '</td>'
+			       +    '<td style="vertical-align: middle">' + item.customerName  + '</td>'
+			       +    '<td class="phone" style="vertical-align: middle">' + item.phoneNumber + '</td>'
+			       +    '<td style="vertical-align: middle">' + item.email + '</td>'
+			       +    '<td style="vertical-align: middle">' + item.zipcode + '</td>'
+			       +    '<td style="vertical-align: middle">' + item.baseAddress + '</td>'
+			       +    '<td style="vertical-align: middle">' + item.detailAddress + '</td>'
+			       +    '<td>'
+			       +      '<a data-toggle="tab" href="#customerupdate">'
+			       +        '<button class="btn btn-small btn-table-default" style="margin: 3px;" id="buttonCustomerUpdate" value="' + item.customerNumber + '">변경</button>'
+			       +      '</a>'
+			       +    '</td>'
+			       +  '</tr>';    
+		});
+    $('#customerlisttablebody').append(trHTML);
+    formatPhone();
+
+		pagingCustomerProc(pageMaker);
+	}
+	
+  function pagingCustomerProc(pageMaker) {
+  	//alert("pagingCustomerProc");
+		//=============pagination 시작=====================
+		$("#paginationcustomer").empty();
+		if (pageMaker.totalCount != 0) {
+			$("#paginationcustomer").empty();
+			if (pageMaker.prev == true) {				
+				/*<![CDATA[*/  //타임리프에서 부등호상용시 조심해야함 반드시 CDATA로 감싸야함
+				$("#paginationcustomer").append('<li class="goBackPage"><a><<</a></li>'); //다음페이지로 가기 버튼 활성화
+				/*]]>*/
+			}
+			//아래는 타임리프사용시 조시매야한다. for하기와 같이 쓰지않음 에러발생함
+			/*<![CDATA[*/
+			for (var i = pageMaker.startPage; i <= pageMaker.endPage; i++) {
+				/*]]>*/
+				//alert(i);
+				if (pageMaker.cri.page == i) { 
+					$("#paginationcustomer").append('<li class="disabled active" style="color: red;"><a>' + i + "</a></li>"); //버튼 비활성화
+
+				} else {
+					$("#paginationcustomer").append('<li class="goPage" data-page="' + i + '"><a>' + i + "</a></li>"); //버튼 활성화
+				}
+			}
+			if (pageMaker.next == true) {
+				$("#paginationcustomer").append('<li class="goNextPage"><a>>></a></li>'); //다음페이지로 가기 버튼 활성화
+			}
+		}
+	//=============pagination 끝=====================
+	}
+  
+	//===================페이지이벤트처리시작==========================
+	/* $(".goBackPage").click(function() { */
+  $(document).on("click", "#paginationcustomer .goBackPage", function(){
+   	page = Number(pageMaker.startPage) - 1;
+		//pageFlag = 1;
+		//$("상단 ajax를 함수로 만들어 재귀호출");
+		getCustomerData(page);
+		//pageFlag = 0;    	
+  });
+
+	$(document).on("click", "#paginationcustomer .goPage", function(){
+		debugger;
+		page = $(this).attr("data-page");
+		//alert(page);
+		//pageFlag = 1;
+		getCustomerData(page);
+		//pageFlag = 0;
+	});
+
+  $(document).on("click", "#paginationcustomer .goNextPage", function(){
+  	debugger;
+  	page = Number(pageMaker.endPage) + 1;
+		//$("상단 ajax를 함수로 만들어 재귀호출");
+		getCustomerData(page);
+		//pageFlag = 0;
+	});
+  
+  $(document).on("click", "#buttonCustomerUpdate", function(){
+		debugger;
+		$('#tabCustomerSearch').removeClass('active');
+		$('#tabCustomerUpdate').addClass('active');
+
+		var customerNumber = $(this).val();
+		//alert("customerNumber = " + customerNumber);
+		$('#customerupdate').load("customerupdate" + "/" + customerNumber);
+	});
+  
+  $(document).on("click", "#customerlisttable tr", function(){
+		debugger;
+		var tr = $(this);
+  	var td = tr.children();    	
+		//var customerNumber = td.eq(0).children().val();
+		var customerNumber = td.eq(0).text();
+		
+		$('#customerlisttable tr').not(this).removeClass('selectedbgcolor');
+    $(this).addClass('selectedbgcolor');
+    
+		$('#productListResult').load("productlist" + "/" + customerNumber);
+	  $('#counsellingListResult').load("counsellinginformation" + "/" + customerNumber);
+	});
+  
+	$(document).on("dblclick", "#customerlisttable tr", function() {
+		debugger;
+  	var tr = $(this);
+  	var td = tr.children();    	
+		//var customerNumber = td.eq(0).children().val();
+		var customerNumber = td.eq(0).text();
+		
+		$('#customermaintab a[href="#customerupdate"]').tab('show');		
+		$('#customerupdate').load("customerupdate" + "/" + customerNumber);
+	});
+</script>
+<div class="row">
+	<div id="customersearchbar"></div>
+</div>
+
+<div id="customerListResult">
+	<div class="row">
+		<div class="col-md-12">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+	    		<h2 class="panel-title">
+	     			<strong>고객 리스트</strong>
+	    		</h2>
+	   		</div>
+	   		<div class="panel-body">
+	    		<div class="table-responsive">
+	     			<table class="table" id="customerlisttable">
+	      			<thead  class="table-header-bg">
+	       				<tr>
+	        				<th style="width: 10%;">고객명</th>
+					        <th style="width: 10%;">전화번호</th>
+					        <th style="width: 10%;">E-mail</th>
+					        <th style="width: 10%;">우편번호</th>
+					        <th style="width: 10%;">기본주소</th>
+					        <th style="width: 10%;">상세주소</th>
+					        <th style="width: 5%;"></th>
+								</tr>
+							</thead>
+							<tbody id="customerlisttablebody" class="table-body-row">
+								<tr th:each="result : ${customerListResult}">
+									<td style="vertical-align: middle" th:text="${result.customerNumber}" hidden="true"></td>
+									<td style="vertical-align: middle" th:text="${result.customerName}"></td>
+									<td class="phone" style="vertical-align: middle" th:text="${result.phoneNumber}"></td>
+									<td style="vertical-align: middle" th:text="${result.email}"></td>
+									<td style="vertical-align: middle" th:text="${result.zipcode}"></td>
+									<td style="vertical-align: middle" th:text="${result.baseAddress}"></td>
+									<td style="vertical-align: middle" th:text="${result.detailAddress}"></td>
+								</tr>
+							</tbody>
+	     			</table>
+	    		</div>
+				</div>
+				<div  align="center">
+				  <ul id="paginationcustomer" class="pagination"><!-- 페이징처리 자리 --></ul>
+						<!-- 페이지네이션 -->
+			  </div>
+	  	</div>
+	 	</div>
+	</div>
+</div>
+		
+<div id="productListResult">
+	<div class="row">
+		<div class="col-md-12">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h2 class="panel-title">
+						<strong>상품 이용 내역</strong>
+					</h2>
+				</div>
+				<div class="panel-body">
+					<div class="table-responsive">
+						<table class="table">
+							<thead class="table-header-bg">
+								<tr>
+									<th style="width: 20%;">상품명</th>
+									<th style="width: 10%;">상태</th>
+									<th style="width: 10%;">가입일자</th>
+									<th style="width: 10%;">종료일자</th>
+									<th style="width: 10%;">기간(월)</th>
+									<th style="width: 10%;">상품가격</th>
+									<th style="width: 10%;">결제구분</th>
+									<th style="width: 10%;">배송주기</th>
+									<th style="width: 10%;">결제주기</th>
+									<th style="width: 5%;"></th>
+								</tr>
+							</thead>
+							<tbody class="table-body-row">	
+								<tr th:each="result : ${productListResult}">
+									<td style="vertical-align: middle" th:text="${result.conNumber}" hidden="true"></td>
+									<td style="vertical-align: middle" th:text="${result.productName}"></td>
+									<td style="vertical-align: middle" th:text="${result.contractState}"></td>
+									<td style="vertical-align: middle" th:text="${result.effectStartDateTime}"></td>
+									<td style="vertical-align: middle" th:text="${result.effectEndDateTime}"></td>
+									<td style="vertical-align: middle" th:text="${result.duration}"></td>
+									<td style="vertical-align: middle; text-align: right" th:text="${result.priceAmount}"></td>
+									<td style="vertical-align: middle" th:text="${result.recurringInvoiceYn}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliveryCycle}"></td>
+									<td style="vertical-align: middle" th:text="${result.invoiceCycle}"></td>
+									<td style="vertical-align: middle"></td>
+								</tr>
+							</tbody>
+							<tfoot>
+								<tr>
+									<td class="no-line"></td>
+									<td class="no-line"></td>
+									<td class="no-line"></td>
+									<td class="no-line"></td>
+									<td class="no-line"></td>
+									<td class="no-line"></td>
+									<td class="no-line"></td>
+									<td class="no-line"></td>
+									<td class="no-line"></td>
+									<td class="no-line"></td>
+									<td class="no-line"></td>
+								</tr>
+							</tfoot>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h2 class="panel-title">
+					<strong>상담/특이 정보</strong>
+				</h2>
+			</div>
+			<div class="panel-body" id="counsellingListResult">
+				<div class="table-responsive">
+					<table class="table">
+						<thead class="table-header-bg">
+							<tr>
+								<th style="width: 20%;">일시</th>
+								<th style="width: 20%;">고객특성</th>
+								<th style="width: 20%;">메모</th>
+							</tr>
+						</thead>
+						<tbody class="table-body-row">	
+							<tr th:each="result : ${customerCharacteristicResult}">
+								<td style="vertical-align: middle" th:text="${result.createDate} + ' ' + ${result.createTime}"></td>
+								<td style="vertical-align: middle" th:text="${result.characteristic}"></td>
+								<td style="vertical-align: middle" th:text="${result.memo}"></td>
+							</tr>
+						</tbody>
+						<tfoot>
+							<tr>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+							</tr>
+						</tfoot>
+					</table>
+					<table class="table">
+						<thead class="table-header-bg">
+							<tr>
+								<th style="width: 20%;">상담일시</th>
+								<th style="width: 20%;">상담유형</th>
+								<th style="width: 20%;">문의경로</th>
+								<th style="width: 20%;">상담내용</th>
+							</tr>
+						</thead>
+						<tbody class="table-body-row">	
+							<tr th:each="result : ${counsellingHistoryListResult}">
+								<td style="vertical-align: middle" th:text="${result.counsellingDate} + ' ' + ${result.counsellingTime}"></td>
+								<td style="vertical-align: middle" th:text="${result.category}"></td>
+								<td style="vertical-align: middle" th:text="${result.inboundPath}"></td>
+								<td style="vertical-align: middle" th:text="${result.memo}"></td>
+							</tr>
+						</tbody>
+						<tfoot>
+							<tr>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+								<td class="no-line"></td>
+								<td class="no-line"></td>									
+							</tr>
+						</tfoot>
+					</table>
+				</div>
+			</div>
+<!-- 			<div class="panel-footer" style="padding-bottom: 40px;">
+   			<div>
+   				<button class="btn btn-small btn-info pull-right" style="margin: 3px;" id="buttonCustomerCounselling">상담 등록</button>
+   			</div>
+   		</div> -->
+		</div>
+	</div>
+</div>
+
+<div class="modal" id="customerCounsellingDialog" role="dialog">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content"></div>
+	</div>
+</div>

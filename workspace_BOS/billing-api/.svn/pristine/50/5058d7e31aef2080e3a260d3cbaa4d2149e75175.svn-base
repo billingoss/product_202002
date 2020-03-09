@@ -1,0 +1,19 @@
+package com.api.repository;
+
+import java.util.List;
+
+import org.apache.ibatis.annotations.Mapper;
+import org.springframework.stereotype.Repository;
+
+import com.api.model.report.Report;
+
+@Mapper
+@Repository
+public interface ReportRepository {
+	List<Report> getDeliveryList(Report report); 
+	Report getContractCount(Report report);
+	List<Report> getProductList(Report report);
+	List<Report> getWeekContractCount(Report report); 
+	List<Report> getMonthlyAmount(Report report);
+	List<Report> getMonthlyAmountList(Report report); 
+}

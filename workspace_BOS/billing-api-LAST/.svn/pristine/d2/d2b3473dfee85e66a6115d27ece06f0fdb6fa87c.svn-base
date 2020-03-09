@@ -1,0 +1,289 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+		$("#searchbardeliverydetail").load("/order/searchbardeliverydetail");
+		
+		var today = getToday().replace('-','').replace('-','');
+		$('#deliveryyear').val(today.substring(0,4));
+		$('#deliverymonth').val(today.substring(4,6));
+
+		$('#deliveryyear').change(function(){
+			var param = new Object();
+			param.deliverydate = $('#deliveryyear').val()+$('#deliverymonth').val();
+			
+			$.ajax({
+				method : 'get',
+	
+				url : '/order/deliverydate',
+				data : param, //JSON.stringify(paramData) , /* queryString, */
+				dataType : 'json',
+				error : function(xhr, status, error) {
+					alert(error);
+				},
+				success : handleDataDeliveryDate
+			});
+		});
+		
+		$('#deliverymonth').change(function(){
+			var param = new Object();
+			param.deliverydate = $('#deliveryyear').val()+$('#deliverymonth').val();
+			
+			$.ajax({
+				method : 'get',
+	
+				url : '/order/deliverydate',
+				data : param, //JSON.stringify(paramData) , /* queryString, */
+				dataType : 'json',
+				error : function(xhr, status, error) {
+					alert(error);
+				},
+				success : handleDataDeliveryDate
+			});
+		});
+		
+		function handleDataDeliveryDate(data) {
+			debugger;
+
+			json = data.lists; //hashmap의 list array데이타
+
+			var html = '';
+			
+			$('#deliveryday').empty();
+
+			$.each(json, function(i, item) {
+				html += '<option value="' + item.deliverydate +'">' + item.deliverydate + '</option>';          
+			});
+			
+			$('#deliveryday').append(html);
+		}	
+		
+		$("#deliveryexcel").click(function(){
+			if($('#deliverydate1').val().replace(/-/g, '') > $('#deliverydate2').val().replace(/-/g, '')){
+		    	Common.Dialog.alert({
+		    		title:''
+		            , content: '조회시작일자가 종료일자보다 큽니다.'
+		        });
+		    	return;
+		    }
+
+			var param = new Object();
+			param.deliverydate1 = $("#deliverydate1").val().replace(/-/g, '');
+			param.deliverydate2 = $("#deliverydate2").val().replace(/-/g, '');
+			param.deliverycompany = $("#deliverycompany").val();
+			param.recurringdeliveryyn = $('#recurringdeliveryyn').val();
+			param.pagingyn = 'N';
+			
+			$.ajax({
+				method : 'get',
+
+				url : '/order/getdeliverydetaillist',
+				data : param, //JSON.stringify(paramData) , /* queryString, */
+				dataType : 'json',
+				error : function(xhr, status, error) {
+					alert(error);
+				},
+				success : handleDataExcel
+			});
+		});
+
+		function handleDataExcel(data) {
+			debugger;
+
+			//PageMaker정보를 Json으로부터 분리한다.
+			json = data.lists; //hashmap의 list array데이타
+
+			//alert(json);
+			if (json.length == 0) {
+				Common.Dialog.alert({
+					title : '',
+					content : '데이터가 없습니다.'
+				});
+			}
+			
+			$('#deliveryexceltbody').empty();
+			var trHTML = '';
+
+			$.each(json, function(i, item) {
+				 trHTML += '<tr>'    
+				 		+ '<td style="vertical-align: middle">' + (i + 1) + '</td>'
+						+ '<td style="vertical-align: middle">' + (item.deliverydate.length==8?item.deliverydate.substring(0,4)+'-'+item.deliverydate.substring(4,6)+'-'+item.deliverydate.substring(6,8):item.deliverydate) + '</td>'
+						+ '<td style="vertical-align: middle">' + item.deliverycompanyname + '</td>'
+						+ '<td style="vertical-align: middle">' + item.customername + '</td>'
+						+ '<td class="phone" style="vertical-align: middle">' + item.customerphonenumber + '</td>'
+						+ '<td style="vertical-align: middle">' + item.productname + '</td>'
+						+ '<td style="vertical-align: middle">' + item.deliveryaddress + '</td>'
+						+ '<td style="vertical-align: middle">' + item.deliverystatename + '</td>'
+						+ '<td style="vertical-align: middle">' + item.contractstatename + '</td>'
+                        + '</tr>';
+			});
+			$('#deliveryexceltbody').append(trHTML);
+			formatPhone();
+			fnExcelReport('deliveryexceltable','배송내역조회_'+$("#deliverydate1").val().replace(/-/g, '')+'_'+$("#deliverydate2").val().replace(/-/g, '')+'.xls');
+		}
+	});
+	
+	function saveExcel(btn){
+		var f = document.form1;
+		f.method = 'post';
+		$('#exceldeliverydate').val($('#deliveryyear').val()+$('#deliverymonth').val()+$('#deliveryday').val());
+		$('#exceldeliverycompany').val(btn.id.replace('btn',''));
+		/*<![CDATA[*/
+		f.action = '/order/getdeliverydetailexcel';
+		/*]]>*/
+		f.submit();
+	}
+
+	function saveState(btn){
+		var param = new Object();
+		param.deliverydate = $('#deliveryyear').val()+$('#deliverymonth').val()+$('#deliveryday').val();
+		param.deliverycompany = btn.id.replace('savebtn','');
+		
+		$.ajax({
+			url : '/order/savedeliverystate',
+			data : param, //JSON.stringify(paramData) , /* queryString, */
+			type : 'post',
+			error : function(xhr, status, error) {
+				alert(error);
+			},
+			success : function(data){
+				alert("저장되었습니다."); 
+			}
+		});
+	}
+</script>		
+<section class="page container">
+<div id="deliverydetaildiv">
+	<form name="form1">
+		<input type="hidden" id="exceldeliverydate" name="deliverydate"/>
+		<input type="hidden" id="exceldeliverycompany" name="deliverycompany"/>
+	</form>
+	<div class="row">
+		<div class="col-md-4">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+		    		<h2 class="panel-title">
+		     			<strong>배송내역 다운로드</strong>
+		    		</h2>
+		    	</div>	
+				<div class="col-md-12">
+					<div class="panel panel-heading" style="vertical-align: middle; text-align: center;
+						margin-left: auto; margin-right: auto;  padding-bottom: 0px;">
+						<div class="form-section">
+							<div class="row" style="text-align: center">
+								<form id="excelDownDataForm" name="excelDownDataForm" class="form-inline" role="form" style="margin-bottom: 10px;">
+									<div class="col-md-11">
+										<div class="form-group">
+											<span>배송일</span>
+											<select id="deliveryyear" class="form-control">
+												<option th:each="result : ${deliveryYearList}" th:value="${result.deliverydate}" th:text="${result.deliverydate}"/>
+											</select>&nbsp;년&nbsp;
+											<select id="deliverymonth"  class="form-control">
+												<option value="01">1</option>
+												<option value="02">2</option>
+												<option value="03">3</option>
+												<option value="04">4</option>
+												<option value="05">5</option>
+												<option value="06">6</option>
+												<option value="07">7</option>
+												<option value="08">8</option>
+												<option value="09">9</option>
+												<option value="10">10</option>
+												<option value="11">11</option>
+												<option value="12">12</option>
+											</select>&nbsp;월&nbsp;
+											<select id="deliveryday"  class="form-control">
+												<option th:each="result : ${deliveryDateList}" th:value="${result.deliverydate}" th:text="${result.deliverydate}"></option>
+											</select>&nbsp;일
+										</div>
+									</div>
+									<div class="col-md-1">
+									</div>
+								</form>
+							</div>
+						</div>
+					</div>
+				</div>		    	
+		   		<div class="panel-body">
+					<div class="form-group" th:each="result: ${codeList}">
+						<div class="col-md-12" style="text-align:left;height:35px;">
+							<label class="col-sm-4 control-label" for="inputFile" th:text="${result.description}"></label>
+							<input type="button" class="btn btn-primary" th:id="${result.value1}+btn" value="다운로드" onclick="saveExcel(this)"></input>	
+							<input type="button" class="btn btn-primary" th:id="${result.value1}+savebtn" value="배송완료" onclick="saveState(this)"></input>	
+						</div>
+					</div>
+				</div>
+			</div>	
+	 	</div>
+		<div class="col-md-8">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+		    		<h2 class="panel-title">
+		     			<strong>배송내역 조회</strong>
+		    		</h2>
+		   		</div>
+				<div class="row">
+					<div id="searchbardeliverydetail">
+					</div>
+				</div>
+		   		<div class="panel-body">
+		    		<div class="table-responsive">
+						<div class="form-group">
+							<b><span id="totalcount"></span></b>
+						</div>
+		     			<table class="table" id="deliverydetailtable"  style="display:block; overflow-x:scroll; overflow-y:hidden; height:100%; white-space:nowrap;">
+			      			<thead  class="table-header-bg">
+			       				<tr>
+			        				<th style="width: 3%;">번호</th>
+			        				<th style="width: 3%;">배송일자</th>
+			        				<th style="width: 3%;">배송업체</th>
+			        				<th style="width: 3%;">수취인명</th>
+			        				<th style="width: 3%;">이동전화번호</th>
+			        				<th style="width: 3%;">상품명</th>
+			        				<th style="width: 3%;">배송주소</th>
+			        				<th style="width: 3%;">배송여부</th>
+			        				<th style="width: 3%;">주문상태</th>
+								</tr>
+							</thead>
+							<tbody id="deliverydetailtbody" class="table-body-row">
+								<tr th:each="result : ${lists}">
+									<td style="vertical-align: middle" th:text=""></td>
+									<td style="vertical-align: middle" th:text="${result.deliverydate}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverycompanyname}"></td>
+									<td style="vertical-align: middle" th:text="${result.customername}"></td>
+									<td style="vertical-align: middle" th:text="${result.customerphonenumber}"></td>
+									<td style="vertical-align: middle" th:text="${result.productname}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliveryaddress}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverystatename}"></td>
+									<td style="vertical-align: middle" th:text="${result.contractstatename}"></td>
+								</tr>
+							</tbody>
+	     				</table>
+	    			</div>
+				</div>
+				<div  align="center">
+					<ul id="paginationdetail" class="pagination"></ul>
+				    <button class="btn btn-primary pull-right" style="margin: 3px;" id="deliveryexcel">다운로드</button>
+				</div>
+				<div>
+	     			<table class="table" id="deliveryexceltable"  style="display:none;">
+		      			<thead  class="table-header-bg">
+		       				<tr>
+		        				<th style="width: 3%;">번호</th>
+		        				<th style="width: 3%;">배송일자</th>
+		        				<th style="width: 3%;">배송업체</th>
+		        				<th style="width: 3%;">수취인명</th>
+		        				<th style="width: 3%;">이동전화번호</th>
+		        				<th style="width: 3%;">상품명</th>
+		        				<th style="width: 3%;">배송주소</th>
+		        				<th style="width: 3%;">배송여부</th>
+		        				<th style="width: 3%;">주문상태</th>
+							</tr>
+						</thead>
+						<tbody id="deliveryexceltbody" class="table-body-row">
+						</tbody>
+     				</table>
+				</div>
+		  	</div>
+	 	</div>
+	</div>
+</div>
+</section>

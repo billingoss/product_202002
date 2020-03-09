@@ -1,0 +1,214 @@
+<script type="text/javascript">
+<![CDATA[
+  $(document).ready(function() {
+    debugger;
+	  
+    $('#couponUseInputProviderNumber').val($('#couponUseInputProviderNumberHide').text());
+    $('#couponUseInputCustomerNumber').val($('#couponUseInputCustomerNumberHide').text());
+    $('#couponUseInputCouponType').val($('#couponUseInputCouponTypeHide').text());
+    $('#inputCouponType').val($('#inputCouponTypeHide').text());
+	  $('#inputCouponBalance').val($('#inputCouponBalanceHide').text());
+	  
+	  if($('#inputCouponBalance').val() <= 0) {
+	   $('#saveCouponUse').hide();
+	  }
+    
+    //$('input[name=inputCouponBalanceCount]').val(numberWithCommas($('#inputCouponBalance').val()) + '회');
+    //$('input[name=inputCouponBalanceAmount]').val(numberWithCommas($('#inputCouponBalance').val()) + '원');
+    
+    if($('#inputCouponType').val() == '쿠폰횟수형') {
+    	$('#inputCouponBalance').val(numberWithCommas($('#inputCouponBalance').val()) + '회');
+    } else if($('#inputCouponType').val() == '쿠폰금액형') {
+    	$('#inputCouponBalance').val(numberWithCommas($('#inputCouponBalance').val()) + '원');
+    } else {
+    	$('#inputCouponBalance').val($('#inputCouponBalance').val());
+    }
+    
+    $('td[name=useAmount]').each(function() {
+    	$(this).text(numberWithCommas($(this).text()));
+    	if($('#inputCouponType').val() == '쿠폰횟수형') {
+    		$(this).text($(this).text() + '회');
+      } else if($('#inputCouponType').val() == '쿠폰금액형'){
+      	$(this).text($(this).text() + '원');
+      } else {
+      	$(this).text($(this).text() + '원');
+      }
+    });
+    
+    $('#saveCouponUse').click(function() {
+      debugger;
+      var customerNumber = $('#couponUseInputCustomerNumber').val();
+   
+      if ($('#couponUseInputUseAmount').val() == "") {
+        alert("해당 값은 필수 입력입니다.");
+        $('#couponUseInputUseAmount').focus();
+        false;
+      } else if (parseInt($('#couponUseInputUseAmount').val()) > parseInt($('#inputCouponBalance').val())) {
+        alert("사용횟수/금액이 잔여 횟수/금액보다 많습니다.");
+        $('#couponUseInputUseAmount').focus();
+        false;
+      } else if ($('#couponUseInputUseHistory').val() == "") {
+        alert("해당 값은 필수 입력입니다.");
+        $('#couponUseInputUseHistory').focus();
+        false;
+      } else {
+        var queryString = $("form[name=couponUseInputForm]").serialize();
+        $.ajax({
+          url : '/contract/saveCouponUseHistory',
+          data : queryString,
+          method : 'post',
+          error : function(xhr, status, error) {
+            alert("error = " + error +status +xhr );
+          },
+          success : function(data) {
+            $('#couponuse').empty();
+            $('#couponuse').load('findcouponuse' + '/' + customerNumber);
+          }
+        });
+     } 
+   });
+  });
+ 
+  function numberWithCommas(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+
+
+
+]]>
+</script>
+ <div class="row">
+  <div class="col-md-12">
+   <div class="panel panel-default">
+    <div class="panel-heading">
+     <h2 class="panel-title">
+      <strong>쿠폰 사용 내역</strong>
+     </h2>
+    </div>
+    
+    <div class="row">
+     <br></br>
+     
+     <div hidden="true">
+	     <table class="table">
+	       <tbody class="table-body-row"> 
+	        <tr th:each="result : ${couponBalanceResult}">
+	         <td style="vertical-align: middle" id="couponUseInputProviderNumberHide" th:text="${result.providernumber}"></td>
+	         <td style="vertical-align: middle" id="couponUseInputCustomerNumberHide" th:text="${result.customerNumber}"></td>
+	         <td style="vertical-align: middle" id="couponUseInputCouponTypeHide" th:text="${result.couponType}"></td>
+	         <td style="vertical-align: middle" id="inputCouponTypeHide" th:text="${result.couponType}"></td>
+	         <td style="vertical-align: middle" id="inputCouponBalanceHide" th:text="${result.couponBalance}"></td>
+	        </tr>
+	       </tbody>
+	      </table>
+     </div>
+     
+     <div class="col-md-12">
+       <div class="col-md-4">
+         <div class="form-group">
+           <label class="col-sm-3 control-label" for="inputCouponType">쿠폰종류</label>
+           <div class="col-sm-6" id="couponType">
+            <input class="form-control" id="inputCouponType" type="text" name="couponType"></input>
+           </div>
+         </div>
+        </div>
+        <div class="col-md-4">
+         <div class="form-group">
+           <label class="col-sm-3 control-label" for="inputCouponBalance">잔여 횟수/금액</label>
+           <div class="col-sm-6">
+             <input class="form-control" type="text" id="inputCouponBalance"></input>
+           </div>
+         </div>
+        </div>
+     </div>
+    </div>
+    
+    <div class="panel-body">
+     <div class="table-responsive">
+      <table class="table">
+       <thead class="table-header-bg">
+        <tr>
+         <th style="width: 20%;">일시</th>
+         <th style="width: 20%;">구분</th>
+         <th style="width: 20%;">쿠폰 횟수/금액</th>
+         <th style="width: 45%;">사용 내역</th>
+        </tr>
+       </thead>
+       <tbody class="table-body-row"> 
+        <tr th:each="result : ${couponUseHistoryListResult}">
+         <td style="vertical-align: middle" th:text="${result.customerNumber}" hidden="true"></td>
+         <td style="vertical-align: middle" th:text="${result.useDateTime}"></td>
+         <td style="vertical-align: middle" th:text="${result.couponUseType}"></td>
+         <td style="vertical-align: middle" th:text="${result.useAmount}" name="useAmount"></td>
+         <td style="vertical-align: middle" th:text="${result.useHistory}"></td>
+        </tr>
+       </tbody>
+       <tfoot>
+        <tr>
+         <td class="no-line"></td>
+         <td class="no-line"></td>
+         <td class="no-line"></td>
+         <td class="no-line"></td>
+         <td class="no-line"></td>
+        </tr>
+       </tfoot>
+      </table>
+     </div>
+    </div>
+   </div>
+  </div>
+ </div>
+ 
+ <div class="row">
+  <div class="col-md-12">
+   <div class="panel panel-default">
+    <div class="panel-heading">
+     <h2 class="panel-title">
+      <strong>쿠폰 사용 등록</strong>
+     </h2>
+    </div>
+    
+    <div class="row">
+     <form id="couponUseInputForm" name="couponUseInputForm">
+      <br></br>
+      <div hidden="true">
+       <div>
+        <input class="form-control" id="couponUseInputProviderNumber" type="text" name="providerNumber"></input>
+       </div>
+       <div>
+        <input class="form-control" id="couponUseInputCustomerNumber" type="text" name="customerNumber"></input>
+       </div>
+       <div>
+        <input class="form-control" id="couponUseInputCouponType" type="text" name="couponType"></input>
+       </div>
+       <div>
+        <input class="form-control" id="couponUseInputCouponUseType" type="text" name="couponUseType" value="DEDUCT"></input>
+       </div>
+      </div>
+      
+      <div class="col-md-12">
+       <div class="col-md-4">
+          <div class="form-group">
+            <label class="col-sm-3 control-label" for="inputUseAmount">쿠폰 횟수/금액</label>
+            <div class="col-sm-6" id="couponType">
+             <input class="form-control" id="couponUseInputUseAmount" type="text" name="useAmount"></input>
+            </div>
+          </div>
+         </div>
+         <div class="col-md-4">
+          <div class="form-group">
+            <label class="col-sm-3 control-label" for="inputUseHistory">사용 내역</label>
+            <div class="col-sm-6">
+              <input class="form-control" id="couponUseInputUseHistory" type="text" name="useHistory"></input>
+            </div>
+          </div>
+         </div>
+         <button id="saveCouponUse" class="btn btn-primary" type="button" >저장</button>
+      </div>
+     </form>
+    </div>
+    
+   </div>
+  </div>
+ </div>
+ 

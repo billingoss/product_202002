@@ -1,0 +1,199 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+
+		var today = getToday().replace('-','').replace('-','');
+		$('#year').val(today.substring(0,4));
+		if (today.substring(4,5) == '0'){
+			$('#month').val(today.substring(5,6));
+		} else {
+			$('#month').val(today.substring(4,6));
+		}
+
+		$("#searchbutton").click(function(){
+			getData(1);
+		});
+		
+		function getData(page) {
+			$('#counsellingdate').val($('#year').val() + ($('#month').val().length==1?'0'+$('#month').val():$('#month').val()));
+			var param = new Object();
+			param.counsellingdate = $("#counsellingdate").val();
+			param.state = $("#state").val();
+			param.page = page;
+			param.perPageNum = 10; /*만약값을셋팅하지 않으면 기본 페이지당 row수 10*/
+			
+			$.ajax({
+				method : 'get',
+				url : '/report/getcounsellist',
+				data : param, 
+				dataType : 'json',
+				error : function(xhr, status, error) {
+					alert(error);
+				},
+				success : handleData
+			});
+		}
+
+		function handleData(data) {
+			debugger;
+
+			json = data.list; //hashmap의 list array데이타
+			pageMaker = data.pageMaker; //pageMaker 
+			
+			if (json.length == 0) {
+				Common.Dialog.alert({
+					title : '',
+					content : '데이터가 없습니다.'
+				});
+			}
+			
+			$('#reporttbody').empty();
+			var trHTML = '';
+
+			$.each(json, function(i, item) {
+				 trHTML += '<tr>'          
+						+ '<td style="vertical-align: middle">' + (item.counsellingdate.substring(0,4)+'-'+item.counsellingdate.substring(4,6)+'-'+item.counsellingdate.substring(6,8)+' '+item.counsellingdate.substring(8,10)+':'+item.counsellingdate.substring(10,12)) + '</td>'
+						+ '<td style="vertical-align: middle">' + item.customername + '</td>'
+						+ '<td class="phone" style="vertical-align: middle">' + (item.phonenumber==''?item.cellphonenumber:item.phonenumber) + '</td>'
+						+ '<td style="vertical-align: middle">' + item.categoryname + '</td>'
+						+ '<td style="vertical-align: middle">' + item.memo + '</td>'
+						+ '<td style="vertical-align: middle">' + item.inboundpathname + '</td>'
+						+ '<td style="vertical-align: middle">' + item.answer + '</td>'
+						+ '<td style="vertical-align: middle">' + item.statename + '</td>'
+                        + '</tr>';
+			});
+			
+			$('#reporttbody').append(trHTML);
+			formatPhone();
+			pagingProc(pageMaker);
+		}
+		
+		function pagingProc(pageMaker) {
+			$("#pagination").empty();
+			if (pageMaker.totalCount != 0) {
+				$("#pagination").empty();
+				if (pageMaker.prev == true) {
+					/*<![CDATA[*/  //타임리프에서 부등호상용시 조심해야함 반드시 CDATA로 감싸야함
+					$("#pagination").append('<li class="goBackPage"><a><<</a></li>'); //다음페이지로 가기 버튼 활성화
+					/*]]>*/
+				}
+
+				/*<![CDATA[*/
+				for (var i = pageMaker.startPage; i <= pageMaker.endPage; i++) {
+				/*]]>*/
+					if (pageMaker.cri.page == i) { 
+						$("#pagination").append('<li class="disabled active" style="color: red;"><a>' + i + "</a></li>"); //버튼 비활성화
+					} else {
+						$("#pagination").append('<li class="goPage" data-page="' + i + '"><a>' + i + "</a></li>"); //버튼 활성화
+					}
+				}
+
+				if (pageMaker.next == true) {
+					$("#pagination").append('<li class="goNextPage"><a>>></a></li>'); //다음페이지로 가기 버튼 활성화
+				}
+			}
+		}
+
+	    $(document).on("click", "#pagination .goBackPage", function(){
+	    	page = Number(pageMaker.startPage) - 1;
+			getData(page);
+	    });
+
+		$(document).on("click", "#pagination .goPage", function(){
+			page = $(this).attr("data-page");
+			getData(page);
+		});
+
+	    $(document).on("click", "#pagination .goNextPage", function(){
+			page = Number(pageMaker.endPage) + 1;
+			getData(page);
+		});
+	});
+	
+	function saveExcel(){
+		var f = document.searchform;
+		f.method = 'post';
+		/*<![CDATA[*/
+		f.action = '/report/getcounsellistexcel';
+		/*]]>*/
+		f.submit();
+	}
+</script>		
+<div class="row">
+	<div id="searchbarreport">
+		<div class="col-md-12">
+			<div class="panel panel-heading" style="vertical-align: middle; text-align: center;
+				margin-left: auto; margin-right: auto;  padding-bottom: 0px;">
+				<div class="form-section">
+					<div class="row" style="text-align: center">
+						<form id="searchform" name="searchform" class="form-inline" role="form" style="margin-bottom: 10px;">
+							<div class="col-md-4">
+								<div class="form-group">
+									<span>조회년도</span>
+									<select name="year" id="year" class="form-control">
+										<option th:each="result : ${yearList}" th:value="${result.subscribedatetime}" th:text="${result.subscribedatetime}"/>
+									</select>&nbsp;년&nbsp;&nbsp;
+									<select name="month" id="month" class="form-control">
+										<option th:each="num : ${#numbers.sequence(1,12)}" th:value="${num}" th:text="${num}"/>
+									</select>&nbsp;월&nbsp;&nbsp;
+									<input type="hidden" id="counsellingdate" name="counsellingdate"/>
+								</div>
+							</div>
+							<div class="col-md-4">
+								<div class="form-group">
+									<span>상태</span>
+									<select id="state" name="state" class="form-control">
+										<option value="">전체</option>
+										<option th:each="result : ${counselstateList}" th:value="${result.code}" th:text="${result.codename}"/>
+									</select>       
+								</div>
+							</div>
+							<div class="col-md-4">
+								<button id="searchbutton" type="button" class="btn btn-primary">조회</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<div id="monthorderreportdiv">
+	<div class="row">
+		<div class="col-md-12">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+		    		<h2 class="panel-title">
+		     			<strong>고객상담 내역 조회</strong>
+		    		</h2>
+		   		</div>
+		   		<div class="panel-body">
+		    		<div class="table-responsive">
+						<div class="form-group">
+							<b><span id="totalcount"></span></b>
+						</div>
+		     			<table class="table" id="reporttable">
+			      			<thead  class="table-header-bg">
+			       				<tr>
+			        				<th>등록일시</th>
+			        				<th>고객명</th>
+			        				<th>전화번호</th>
+			        				<th>요청구분</th>
+			        				<th>요청내용</th>
+			        				<th>상담경로</th>
+			        				<th>답변내용</th>
+			        				<th>상태</th>
+								</tr>
+							</thead>
+							<tbody id="reporttbody" class="table-body-row">
+							</tbody>
+	     				</table>
+	    			</div>
+				</div>
+				<div  align="center">
+					<ul id="pagination" class="pagination"></ul>
+				    <button class="btn btn-primary pull-right" style="margin: 3px;" id="exceldown" onclick="saveExcel();">다운로드</button>
+				</div>
+		  	</div>
+	 	</div>
+	</div>
+</div>

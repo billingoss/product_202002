@@ -1,0 +1,218 @@
+<div id="popCustomerDiv" class="trp popupfixed-wrap" th:fragment="customerPopup">
+<script type="text/javascript">
+/*<![CDATA[*/
+function insertCustomer() {
+    $('#popCustomerSaveFlag').val('I');
+    $('#popCustomerCustomerNumber').val(0);
+    $('#popCustomerCustomerName').val('');
+    $('#popCustomerPhoneNumber').val('');
+    $('#popCustomerBirthDay').val('');
+    $('#popCustomerSex').val('');
+    $('#popCustomerEmail').val('');
+    $('#popCustomerZipCode').val('');
+    $('#popCustomerBaseAddress').val('');
+    $('#popCustomerDetailAddress').val('');
+    $('#popCustomerRemark').val('');
+
+    // 팝업 선택박스 index 높이기
+    $(".select2Basic_pop").select2({   
+        dropdownCssClass : 'increasedzindexclass_pop',
+        minimumResultsForSearch: Infinity,
+        width:"100%"
+    });    
+}
+
+function updateCustomer(customerNumber) {
+	var param = new Object();
+	param.customerNumber = customerNumber;
+	
+	$.ajax({
+		method : 'get',
+	 		url : '/customer/getcustomer',
+	 		data : param,
+		error: function(xhr, status, error){ 	
+			$('#popCustomerDiv .btn_close').click();
+		},
+		success : function(data){
+	        json = data.customer;
+	        $('#popCustomerSaveFlag').val('U');
+	        $('#popCustomerCustomerNumber').val(json.customerNumber);
+	        $('#popCustomerCustomerName').val(json.customerName);
+	        $('#popCustomerPhoneNumber').val(json.phoneNumber);
+	        $('#popCustomerBirthDay').val(formatDate(json.birthDay));
+	        $('#popCustomerSex').val(json.sex);
+	        $('#popCustomerEmail').val(json.email);
+	        $('#popCustomerZipCode').val(json.zipCode);
+	        $('#popCustomerBaseAddress').val(json.baseAddress);
+	        $('#popCustomerDetailAddress').val(json.detailAddress);
+	        $('#popCustomerRemark').val(json.remark);
+
+	        // 팝업 선택박스 index 높이기
+		    $(".select2Basic_pop").select2({   
+		        dropdownCssClass : 'increasedzindexclass_pop',
+		        minimumResultsForSearch: Infinity,
+		        width:"100%"
+		    });    
+		}
+	});
+}	
+	
+$(document).ready(function(){
+	
+	//저장버튼 클릭
+	$('#popCustomerSaveButton').click(function(){
+		
+		if ($('#popCustomerCustomerName').val() == '') {
+			showAlert("고객명을 입력하십시오.",$('#popCustomerCustomerName'));
+			return;
+		}		
+		if (!isKorean($('#popCustomerCustomerName').val())){
+			showAlert("고객명은 한글,영문만 입력가능합니다.",$('#popCustomerCustomerName'));
+			return;
+		}		
+
+		if ($('#popCustomerPhoneNumber').val() == '') {
+			showAlert("전화번호를 입력하십시오.",$('#popCustomerPhoneNumber'));
+			return;
+		}		
+		if (!isNumber($('#popCustomerPhoneNumber').val().replace(/-/g, ''))){
+			showAlert("전화번호는 숫자만 입력가능합니다.",$('#popCustomerPhoneNumber'));
+			return;
+		}		
+
+		if ($('#popCustomerBirthDay').val().replace(/-/g, '') != '' && !isNumber($('#popCustomerBirthDay').val().replace(/-/g, ''))){
+			showAlert("생일은 숫자만 입력가능합니다.",$('#popCustomerBirthDay'));
+			return;
+		} else if ($('#popCustomerBirthDay').val().replace(/-/g, '').length != 0 && $('#popCustomerBirthDay').val().replace(/-/g, '').length != 8) {
+			showAlert('생일을 정확히 입력하십시오.',$('#popCustomerBirthDay'));
+			return;
+		}
+
+		if ($('#popCustomerDetailAddress').val() != '' && !isKoreanNumber($('#popCustomerDetailAddress').val())){
+			showAlert("상세 주소는 한글,영문,숫자만 입력가능합니다.",$('#popCustomerDetailAddress'));
+			return;
+		}		
+		
+		if ($('#popCustomerRemark').val() != '' && !isKoreanNumber($('#popCustomerRemark').val())){
+			showAlert("비고는 한글,영문,숫자만 입력가능합니다.",$('#popCustomerRemark'));
+			return;
+		}		
+
+		$('#popCustomerPhoneNumber').val($('#popCustomerPhoneNumber').val().replace(/-/g, ''));
+		$('#popCustomerBirthDay').val($('#popCustomerBirthDay').val().replace(/-/g, ''));
+		
+		var queryString = $("form[name=popCustomerCustomerForm]").serialize();
+		
+		$.ajax({
+			method : 'post',
+			url : '/customer/savecustomer',
+			data : queryString,
+			success : function(data) {
+				showAlert('저장되었습니다.');
+				$('#popCustomerCancelButton').click();
+				
+				if ($('#popCustomerSaveFlag').val() == 'I') {
+					$('#customerName').val($('#popCustomerCustomerName').val());
+					$('#phoneNumber').val($('#popCustomerPhoneNumber').val());
+					getData(1);
+				} else {
+					getCustomerInformation();
+				}
+			}
+		});
+	});
+});
+/*]]>*/
+</script>
+<form name="popCustomerCustomerForm" onsubmit="return false;">
+<input type="hidden" id="popCustomerCustomerNumber" name="customerNumber"/>
+<input type="hidden" id="popCustomerSaveFlag" name="saveFlag"/>
+<!--고객정보//-->
+	<div class="popup-dim"></div>
+	<div class="popup-align">
+		<div class="popup-vertical">
+			<div class="popup-layer option wl">
+				<a class="btn_close" href="#">X</a>
+				<div class="pop_tit">고객정보</div>
+				<!-- 알림 mode0 -->
+				<section class="section">
+					<div class="table-wrap">
+						<p class="comparison_text mb10 tar"><em>*</em> 필수입력정보</p>
+						<table class="form_table">
+							<colgroup>
+								<col width="130px" />
+								<col width="*" />
+								<col width="130px" />
+								<col width="*" />
+							</colgroup>
+							<tbody>
+								<tr>
+									<th>고객명 <i>*</i></th>
+									<td>
+										<input type="text" class="" value="" placeholder="" id="popCustomerCustomerName" name="customerName"/>
+									</td>
+									<th>전화번호 <i>*</i></th>
+									<td>
+										<input type="text" class="" value="" placeholder="-없이 입력" id="popCustomerPhoneNumber" name="phoneNumber"/>
+									</td>
+								</tr>
+								<tr>
+									<th>생년월일</th>
+									<td>
+										<span class="datepicker-box w_mm">
+											<input type="text" class="js-datepicker" id="popCustomerBirthDay" name="birthDay"/>
+										</span>
+									</td>
+									<th>성별</th>
+									<td>
+										<div class="select-box">
+											<select class="select2Basic_pop" id="popCustomerSex" name="sex">
+												<option value="">선택</option>
+												<option th:each="result : ${sexList}" th:value="${result.code}" th:text="${result.codeName}"/>
+											</select>
+										</div>
+									</td>
+								</tr>
+								<tr>
+									<th>이메일</th>
+									<td colspan="3">
+										<input type="text" class="" value="" placeholder="" id="popCustomerEmail" name="email"/>
+									</td>
+								</tr>
+								<tr>
+									<th>주소</th>
+									<td colspan="3">
+										<div class="address-box mb10">
+											<span class="post_item"><input type="text" class="w_mm mr5" placeholder="우편번호" id="popCustomerZipCode" name="zipCode" readonly="readonly" /></span>
+											<span class="btn_item"><button class="btn btn_gray " role="button" id="popCustomerAddressButton" onclick="execDaumPostcode('zipCodeWrap', 'popCustomerZipCode', 'popCustomerBaseAddress');">주소검색</button></span>
+											<div id="zipCodeWrap" style="display:none;border:1px solid;width:100%;height:250px;margin:5px 0;position:relative">
+												<img src="//t1.daumcdn.net/localimg/localimages/07/postcode/320/close.png" id="btnFoldWrap" style="cursor:pointer;position:absolute;right:0px;top:-1px;z-index:1" onclick="foldDaumPostcode('zipCodeWrap');" alt="접기 버튼" />
+											</div>
+										</div>
+										<div class="">
+											<input type="text" class="mb10" placeholder="기본주소" id="popCustomerBaseAddress" name="baseAddress" readonly="readonly"/>
+											<input type="text" class="" placeholder="상세주소 입력" id="popCustomerDetailAddress" name="detailAddress" />
+										</div>
+									</td>
+								</tr>
+								<tr>
+									<th>비고</th>
+									<td colspan="3">
+										<input type="text" class="" value="" placeholder="" id="popCustomerRemark" name="remark"/>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+		
+					<div class="btn_set-center bottom_set mt30">
+						<a class="btn btn_green btn_wm radius mr5" role="button" href="#none" id="popCustomerSaveButton" >저장</a>
+						<a class="btn btn_default btn_wm radius btn_cancel" href="#none" role="button" id="popCustomerCancelButton">취소</a>
+					</div>
+		
+				</section>
+			</div>
+		</div>
+	</div>
+</form>
+</div>

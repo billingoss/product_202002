@@ -1,0 +1,184 @@
+<div class="col-md-12">
+	<div class="panel panel-heading"
+		style="vertical-align: middle; text-align: center; margin-left: auto; margin-right: auto;  padding-bottom: 0px;">
+		<div class="form-section">
+			<div class="row font-size16px" style="text-align: center">
+				<form id="dataForm" name="dataForm" class="form-inline" role="form" style="margin-bottom: 10px;">
+					<div class="col-md-3">
+						<span>이름</span> <input type="text" class=" form-control" name ="customerName"/>
+					</div>
+					<div class="col-md-3">
+						<span>전화번호</span> <input type="text" class=" form-control" name ="phoneNumber"/>
+					</div>
+					<div class="col-md-3">
+						<span>계약번호</span> <input type="text" class=" form-control" name ="connumber" id='connumber'/>
+					</div>
+					<div class="col-md-3">
+							<span>결제여부</span>          
+					         <select id="customerpaymenttypeyn" class="form-control">
+					           <option value="Z">전체</option>
+					           <option value="Y">Y</option>
+					           <option value="N">N</option>
+					         </select>   
+					</div>				
+					<div class="col-md-3">
+						<button id="searchbt" type="button" class="btn btn-primary">조회</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+	$(document).ready(function() {
+			
+		$('#searchbt').click(function() {
+			$("#paginationpayment").empty();
+			getCustomerData(1);
+		});
+	
+		//===================페이지이벤트처리시작==========================
+		/* $(".goBackPage").click(function() { */
+	    $(document).on("click", "#paginationcustomer .goBackPage", function(){
+	    	page = Number(pageMaker.startPage) - 1;
+			//pageFlag = 1;
+			//$("상단 ajax를 함수로 만들어 재귀호출");
+			getCustomerData(page);
+			//pageFlag = 0;
+	    });
+	
+		$(document).on("click", "#paginationcustomer .goPage", function(){
+			debugger;
+			page = $(this).attr("data-page");
+			//alert(page);
+			//pageFlag = 1;
+			getCustomerData(page);
+			//pageFlag = 0;
+		});
+	
+	    $(document).on("click", "#paginationcustomer .goNextPage", function(){
+			page = Number(pageMaker.endPage) + 1;
+			//$("상단 ajax를 함수로 만들어 재귀호출");
+			getCustomerData(page);
+			//pageFlag = 0;
+		});
+	});
+
+	/************************************************************************************
+	고객 결제 내역 조회 
+	************************************************************************************/		
+	function getCustomerData(page) {
+		var param = new Object();
+		param.page = page;
+		param.perPageNum = 5; /*만약값을셋팅하지 않으면 기본 페이지당 row수 10*/		
+		param.customerName = $("form[name=dataForm]").find("input[name=customerName]").val();
+		param.phoneNumber = $("form[name=dataForm]").find("input[name=phoneNumber]").val();
+		param.paymenttypeyn = $("#customerpaymenttypeyn").val();
+		param.connumber = $("#connumber").val();
+		if (param.connumber == ''){
+			param.connumber ="0";			
+		}
+		
+		$.ajax({
+			method : 'get',
+			url : '/billing/getinvoicelistbyname',
+			data : param, 
+			dataType : 'json',
+			error : function(xhr, status, error) {
+				alert(error);
+			},
+			success : handleCustomerData
+		});
+	}
+	
+	/************************************************************************************
+	고객 결제 내역 조회 후 화면 노출 
+	************************************************************************************/		
+	 function handleCustomerData(data) {		  
+		json = data.lists; //hashmap의 list array데이타
+		pageMaker = data.pageMaker; //pageMaker 
+		debugger;
+
+		if (json.length == 0) {
+		 Common.Dialog.alert({
+		  title : '',
+		  content : '데이터가 없습니다.'
+		 });
+		}
+		$("#paginationpayment").empty();
+		$('#InvoiceCustomermaintablebody').empty();
+		$('#PaymentCustomermaintablebody').empty();
+		var trHTML = '';
+		$.each(json, function (i, item) {
+			var url ='/billing/invoiceDetail/'+item.invoicenumber + '/' + item.invoiceDate.replace(/-/g, '') + '/' + item.conNumber;
+			var adjusturl ='/billing/invoiceAdjust/'+item.invoicenumber + '/' + item.invoiceDate.replace(/-/g, '') + '/' + item.conNumber;
+			// alert(url);
+			trHTML += '<tr>' 
+					+ '<td style="display:none;">' + item.invoicenumber + '</td>'
+					+ '<td style="display:none;"><input class="tot_amount" type="checkbox" value=""/></td>'
+					+ '<td>' + item.paymenttype + '</td>'
+					+ '<td>' + item.invoiceDate + '</td>'
+					+ '<td>' + item.customerName + '</td>'
+					+ '<td>' + item.productName + '</td>'
+					+ '<td>' + item.invoicecycle + '</td>'
+					+ '<td style="text-align: right">' + numberComma(item.totalInvoiceAmount) + '</td>'
+					+ '<td style="text-align: right">' + numberComma(item.adjustamount) + '</td>'
+					+ '<td style="display:none;">' + item.paymentstatecodename + '</td>'
+					+ '<td style="display:none;">' + item.paymentdate + '</td>'
+					+ '<td style="text-align: right">' + numberComma(item.paymentAmount) + '</td>'
+					+ '<td style="text-align: right">' + numberComma(item.collectionBalanceAmount) + '</td>'
+					+ '<td style="display:none;">' + item.errorReason + '</td>'
+					+ '<td style="text-align: left">'  +  '<a href="' +url + '" data-toggle="modal" data-target="#customerinvoiceDetailDialog" >'
+					+  '<button class="btn btn-small btn-table-default">상세</button></a>' 
+					+  '<a href="' + adjusturl +'" data-toggle="modal" data-target="#customeradjustDialog"><button class="btn btn-small btn-table-default customeradjustbt">조정</button></a>' + '</td>' 
+					+ '<td style="display:none;">' + item.conNumber + '</td>'
+					+ '<td style="display:none;">' + item.providernumber + '</td>'
+					+ '<td style="display:none;">' + item.tid + '</td>'
+					+ '</tr>';
+		});
+		$('#InvoiceCustomermaintablebody').append(trHTML);
+        CustomerTableSum();
+        $('#InvoiceCustomermaintablebody tr').each(function() {
+	         var colvalue = parseInt($('td', this).eq(12).text().replace(',',''));
+	         if ( colvalue == 0){
+	          $('td', this).find('.customeradjustbt').css("display","none");
+	         }
+        });		        
+        $('#customerpayment').prop("disabled", true);
+		$('#customerrefund').prop("disabled", true);
+  		pagingCustomerProc(pageMaker);
+	}
+
+	/************************************************************************************
+	고객 결제 내역 Page navigater
+	************************************************************************************/		 
+	function pagingCustomerProc(pageMaker) {
+		//=============pagination 시작=====================
+		$("#paginationcustomer").empty();
+		if (pageMaker.totalCount != 0) {
+			$("#paginationcustomer").empty();
+			if (pageMaker.prev == true) {
+				/*<![CDATA[*/  //타임리프에서 부등호상용시 조심해야함 반드시 CDATA로 감싸야함
+				$("#paginationcustomer").append('<li class="goBackPage"><a><<</a></li>'); //다음페이지로 가기 버튼 활성화
+				/*]]>*/
+			}
+
+			//아래는 타임리프사용시 조시매야한다. for하기와 같이 쓰지않음 에러발생함
+			/*<![CDATA[*/
+			for (var i = pageMaker.startPage; i <= pageMaker.endPage; i++) {
+				/*]]>*/
+				//alert(i);
+				if (pageMaker.cri.page == i) { 
+					$("#paginationcustomer").append('<li class="disabled active" style="color: red;"><a>' + i + "</a></li>"); //버튼 비활성화
+				} else {
+					$("#paginationcustomer").append('<li class="goPage" data-page="' + i + '"><a>' + i + "</a></li>"); //버튼 활성화
+				}
+			}
+
+			if (pageMaker.next == true) {
+				$("#paginationcustomer").append('<li class="goNextPage"><a>>></a></li>'); //다음페이지로 가기 버튼 활성화
+			}
+		}
+	//=============pagination 끝=====================
+	}		
+</script>

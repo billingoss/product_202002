@@ -1,0 +1,73 @@
+<!-- Modal -->
+<script type="text/javascript">
+	$(document).ready(function() {
+	debugger;	
+		formatPhone();
+		
+		
+ 	});
+	
+	$('button[name="selectedCustomer"]').click(function(){
+		debugger;customerNumber
+		var customerNumber = $(this).parent().parent().children()[0].outerText;
+		var customerName = $(this).parent().parent().children()[1].outerText;
+		var phoneNumber = $(this).parent().parent().children()[2].outerText;
+		
+		$('input[name="customerNumber"]').val(customerNumber);
+		$('input[name="customerName"]').val(customerName);
+		$('input[name="phoneNumber"]').val(phoneNumber);
+		
+		$('#customerListlDialog').modal('hide');
+	});
+			
+</script>
+<div class="modal-header modal-popup-header">
+	<h5 class="modal-title">
+		▶ 고객 목록
+		<button id="customerlistpopupclose" type="button" class="close" data-dismiss="modal">&times;</button>
+	</h5>
+</div>
+<div class="modal-body">
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="panel-title">
+				<strong>고객 목록</strong>
+			</h4>
+		</div>
+	</div>
+	<div style="overflow:auto;height:520px;">
+		<table class="table table-hover table-bordered" id="customerlistmaintable">
+			<thead class="table-header-bg">
+				<tr>
+					<th style="width: 8%;">고객명</th>
+					<th style="width: 8%;">전화번호</th>
+					<th style="width: 10%;">기본주소</th>
+					<th style="width: 10%;">상세주소</th>
+					<th style="width: 4%;"></th>
+				</tr>
+			</thead>
+			<tbody class="table-body-row">
+				<tr th:each="result : ${customerListResult}">
+					<td style="vertical-align: middle" th:text="${result.customerNumber}" hidden="true"></td>
+					<td style="vertical-align: middle" th:text="${result.customerName}"></td>
+					<td class="phone" style="vertical-align: middle" th:text="${result.phoneNumber}"></td>								
+					<td style="vertical-align: middle" th:text="${result.baseAddress}"></td>
+					<td style="vertical-align: middle" th:text="${result.detailAddress}"></td>
+					<td style="vertical-align: middle">
+						<button class="btn btn-small btn-table-default" name ="selectedCustomer" >선택</button>
+					</td>
+				</tr>
+			</tbody>
+			<tfoot>
+			  <tr>
+					<td class="no-line"></td>
+					<td class="no-line"></td>
+					<td class="no-line"></td>
+					<td class="no-line"></td>
+					<td class="no-line"></td>
+				</tr>
+			</tfoot>
+		</table>
+	</div>
+</div>
+<!-- modal list END -->

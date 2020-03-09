@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout"
+	layout:decorator="layout/default">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></meta>
+<script type="text/javascript" src="http://www.google.com/jsapi"></script>
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<link href="/css/custom.css" type="text/css" media="screen, projection" rel="stylesheet" />
+<link href="/css/customize-template.css" type="text/css" media="screen, projection" rel="stylesheet" />
+<script src="/js/commonlib.js" type="text/javascript"></script>
+<script src="/js/chart.js" type="text/javascript"></script>
+<link rel="stylesheet" th:href="@{/css/dataTables.bootstrap4.css}" />
+
+<title>Billing Service</title>
+<style type="text/css">
+ul.timeline {
+	list-style-type: none;
+	position: relative;
+	right: 10px;
+	margin-left: 10px;
+}
+
+ul.timeline:before {
+	content: ' ';
+	background: #d4d9df;
+	display: inline-block;
+	position: absolute;
+	left: 29px;
+	width: 2px;
+	height: 100%;
+	z-index: 400;
+}
+
+ul.timeline>li {
+	margin: 40px 0;
+	margin-top: 20px;
+	padding-left: 50px;
+	margin-left: 0px;
+}
+
+ul.timeline>li>i {
+	 color : #22c0e8;
+}
+
+ul.timeline>li:before {
+	content: ' ';
+	background: white;
+	display: inline-block;
+	position: absolute;
+	border-radius: 50%;
+	border: 3px solid #22c0e8;
+	left: 20px;
+	width: 20px;
+	height: 20px;
+	z-index: 400;
+}
+</style>
+<script type="text/javascript">
+$(document).ready(function() {
+	$('#headerreport').addClass('header-click-bg');
+	var today = new Date();
+	console.log(yyyymmdd(today));
+	getTotalCustomerandContract(yyyymmdd(today));
+	//setTimeout(getArticle(), 2000);
+	//setTimeout(getRatioProduct(), 2000);
+	//setTimeout(getRatioProductRank(yyyymmdd(today).substr(0, 7).replace(/-/g, '')), 2000);
+    //setTimeout(getRatioProductRank('201807'), 2000);
+	//setTimeout(getInvoiceReportOutput(), 2000);
+	//setTimeout(getInvoiceReportMonthOutput(), 2000);
+	 var promise = Promise.resolve(true);
+	 promise = promise.then(function(res) {
+		 
+		 promise = getArticle();
+		    
+		 promise = promise.then(function(res) {
+			 
+			 promise = getRatioProduct();
+			  
+				 promise = promise.then(function(res) {
+						  
+					     console.log(yyyymmdd(today).substr(0, 7).replace(/-/g,''));
+						  promise = getRatioProductRank(yyyymmdd(today).substr(0, 7).replace(/-/g,''));
+						    
+						     promise = promise.then(function(res) {
+						    	 
+					               promise = getInvoiceReportOutput();
+					                    promise = promise.then(function(res) {
+					            	   
+							                   promise = getInvoiceReportMonthOutput();
+						   });
+					   });
+				});
+	    }); 	
+    });			 
+		
+	
+    //getRatioProduct();
+    //getRatioProductRank('201807');
+    //getInvoiceReportOutput();
+    //getInvoiceReportMonthOutput();
+	$('#writeNoticePopupbt').click(function(){
+		$.ajax({
+            url : '/report/writeNoticePopup' ,
+            timeout: 3000,
+            error: function(xhr, status, error){
+               alert(error);
+            },
+            success : function(data){
+             //alert(data);
+         	 $('#writeNoticePopup .modal-content').html(data);
+         	 $("#writeNoticePopup").modal('show'); 
+            }
+		});
+	});
+	
+	
+});
+
+function getTotalCustomerandContract(todaydate){
+	//alert(todaydate);
+	return new Promise(function (resolve, reject) { 
+	$.ajax({
+		method : 'get',
+		timeout: 3000,
+        url : '/report/getTotalCustomerandContract/'+todaydate ,
+        error: function(xhr, status, error){
+            alert(error);
+        },
+        success : function(json){
+        	//alert(json.length);
+          if(json == null ){
+        	  $('#totalcustomercnt').text('0');
+              $('#todaycustomercnt').text('0');
+              $('#totalcontractcnt').text('0');
+              $('#todaycontractcnt').text('0');
+              return resolve();
+           }
+           $('#totalcustomercnt').text(numberComma(json.total_customer_register));
+           $('#todaycustomercnt').text(numberComma(json.current_customer_register));
+           $('#totalcontractcnt').text(numberComma(json.total_contract_register));
+           $('#todaycontractcnt').text(numberComma(json.current_contract_register));
+           return resolve();
+        }
+    });
+	});
+}
+
+function getRatioProduct(){
+	//alert(todaydate);
+	return new Promise(function (resolve, reject) { 
+	$.ajax({
+		method : 'get',
+		timeout: 3000,
+        url : '/report/getRatioProduct' ,
+        error: function(xhr, status, error){
+            alert(error);
+        },
+        dataType : 'json',
+        success : function(json){
+        	
+        	drawVisualProductratio(json);
+        	return resolve();
+        }
+    });
+	});
+}
+
+function getInvoiceReportOutput(){
+	//alert(todaydate);
+	return new Promise(function (resolve, reject) { 
+	$.ajax({
+		method : 'get',
+		timeout: 3000,
+        url : '/report/getInvoiceReportOutput' ,
+        error: function(xhr, status, error){
+            alert(error);
+        },
+        success : function(json){
+        	//alert(json.length);
+           $('#thismonthsalessamt').text(numberComma(json.thismonthtotalInvoiceAmount));
+           $('#totaysalesamt').text(numberComma(json.todaytotalInvoiceAmount));
+           //$('#totalcolbamt').text(numberComma(json.totalCollectionBalanceAmount));
+           return resolve();
+        }
+    });
+  });
+}
+
+function getInvoiceReportMonthOutput(){
+	//alert(todaydate);
+	return new Promise(function (resolve, reject) { 
+	$.ajax({
+		method : 'get',
+		timeout: 3000,
+        url : '/report/getInvoiceReportMonthOutput' ,
+        error: function(xhr, status, error){
+            alert(error);
+        },
+        success : function(json){
+        	drwaInvoiceMonthChart(json);
+        	return resolve();
+        }
+    });
+  });
+}
+
+function getRatioProductRank(monthdate){
+	//alert(todaydate);
+	return new Promise(function (resolve, reject) {
+	$.ajax({
+		method : 'get',
+		timeout: 3000,
+        url : '/report/getRatioProductRank/' +  monthdate,
+        error: function(xhr, status, error){
+            alert(error);
+        },
+        dataType : 'json',
+        success : function(json){
+        	
+        	drawProductRank(json);
+        	return resolve();
+        }
+    });
+	});	
+}
+
+function getArticle(){
+	//alert(todaydate);
+	var trHTML ="";
+	
+	$('#noticeul').empty();
+	return new Promise(function (resolve, reject) {
+	$.ajax({
+		method : 'get',
+        url : '/report/getArticle' ,
+        timeout: 3000,
+        error: function(xhr, status, error){
+            alert(error);
+        },
+        dataType : 'json',
+        success : function(json){
+        	
+        	$.each(json, function (i, item) {
+         	   
+                trHTML += '<li>' + '<i style="display:none" class="articlenum">' + item.articlenum + '</i>'
+                       + item.articlesubject  
+                       + '<i>' + item.writedate +'<i class="icon-eye-close" onclick="deleteArtice(' + item.articlenum + ')"></i>' + '</i>'
+            	       +  '<p>' + item.articlecontent + '</p></li>';
+            });
+        	
+        	$('#noticeul').append(trHTML);
+        	$('#noticeul li i').addClass('pull-right');
+        	$('.icon-eye-close').addClass('pull-right');
+        	return resolve();
+        }
+       });
+	});	
+}
+
+function deleteArtice(num){
+	Common.Dialog.confirm({
+        content: '삭제 하시겠습니다?'
+        ,ok: function(){
+        	$.ajax({
+        		method : 'get',
+        		timeout: 3000,
+                url : '/report/updateArticle/' + num ,
+                error: function(xhr, status, error){
+                    alert(error);
+                },
+                success : function(json){
+                	Common.Dialog.alert({
+ 	 		    		  title:'삭제'
+ 	 		            , content: '삭제되었습니다.'
+ 	 		        });
+                	getArticle();
+                }
+            });
+        }
+    }); 
+}
+</script>
+</head>
+<body>
+	<div id="page-content" layout:fragment="content">
+		<div id="body-container">
+		
+			<div id="body-content">
+				<section class="page container">
+					<div class="row">
+						<div class="span6">
+							<div class="col-md-12">
+								<div class="x_panel tile fixed_height_800">
+									<div class="x_title">
+										<h5>
+											Notice
+											<button class="btn btn-small btn-info pull-right" id="writeNoticePopupbt">
+												<i class="btn-icon-only icon-edit"></i>
+											</button>
+										</h5>
+									</div>
+									<div class="box-content">
+												<ul class="timeline" id="noticeul">
+												</ul>
+									</div>
+								</div>
+							</div>
+						</div>
+						<div class="span12" style="margin-left: 10px;">
+						<div class="col-md-12">
+						<div class="bg-light tile_count">
+								<div class="col-md-4 col-sm-6 col-xs-6 tile_stats_count">
+									<span class="count_top"><i class="fa fa-user"></i> 전체 고객
+										수</span>
+									<div class="count" id="totalcustomercnt">0</div>
+									<span class="count_bottom">금일 가입 고객 수 &nbsp;<i id="todaycustomercnt">0</i></span>
+								</div>
+								<div class="col-md-4 col-sm-6 col-xs-6 tile_stats_count">
+									<span class="count_top"><i class="fa fa-user"></i> 전체 계약
+										건 수</span>
+									<div class="count" id="totalcontractcnt">0</div>
+									<span class="count_bottom">금일 계약 건 수 &nbsp;<i
+										id="todaycontractcnt">0</i></span>
+								</div>
+								<div class="col-md-4 col-sm-6 col-xs-6 tile_stats_count">
+									<span class="count_top"><i class="fa fa-user"></i> 이번달 매출 금액</span>
+									<div class="count" id="thismonthsalessamt">0</div>
+									<span class="count_bottom">금일 매출 금액 &nbsp;<i id="totaysalesamt">0</i></span>
+								</div>
+							<!--  	<div class="col-md-3 col-sm-6 col-xs-6 tile_stats_count">
+									<span class="count_top"><i class="fa fa-user"></i>총 미납 금액</span>
+									<div class="count" id="totalcolbamt">0</div>
+								</div>-->
+							</div>
+							</div>
+							<div class="col-md-6">
+								<div class="x_panel tile fixed_height_320">
+									<div class="x_title">
+										<h5>Top 5 상품 판매 비율</h5>
+									</div>
+									<div class="box-content">
+										<div id="piechart"></div>
+									</div>
+								</div>
+							</div>
+							<div class="col-md-6">
+								<div class="x_panel tile fixed_height_320">
+									<div class="x_title">
+										<h5>이번달 상품별 판매Rank</h5>
+									</div>
+									<div class="box-content">
+										<div id="productrankchart"></div>
+									</div>
+								</div>
+							</div>
+							<div class="col-md-12">
+									<div class="x_panel tile fixed_height_320">
+										<div class="x_title">
+											<h5>월별매출현황</h5>
+										</div>
+										<div class="box-content">
+											<div id="monthlyinvoicebarchart"></div>
+										</div>
+									</div>
+								</div>
+							</div>
+					</div>
+				</section>
+			</div>
+		</div>
+		
+<div class="modal" id="writeNoticePopup" role="dialog">
+	<div class="modal-dialog modal-lg modal-dialog-center">
+		<div class="modal-content"></div>
+	</div>
+</div>
+	</div>
+	
+</body>
+</html>

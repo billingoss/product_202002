@@ -1,0 +1,67 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+  	$("#discountsearchbar").load("searchbar-discount");
+    //alert("discountsearchbar load");
+ 	});
+</script>
+<div class="row">
+	<div id="discountsearchbar"></div>
+</div>
+
+<div id="discountListResult">
+	<div class="row">
+		<div class="col-md-12">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+	    		<h2 class="panel-title">
+	     			<strong>할인 정보</strong>
+	    		</h2>
+	   		</div>
+	   		<div class="panel-body">
+	    		<div class="table-responsive">
+	     			<table class="table" id="p1maintable">
+	      			<thead class="table-header-bg">
+	       				<tr>
+	           			<th style="width: 4%;"></th>
+	        				<!-- <th style="width: 8%;">할인ID</th> -->
+	        				<th>할인명</th>
+					        <th style="width: 12%;">할인유형</th>
+					        <th style="width: 12%;">할인율/금액</th>
+					        <th style="width: 10%;">상태</th>
+					        <th style="width: 10%;">시작일자</th>
+					        <th style="width: 10%;">종료일자</th>
+					        <th>할인설명</th>
+					        <!-- <th style="width: 65px;"></th> -->
+					        <th style="width: 65px;"></th>
+								</tr>
+							</thead>
+							<tbody id="discountlisttablebody" class="table-body-row">
+								<tr th:each="result : ${discountListResult}">
+								  <td><input type="checkbox" name="discountListBox" th:value="${result.discountId}"/></td>
+									<td th:text="${result.discountId}"></td>
+									<td th:text="${result.discountName}"></td>
+									<td th:text="${result.discountType}"></td>
+									<td th:text="${result.discountValue}"></td>								
+									<td th:text="${result.discountState}"></td>
+									<td th:text="${result.subscribeStartDateTime}"></td>
+									<td th:text="${result.subscribeEndDateTime}"></td>
+									<td th:text="${result.discountDescription}"></td>
+									<td></td>
+									<td></td>
+								</tr>
+							</tbody>
+	     			</table>
+	    		</div>
+				</div>
+	   		<div class="panel-footer" style="padding-bottom: 40px;">
+	   			<div>
+	   				<button class="btn btn-primary pull-right" disabled="disabled" style="margin: 3px;" id="discountadd">저장</button>
+	   			</div>
+	   			<div>
+	    			<button class="btn btn-primary pull-right" disabled="disabled" style="margin: 3px;" id="discountsave">추가</button>
+	    		</div>
+	   		</div>
+	  	</div>
+	 	</div>
+	</div>
+</div>

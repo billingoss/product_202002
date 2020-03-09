@@ -1,0 +1,25 @@
+package com.api.service.logic;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.api.model.product.Product;
+import com.api.repository.ProductRepository;
+import com.api.service.ProductService;
+
+@Service
+public class ProductLogic implements ProductService
+{
+
+	@Autowired
+    private ProductRepository productRepository;
+
+	@Override
+	public List<Product> getProductList(Product product)
+	{
+		List<Product> list = productRepository.getProductList(product);
+		return list;
+	}
+}

@@ -1,0 +1,278 @@
+<script type="text/javascript">
+$(document).ready(function() {
+	
+	$.ajax({
+		url : '/product/findProductid',
+		method : 'get',
+		error : function(xhr, status, error) {
+			alert("신규상품ID 생성이 실패했습니다. 오류사유= "+error);
+		},
+		success : function(data) {
+			$('#productidset').html(data);
+		}
+	});
+
+	$('#productregistbutton').click(function() {
+		//var queryString = $("form[name=registproductform]").serialize();
+	  //debugger;
+	  	var itemObj = new Object();
+		var prdty = $('#productType').val();
+		var prdnm = $('#productName1').val();
+		var pkgty = $('#packagePriceReferenceYn').val();
+		var prdprice = $('#priceAmount').val();
+		var pkgprice = $('#packagePriceBandwidth').val();
+		var pkgyn = 'N';
+		
+		// Validation Check
+		if(prdty == ''){
+			alert("상품유형을 선택하시기 바랍니다." );
+			return false;
+		}
+		if(prdnm ==''){
+			alert("상품명을 입력하시기 바랍니다." );
+			return false;
+		}
+		else if(prdty == 'PACKAGE'){
+			if(pkgty == ''){
+				alert("패키지유형을 선택하시기 바랍니다." );
+				return false;
+			}
+			else if(pkgty == 'Y'){ //종량형일경우 가격을 '0'으로 세팅
+				prdprice = '0';
+				//pkgprice = prdprice ;
+				//if(isNaN(pkgprice) == true || pkgprice == ''){
+				//	alert("상품가격에 숫자를 입력하시기 바랍니다." );
+				//	return false;
+				//}
+			}
+			pkgyn = 'Y';
+		}
+		
+		if(prdprice == ''){
+			alert("상품가격을 입력하시기 바랍니다." );
+			return false;
+		}
+		if(isNaN(prdprice) == true) {
+			alert("상품가격은 숫자만 입력하시기 바랍니다." );
+			return false;
+		}
+		
+		itemObj.productId = $('#productId').val();
+		itemObj.productType = $('#productType').val();
+		itemObj.packageYn = pkgyn; 
+		itemObj.productName = $('#productName1').val();
+		itemObj.packagePriceReferenceYn = $('#packagePriceReferenceYn').val();
+		itemObj.priceAmount = prdprice;
+		itemObj.packagePriceBandwidth = pkgprice;
+		itemObj.subscribeStartDateTime  = $('#fromDate').val();
+		itemObj.subscribeEndDateTime = $('#toDate').val();
+		itemObj.productDescription = $('#productDescription').val();
+		console.log(itemObj);
+		
+		$.ajax({
+       url : '/product/saveProduct',
+       data : itemObj,
+       type : 'post',
+       error : function(xhr, status, error) {
+         alert("등록하실 상품정보를 정확히 입력하시기 바랍니다.");
+       },
+       success : function(data) {
+       	//alert("data = " + data);
+       	alert("신규상품 등록이 완료되었습니다.");
+       	$('#productregistbutton').prop("disabled", "disabled");
+       	$("#productregistDialog").modal('hide');
+		$("#product-productlist").load("product-productlist");
+		$('#searchbt').click();
+       }
+		});
+	});	
+	
+	//productType selectBox선택따라 바뀌는 입력창
+	$('#productType').change(function(){
+		$("#productType option:selected").each(function () {	
+			if($(this).val()== 'PACKAGE'){	
+              //선택(패키지)일 경우		
+                 $("#packagePriceReferenceYn").attr("disabled",false); //textBox 활성화
+                 $("#packageVarietyYn").attr("disabled",false);    	//textBox 활성화
+                 $("#packagePriceBandwidth").attr("disabled",false);   //textBox 활성화
+                 
+                 // 패키지참조여부 값에 따라 분기
+                 $('#packagePriceReferenceYn').change(function(){
+               	 $("#packagePriceReferenceYn option:selected").each(function () {	
+               		 if($(this).val()== 'N'){
+      					$("#suspendPriceYn").attr("disabled",false);   //textBox 활성화
+      					$("#suspendPriceAmount").attr("disabled",false);   //textBox 활성화
+      					$("#taxObjectYn").attr("disabled",false);   //textBox 활성화
+      					$("#priceAmount").attr("disabled",false);   //textBox 활성화
+      					$("#packagePriceBandwidth").attr("disabled",true);   //textBox 비활성화
+      					// 정지시 과금여부 값에 따라 분기
+      					$('#suspendPriceYn').change(function(){
+  	                	  	$("#suspendPriceYn option:selected").each(function () {	
+		  		      				if($(this).val()== 'N'){
+		  		      					//$("#suspendPriceAmount").attr("disabled",true);   //textBox 비활성화
+		  		      				}else{
+		  		      					$("#suspendPriceAmount").attr("disabled",false);   //textBox 활성화
+		  		      				}
+  	                	  	});
+      					});
+      				}else{
+      					$("#packagePriceBandwidth").attr("disabled",false);   //textBox 활성화
+      					$("#suspendPriceYn").attr("disabled",true);   //textBox 비활성화
+      					$("#suspendPriceAmount").attr("disabled",true);   //textBox 비활성화
+      					$("#taxObjectYn").attr("disabled",true);   //textBox 비활성화
+      					//$("#priceAmount").attr("disabled",true);   //textBox 비활성화
+     					}
+     				});
+                 });
+	      }	 
+	       else{	 //선택(일반)일 경우
+	    	   $("#packagePriceReferenceYn").val('');
+	    	   $("#packagePriceReferenceYn").attr("disabled",true); //textBox 비활성화
+	    	   $("#packageVarietyYn").attr("disabled",true);    	 //textBox 비활성화
+	    	   $("#packagePriceBandwidth").attr("disabled",true);    	 //textBox 비활성화
+	    	   $("#taxObjectYn").attr("disabled",false);   //textBox 비활성화
+	    	   $("#priceAmount").attr("disabled",false);   //textBox 비활성화
+	    	   
+	    	   // 정지시 과금여부 값에 따라 분기
+	    	   $('#suspendPriceYn').change(function(){
+	    		   $("#suspendPriceYn option:selected").each(function () {	
+	    			   if($(this).val()== 'N'){
+	    				   //$("#suspendPriceAmount").attr("disabled",true);   //textBox 비활성화
+    				   }else{
+    					   $("#suspendPriceAmount").attr("disabled",false);   //textBox 비활성화
+   					   }
+    			   });
+    		   });
+    	   }	
+		});
+	}); 
+	
+	//datepicker사용
+	$("#fromDate").datepicker({
+		dateFormat: "yy-mm-dd"
+	}).datepicker("setDate", new Date()); // 오늘날짜로 세팅
+	
+	$('#fromDate').datepicker().on('click', function(ev){                 
+		$('#fromDate').datepicker('show');
+	});
+	$('#fromDate').datepicker().on('changeDate', function(ev){                 
+	    $('#fromDate').datepicker('hide');
+	});
+	$('#toDate').datepicker().on('click', function(ev){                 
+	    $('#toDate').datepicker('show');
+	});
+	$('#toDate').datepicker().on('changeDate', function(ev){                 
+	    $('#toDate').datepicker('hide');
+	});
+	$('#toDate').change(function() { 
+		if($('#fromDate').val().replace(/-/g, '') > $('#toDate').val().replace(/-/g, '')){
+	    	if($('#fromDate').val().replace(/-/g, '') != ""){
+	    		$('#toDate').val("");
+		    	Common.Dialog.alert({
+		    		title:''
+		            , content: '시작일자보다 클 수 없습니다.'
+		        });
+	    	}
+	    }
+	});
+		
+});
+	
+</script>
+<div class="modal-header modal-popup-header">
+	<h5 class="modal-title">
+	<strong>▶ 상품 신규 등록</strong>
+		<button type="button" class="close" data-dismiss="modal">&times;</button>
+	</h5>
+</div>
+<!--팝업메인-->
+<div class="panel panel-default">
+	<div class="panel-heading">
+		<h4 class="panel-title">
+			<strong>상품 정보</strong>
+		</h4>
+	</div>
+	<div class="panel-body">
+		<div class="modal-body" style="padding-bottom: 0px; padding-top: 0px;">			
+			<form  id='registproductform' name="registproductform">
+				<div class="row">	
+					<div id="productidset">
+					</div>	
+				</div>
+				<div class="row">	
+					<div class="col-6 col-md-6"> 		
+						<div class="form-group">
+					       <label >상품유형</label>          
+					         <select id="productType" name="productType" class="form-control" >
+					           <option value="">상품종류를 선택하세요.</option>
+					           <option value="NORMAL">일반상품</option>
+					           <option value="PACKAGE">패키지상품</option>
+					           <option value="COUPONCOUNT">쿠폰횟수형</option>
+					           <option value="COUPONPRICE">쿠폰금액형</option>
+					         </select>       
+				      	</div> 
+			      	</div>
+			      	<div class="col-6 col-md-6">
+						<div class="form-group">
+							<label for="productName1"> 상품명 </label> 
+							<input type="text" class="form-control" id="productName1" placeholder=""
+								name="productName" />
+						</div>
+					</div>
+		      	</div>
+				<div class="row">
+			      	<div class="col-6 col-md-6">
+						<div class="form-group">
+							<label> 패키지유형 </label>        
+					         <select id="packagePriceReferenceYn" name="packagePriceReferenceYn" class="form-control">
+					           <option value="">선택</option>
+					           <option value="Y">종량형</option>
+					           <option value="N">정액형</option>
+					         </select>  
+				         </div>     
+			      	</div>
+					<div class="col-6 col-md-6">
+						<div class="form-group">
+							<label for="priceAmount"> 가격 </label> 
+							<input type="text" class="form-control" id="priceAmount" placeholder="금액만 입력하세요. ex) 3000"
+								name="priceAmount" />									
+						</div>		
+					</div>
+					<div class="col-6 col-md-6">
+						<div class="form-group">
+							<input type="hidden" class="form-control" id="packagePriceBandwidth" placeholder=""
+								name="packagePriceBandwidth" />									
+						</div>
+					</div>			      	
+		      	</div>
+				<div class="row">
+					<div class="col-6 col-md-6">
+						<div class="form-group">
+							<label for="subscribeStartDateTime"> 판매가능일 </label> 
+							<input type="text" class="form-control" id="fromDate" data-date-format="yyyy-mm-dd"
+								name="subscribeStartDateTime" />
+						</div>		
+					</div>
+					<div class="col-6 col-md-6">
+						<div class="form-group">
+							<label for="subscribeEndDateTime"> 판매종료종료일 </label> 
+							<input type="text" class="form-control" id="toDate" value="9999-12-31" data-date-format="yyyy-mm-dd"
+								name="subscribeEndDateTime" />
+						</div>			
+					</div>
+				</div>
+				<div class="row">	
+					<div class="col-12 col-md-12">
+						<div class="form-group">
+							<label for="productDescription"> 상품설명 </label> 
+							<input type="text" class="form-control" id="productDescription" placeholder=""
+								name="productDescription" />
+						</div>		
+					</div>
+				</div>
+			</form>
+			<button id="productregistbutton"
+				class="btn btn-primary pull-right" role="button">등록</button>
+		</div>
+	</div>
+</div>

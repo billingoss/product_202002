@@ -1,0 +1,175 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+
+		var today = getToday().replace('-','').replace('-','');
+		$('#subscribedatetime').val(today.substring(0,4));
+
+		$("#searchbutton").click(function(){
+			var param = new Object();
+			param.subscribedatetime = $("#subscribedatetime").val();
+			param.channelid = $("#channelid").val();
+			param.searchflag = $("#searchflag").val();
+			param.durationsearchflag = $("#durationsearchflag").val();
+			
+			$.ajax({
+				method : 'get',
+				url : '/report/getproductreport',
+				data : param, 
+				dataType : 'json',
+				error : function(xhr, status, error) {
+					alert(error);
+				},
+				success : handleData
+			});
+		});
+
+		function handleData(data) {
+			debugger;
+
+			json = data.list; //hashmap의 list array데이타
+			
+			if (json.length == 0) {
+				Common.Dialog.alert({
+					title : '',
+					content : '데이터가 없습니다.'
+				});
+			}
+			
+			$('#reporttbody').empty();
+			var trHTML = '';
+
+			$.each(json, function(i, item) {
+				/*<![CDATA[*/
+				trHTML += '<tr' + (item.productname==null?' class="table-header-bg"':'') + '>';          
+				if ($('#durationsearchflag').val() == 'month'){
+					trHTML += '<td style="vertical-align: middle">' + (item.subscribedatetime==null?'합계':(item.subscribedatetime.substring(0,4)+'-'+item.subscribedatetime.substring(4,6))) + '</td>'
+					        + '<td style="vertical-align: middle">' + (item.productname==null?(item.subscribedatetime==null?'':'소계'):item.productname) + '</td>';
+					
+				} else {
+					trHTML += '<td style="vertical-align: middle">' + (item.productname==null?'합계':item.productname) + '</td>';
+				}
+				trHTML += '<td style="vertical-align: middle">' + (item.channelname==null?'':item.channelname) + '</td>';
+				if ($('#searchflag').val() == 'order'){
+					trHTML += '<td style="vertical-align: middle">' + item.contractcount + '</td>';
+				} else {
+					trHTML += '<td style="vertical-align: middle">' + item.quantity + '</td>';
+				}
+				trHTML += '</tr>';
+				/*]]>*/
+			});
+			
+			$('#reporttbody').append(trHTML);
+			
+			var thHtml = '';
+			if ($('#durationsearchflag').val() == 'month'){
+				if ($('#durationsearchflag').val() == 'order'){
+					thHtml += '<th>판매월</th>';
+				} else {
+					thHtml += '<th>배송월</th>';
+				}
+			}
+			thHtml += '<th>상품명</th>';
+			thHtml += '<th>판매채널구분</th>';
+			thHtml += '<th>수량</th>';
+			
+			var th = $('#reporttable thead tr');
+			th.html(thHtml);
+		}
+	});
+	
+	function saveExcel(){
+		var f = document.searchform;
+		f.method = 'post';
+		/*<![CDATA[*/
+		f.action = '/report/getproductreportexcel';
+		/*]]>*/
+		f.submit();
+	}
+</script>		
+<div class="row">
+	<div id="searchbarreport">
+		<div class="col-md-12">
+			<div class="panel panel-heading" style="vertical-align: middle; text-align: center;
+				margin-left: auto; margin-right: auto;  padding-bottom: 0px;">
+				<div class="form-section">
+					<div class="row" style="text-align: center">
+						<form id="searchform" name="searchform" class="form-inline" role="form" style="margin-bottom: 10px;">
+							<div class="col-md-3">
+								<div class="form-group">
+									<span>조회년도</span>
+									<select name="subscribedatetime" id="subscribedatetime" class="form-control">
+										<option th:each="result : ${yearList}" th:value="${result.subscribedatetime}" th:text="${result.subscribedatetime}"/>
+									</select>&nbsp;년&nbsp;&nbsp;
+								</div>
+							</div>
+							<div class="col-md-2">
+								<div class="form-group">
+									<span>조회구분</span>
+									<select name="durationsearchflag" id="durationsearchflag" class="form-control">
+										<option value="year">년도별</option>
+										<option value="month">월별</option>
+									</select>
+								</div>
+							</div>
+							<div class="col-md-3">
+								<div class="form-group">
+									<span>판매채널구분</span>
+									<select id="channelid" name="channelid" class="form-control">
+										<option value="">전체</option>
+										<option th:each="result : ${channellist}" th:value="${result.value1}" th:text="${result.description}"/>
+									</select>       
+								</div>
+							</div>
+							<div class="col-md-2">
+								<div class="form-group">
+									<span>조회기준</span>
+									<select name="searchflag" id="searchflag" class="form-control">
+										<option value="order">판매기준</option>
+										<option value="delivery">배송기준</option>
+									</select>       
+								</div>
+							</div>
+							<div class="col-md-2">
+								<button id="searchbutton" type="button" class="btn btn-primary">조회</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<div id="monthorderreportdiv">
+	<div class="row">
+		<div class="col-md-12">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+		    		<h2 class="panel-title">
+		     			<strong>상품별 판매내역 조회</strong>
+		    		</h2>
+		   		</div>
+		   		<div class="panel-body">
+		    		<div class="table-responsive">
+						<div class="form-group">
+							<b><span id="totalcount"></span></b>
+						</div>
+		     			<table class="table" id="reporttable">
+			      			<thead  class="table-header-bg">
+			       				<tr>
+			        				<th>상품명</th>
+			        				<th>판매채널구분</th>
+			        				<th>수량</th>
+								</tr>
+							</thead>
+							<tbody id="reporttbody" class="table-body-row">
+							</tbody>
+	     				</table>
+	    			</div>
+				</div>
+				<div  align="center">
+				    <button class="btn btn-primary pull-right" style="margin: 3px;" id="exceldown" onclick="saveExcel();">다운로드</button>
+				</div>
+		  	</div>
+	 	</div>
+	</div>
+</div>

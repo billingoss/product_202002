@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.api.repository.ChannelRepository">
+	
+	<sql id="selectChannelInfo">
+		SELECT
+			chanInfo.channelid				/*채널ID */
+			, IFNULL(code1.codename , '') AS channelName
+			, chanInfo.providernumber		/*결제방법 */
+			, chanInfo.prepaymentyn			/*선납여부*/
+			, chanInfo.payableyn				/*납부가능여부*/
+			, chanInfo.description			/*설명 */
+			, chanInfo.invoicefilecreateyn /*전송파일생성여부*/
+			, chanInfo.useyn					/*사용여부*/
+			, chanInfo.auditid				/*생성자ID */
+			, chanInfo.auditdatetime
+			, chanInfo.editid					/*수정자ID*/
+			, chanInfo.editdatetime 		
+	  FROM channelbillinginformation chanInfo LEFT OUTER JOIN codegroupdetail code1
+	  						ON (code1.codegroupid = 'CHANNEL'
+	  							AND code1.code = chanInfo.channelid
+	  						)
+	</sql>
+	<!-- 채널/업체 별 청구 정보 조회 -->
+	<select id="selectChannelBillingInformation" parameterType="com.api.model.billing.ChannelBillingInformation" resultType="com.api.model.billing.ChannelBillingInformation">
+		<include refid="selectChannelInfo"></include>
+		 WHERE chanInfo.channelid = #{channelId} /*'BILLLETTER'*/
+		   AND chanInfo.providernumber = #{providerNumber}
+	</select>
+	
+	<!-- 채널/업체 별 청구 정보 목록 조회 -->
+	<select id="selectChannelBillingInformationList" parameterType="com.api.model.billing.ChannelBillingInformation" resultType="com.api.model.billing.ChannelBillingInformation">
+		<include refid="selectChannelInfo"></include>
+		 WHERE 1=1
+		 <if test='channelId != null and !"".equals(channelId)'>
+		   AND chanInfo.channelid = #{channelId}
+		 </if>		 
+ 		 <if test='providerNumber != null and !"0".equals(providerNumber) and providerNumber != 0'> 		  
+		   AND chanInfo.providernumber = #{providerNumber}
+		 </if>
+		 <if test='invoiceFileCreateYn != null and !"".equals(invoiceFileCreateYn)'>
+		      AND chanInfo.invoicefilecreateyn =  #{invoiceFileCreateYn}
+		 </if>
+		 <if test='payableYn != null and !"".equals(payableYn)'>
+		      AND chanInfo.payableyn =  #{payableYn}
+		 </if>
+		 <if test='useYn != null and !"".equals(useYn)'>
+		      AND chanInfo.useyn =  #{useYn}
+		 </if>
+	</select>
+	
+	<!-- 계약번호 기준 채널/업체 별 청구 정보 조회 -->
+	<select id="selectChannelBillingInforByConnumber" parameterType="int" resultType="com.api.model.billing.ChannelBillingInformation">
+ 		SELECT
+				chanInfo.channelid				/*채널ID */
+				, chanInfo.providernumber		/*결제방법 */
+				, chanInfo.prepaymentyn		/*선납여부*/
+				, chanInfo.payableyn				/*납부가능여부*/
+				, chanInfo.description			/*설명 */
+				, chanInfo.auditid					/*생성자ID */
+				, chanInfo.auditdatetime
+				, chanInfo.editid					/*수정자ID*/
+				, chanInfo.editdatetime 
+		  FROM channelbillinginformation chanInfo INNER JOIN contract cont
+		  				ON(chanInfo.channelid = cont.channelid
+		  					AND chanInfo.providernumber = cont.providernumber
+						   AND cont.connumber = #{conNumber}
+						   )		
+	</select>
+	
+	<!-- 채널/업체 별 청구 정보 등록 -->
+	<insert id="insertChannelBillingInformation" parameterType="com.api.model.billing.ChannelBillingInformation" >
+		INSERT INTO channelbillinginformation (
+			channelid
+			, providernumber
+			, prepaymentyn
+			, payableyn
+			, description
+			, auditid
+			, auditdatetime
+		) VALUES(
+			  #{channelId}
+			, #{providerNumber}
+			, #{prePaymentYn}
+			, #{payableYn}
+			, #{description}
+			, #{auditId}
+			, NOW()	
+		)
+	</insert>
+	
+	<!-- 채널/업체 별 청구 정보 수정 -->
+	<update id="updateChannelBillingInformation" parameterType="com.api.model.billing.ChannelBillingInformation" >
+		UPDATE channelbillinginformation SET
+			prepaymentyn = #{prePaymentYn}
+			, payableyn = #{payableYn}
+			, description = #{description}
+			, editid = #{auditId}
+			, editdatetime = NOW()
+		WHERE channelid = #{channelId}
+		   AND providernumber =  #{providerNumber}
+	</update>
+	
+	<!-- 채널별 납부 방법 목록 조회 -->
+	<select id="selectChannelPaymentMethodList" parameterType="com.api.model.billing.ChannelPaymentMethod" resultType="com.api.model.billing.ChannelPaymentMethod">
+		SELECT
+			channelid					/*채널ID */
+			, chanPayMeth.paymentmethodcode	/*결제방법 */
+			, chanPayMeth.useyn						/*결제방법 */
+			, chanPayMeth.description					/*설명 */
+			, chanPayMeth.auditid						/*생성자ID */
+			, chanPayMeth.auditdatetime
+			, chanPayMeth.editid						/*수정자ID*/
+			, chanPayMeth.editdatetime	
+		  FROM channelpaymentmethod chanPayMeth
+		 WHERE chanPayMeth.channelid = #{channelId}
+		<if test='paymentMethodCode != null and !"".equals(paymentMethodCode)'>		 	
+			AND chanPayMeth.paymentmethodcode= #{paymentMethodCode}
+		</if>
+		<if test='useYn != null and !"".equals(useYn)'>		 	
+			AND chanPayMeth.useyn = #{useYn}
+		</if>
+	</select>
+	
+	<!-- 채널별 납부 방법 저장 -->
+	<insert  id="insertChannelPaymentMethod" parameterType="com.api.model.billing.ChannelPaymentMethod">
+		INSERT INTO channelpaymentmethod (
+			channelid
+			, paymentmethodcode
+			, useyn
+			, description
+			, auditid
+			, auditdatetime
+		) VALUES (
+			  #{channelId}
+			, #{paymentMethodCode}
+			, #{useYn}
+			, #{description}
+			, #{auditId}
+			, NOW()
+		)	
+	</insert>
+	
+	<!-- 채널별 납부 방법 수정 -->
+	<update  id="updateChannelPaymentMethod" parameterType="com.api.model.billing.ChannelPaymentMethod">
+		UPDATE channelpaymentmethod SET			
+			 useyn = #{useYn}
+			, description = #{description}
+			, editid = #{auditId}
+			, editdatetime = NOW()
+		WHERE channelid = #{channelId}
+		   AND paymentmethodcode =  #{paymentMethodCode}
+	</update>
+	
+	<!-- 채널/업체 별 PG 정보 조회 -->
+	<select id="selectChannelPGInformationList" parameterType="com.api.model.billing.ChannelPGInformation" resultType="com.api.model.billing.ChannelPGInformation">
+		SELECT
+			pg.channelid				/*채널ID */
+			, pg.providernumber		/*업체ID */
+			, pg.pggroup				/*PG그룹(이니시스, skpay등)*/
+			, pg.pgkey					/*pg항목 키*/
+			, pg.pgvalue				/*pg항목값*/
+			, pg.description			/*설명*/
+			, pg.auditid					/*생성자ID*/
+			, pg.auditdatetime
+			, pg.editid					/*수정자ID*/
+			, pg.editdatetime	
+		  FROM channelpginformation pg
+		 WHERE pg.channelid = #{channelId}
+		   AND pg.providernumber = #{providerNumber}
+		   AND pg.pggroup = #{pgGroup}	
+	</select>
+	
+	<!-- 계약 기준 채널/업체 별 PG 정보 조회 -->
+	<select id="selectContractPGInformationList" parameterType="com.api.model.billing.ChannelPGInformation" resultType="com.api.model.billing.ChannelPGInformation">
+		SELECT
+					pg.channelid				/*채널ID */
+					, pg.providernumber		/*업체ID */
+					, pg.pggroup				/*PG그룹(이니시스, skpay등)*/
+					, pg.pgkey					/*pg항목 키*/
+					, pg.pgvalue				/*pg항목값*/
+					, pg.description			/*설명*/
+					, pg.auditid					/*생성자ID*/
+					, pg.auditdatetime
+					, pg.editid					/*수정자ID*/
+					, pg.editdatetime	
+		  FROM channelpginformation pg 
+		  		, contract cont
+		 WHERE pg.channelid = cont.channelid
+		   AND pg.providernumber = cont.providernumber
+			AND cont.connumber = #{conNumber}
+			AND cont.providernumber = #{providerNumber}
+	</select>
+	
+	<!-- 채널/업체 별 PG 정보 등록 -->
+	<insert id="insertChannelPGInformation" parameterType="com.api.model.billing.ChannelPGInformation" >
+		INSERT INTO channelpginformation (
+			channelid
+			, providernumber
+			, pggroup
+			, pgkey
+			, pgvalue
+			, description
+			, auditid
+			, auditdatetime
+		) VALUES (
+			  #{channelId}
+			, #{providerNumber}
+			, #{pgGroup}
+			, #{pgKey}
+			, #{pgValue}
+			, #{description}
+			, #{auditId}
+			, NOW()		
+		)	
+	</insert>
+	
+	<!-- 채널/업체 별 PG 정보 수정 -->
+	<update id="updateChannelPGInformation" parameterType="com.api.model.billing.ChannelPGInformation" >
+		UPDATE channelpginformation SET
+			 pgvalue = #{pgValue}
+			, description = #{description}
+			, editid = #{auditId}
+			, editdatetime = NOW() 
+		WHERE channelid = #{channelId} 
+		   AND providernumber = #{providerNumber} 
+		   AND pggroup = #{pgGroup} 
+		   AND pgkey = #{pgKey}	
+	</update>
+</mapper>

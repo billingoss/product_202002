@@ -1,0 +1,136 @@
+package com.api.model.biz;
+
+import com.api.model.Criteria;
+
+public class Employee extends Criteria{
+	
+	private String employeeName;		/*사원번호*/
+	private String employeeNumber;	/*사원명*/
+	private String effectStartDateTime;	/*유효시작일*/
+	private String effectEndDateTime;	/*유효종료일*/
+	private String adminYn;				/*관리자여부*/
+	private int providerNumber;			/*제공자번호*/
+	private String loginId;					/*로그인ID*/
+	private String password;				/*비밀번호*/
+	private String email;					/*이메일*/
+	private String auditId;					/*작정자*/
+	private String auditDateTime;		/*작성일자*/
+	private String isEnabled; 				/*사용가능여부*/
+	
+	private boolean expiredSearchFlag;	/*유효종료 검색 여부*/
+	private String searchEmployeeName; /*사원이름 검색*/
+	
+
+	public String getEmployeeName() {
+		return employeeName;
+	}
+
+	public void setEmployeeName(String employeeName) {
+		this.employeeName = employeeName;
+	}
+
+	public String getEmployeeNumber() {
+		return employeeNumber;
+	}
+
+	public void setEmployeeNumber(String employeeNumber) {
+		this.employeeNumber = employeeNumber;
+	}
+	
+	public String getAdminYn() {
+		return adminYn;
+	}
+
+	public void setAdminYn(String adminYn) {
+		this.adminYn = adminYn;
+	}
+
+	public int getProviderNumber() {
+		return providerNumber;
+	}
+
+	public void setProviderNumber(int providerNumber) {
+		this.providerNumber = providerNumber;
+	}
+
+	public String getLoginId() {
+		return loginId;
+	}
+
+	public void setLoginId(String loginId) {
+		this.loginId = loginId;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public String getAuditId() {
+		return auditId;
+	}
+
+	public void setAuditId(String auditId) {
+		this.auditId = auditId;
+	}
+
+	public String getAuditDateTime() {
+		return auditDateTime;
+	}
+
+	public void setAuditDateTime(String auditDateTime) {
+		this.auditDateTime = auditDateTime;
+	}
+
+	public boolean isExpiredSearchFlag() {
+		return expiredSearchFlag;
+	}
+
+	public void setExpiredSearchFlag(boolean expiredSearchFlag) {
+		this.expiredSearchFlag = expiredSearchFlag;
+	}
+
+	public String getSearchEmployeeName() {
+		return searchEmployeeName;
+	}
+
+	public void setSearchEmployeeName(String searchEmployeeName) {
+		this.searchEmployeeName = searchEmployeeName;
+	}
+
+	public String getEffectStartDateTime() {
+		return effectStartDateTime;
+	}
+
+	public void setEffectStartDateTime(String effectStartDateTime) {
+		this.effectStartDateTime = effectStartDateTime;
+	}
+
+	public String getEffectEndDateTime() {
+		return effectEndDateTime;
+	}
+
+	public void setEffectEndDateTime(String effectEndDateTime) {
+		this.effectEndDateTime = effectEndDateTime;
+	}
+
+	public String getIsEnabled() {
+		return isEnabled;
+	}
+
+	public void setIsEnabled(String isEnabled) {
+		this.isEnabled = isEnabled;
+	}
+
+}

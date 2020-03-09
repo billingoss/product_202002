@@ -1,0 +1,219 @@
+<!-- modal list KKH추가 -->
+<!-- Modal -->
+<script type="text/javascript">
+	$(document).ready(function() {
+		debugger;
+		$('#inputCustomerAddressIdPopup').hide();
+		$('#customeraddressPopup').hide();
+		
+		$('#cancelPopup').click(function() {
+			$('#customercreatepopuplDialog').modal('hide');
+			//alert("reload");
+		});
+		
+ 	});
+	
+  $(document).on("click", "#saveCustomerPopup", function(){
+		debugger;
+		saveCustomerPopup();
+	});
+	
+	function saveCustomerPopup() {
+		debugger;
+		if ($('#inputCustomerNamePopup').val() == "") {
+			alert("해당 값은 필수 입력입니다.");
+			$('#inputCustomerNamePopup').focus();
+			false;
+		} else if ($('#inputEmailPopup').val() == "") {
+			alert("해당 값은 필수 입력입니다.");
+			$('#inputEmailPopup').focus();
+			false;
+		} else if ($('#inputPhoneNumberPopup').val() == "") {
+			alert("해당 값은 필수 입력입니다.");
+			$('#inputPhoneNumberPopup').focus();
+			false;
+		} else {
+			findAddressIdPopUp();
+			$('#customercreatepopuplDialog').modal('hide');
+		}
+	}
+	
+	function findAddressIdPopUp() {
+		debugger;
+		$.ajax({
+      url : '/contract/findAddressIdPopUp',
+      method : 'get', 
+      async : false,
+      error : function(xhr, status, error) {
+        alert(error);
+      },
+      success : function(data){
+      	//alert(data);
+   	    $('#customeraddressPopup').html(data);
+   	    //alert($('#inputAddressId').val());
+   	    $('#inputCustomerAddressIdPopup').val($('#inputAddressIdPopup').val());
+  			saveAddress();
+      }
+		});
+	}
+	
+	function saveAddress() {
+		debugger;
+    var queryString = $("form[name=addressInputFormPopup]").serialize();
+			//alert("queryString = " + queryString);
+	  
+		$.ajax({
+      url : '/contract/saveAddress',
+      data : queryString,
+      dataType : 'text',
+      type : 'post',
+      async : false,
+      error : function(xhr, status, error) {
+        alert("error = " + error);
+      },
+      success : function() {
+      	//alert("data = " + data);
+      	saveCustomer();
+      }
+		});
+	}
+	
+	function saveCustomer() {
+		debugger;
+		var queryString2 = $("form[name=customerInputFormPopup]").serialize();
+		//alert("queryString2 = " + queryString2);
+	  
+		$.ajax({
+      url : '/contract/saveCustomer',
+      data : queryString2,
+      dataType : 'text',
+      type : 'post',
+      async : false,
+      error : function(xhr, status, error) {
+        alert("error = " + error);
+      },
+      success : function() {
+      	alert("신규 고객 생성 완료");
+      }
+		});
+	}
+	
+	
+</script>
+<div class="modal-header modal-popup-header">
+	<h5 class="modal-title">
+		▶ 고객등록
+		<button id="closecustomercreate" type="button" class="close" data-dismiss="modal">&times;</button>
+	</h5>
+</div>
+<div class="modal-body">
+  
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="panel-title">
+				<strong>신규 고객 등록</strong>
+			</h4>
+		</div>
+	</div>
+	
+		<form id="customerInputFormPopup" name="customerInputFormPopup" class="form-horizontal" onsubmit="return false;">
+      <div class="form-group" hidden="true">
+        <label class="col-sm-3 control-label" for="inputCustomerNumberPopup">고객번호</label>
+        <div class="col-sm-6">
+          <input class="form-control" id="inputCustomerNumberPopup" type="text" name="" placeholder="고객번호" readonly="true"></input>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-sm-3 control-label" for="inputCustomerNamePopup">고객명</label>
+        <div class="col-sm-6">
+          <input class="form-control" id="inputCustomerNamePopup" type="text" name="customerName" placeholder="고객명"></input>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-sm-3 control-label" for="inputBirthdayPopup">생년월일</label>
+        <div class="col-sm-6">
+          <input type="text" class=" form-control" id="inputBirthdayPopup" name="birthday" data-date-format="yyyymmdd"></input>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-sm-3 control-label" for="inputEmailPopup">E-mail</label>
+        <div class="col-sm-6">
+          <input type="tel" class="form-control" id="inputEmailPopup" name="email"></input>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-sm-3 control-label" for="inputPhoneNumberPopup">전화번호</label>
+        <div class="col-sm-6">
+          <input type="tel" class="form-control" id="inputPhoneNumberPopup" name="phoneNumber" placeholder="- 없이 입력해 주세요"></input>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-sm-3 control-label" for="inputCreateDatePopup">생성일자</label>
+        <div class="col-sm-6">
+          <input class="form-control" id="inputCreateDatePopup" type="text" name="" placeholder="YYYYMMDD" readonly="true"></input>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-sm-3 control-label" for="inputCreateDatePopup">최종변경일자</label>
+        <div class="col-sm-6">
+          <input class="form-control" id="inputCreateDatePopup" type="text" name="" placeholder="YYYYMMDD" readonly="true"></input>
+        </div>
+      </div>
+    	<div class="form-group">
+        <div class="col-sm-6">
+          <input class="form-control" id="inputCustomerAddressIdPopup" type="text" name="addressId" placeholder="주소를 입력 후 주소ID 조회 버튼 클릭"></input>
+        </div>
+      </div>
+    </form>
+    
+    <form id="addressInputFormPopup" name="addressInputFormPopup" class="form-horizontal" onsubmit="return false;">
+      <div class="form-group">
+        <label class="col-sm-3 control-label" for="inputZipcodePopup">우편번호</label>
+        <div class="col-sm-6">
+          <input class="form-control" id="inputZipcodePopup" type="number" name="zipcode" placeholder="우편번호"></input>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-sm-3 control-label" for="inputBaseAddressPopup">기본주소</label>
+        <div class="col-sm-6">
+          <input class="form-control" id="inputBaseAddressPopup" type="text" name="baseAddress" placeholder="기본주소"></input>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="col-sm-3 control-label" for="inputDetailAddressPopup">상세주소</label>
+        <div class="col-sm-6">
+          <input class="form-control" id="inputDetailAddressPopup" type="text" name="detailAddress" placeholder="상세주소"></input>
+        </div>
+      </div>
+      <div id="customeraddressPopup">
+	      <div class="form-group">
+	        <label class="col-sm-3 control-label" for="inputAddressIdPopup">주소ID</label>
+	        <div class="col-sm-6">
+	          <div class="input-group">
+	            <input class="form-control" id="inputAddressIdPopup" type="text" name="addressId" placeholder="주소를 입력 후 주소ID 조회 버튼 클릭"></input>
+	            <span class="input-group-btn">
+	              <button type="button" id="buttonAddressIdPopup" class="btn btn-success">주소ID 조회
+		                <i class="fa fa-mail-forward spaceLeft"></i>
+		            </button>
+	            </span>
+	          </div>
+	        </div>
+	      </div>
+      </div>
+    </form>
+  
+  <form>
+    <div class="form-group">
+      <div class="col-sm-12 text-center">
+        <button id="saveCustomerPopup" class="btn btn-primary" type="submit">저장
+          <i class="fa fa-check spaceLeft"></i>
+        </button>
+        <button id="cancelPopup" class="btn btn-table-default" type="submit">취소
+          <i class="fa fa-times spaceLeft"></i>
+        </button>
+      </div>
+    </div>
+  </form>
+  
+</div>
+<!-- modal list END -->

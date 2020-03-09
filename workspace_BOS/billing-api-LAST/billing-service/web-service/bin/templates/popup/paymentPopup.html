@@ -1,0 +1,503 @@
+<link rel="stylesheet"
+	href="https://use.fontawesome.com/releases/v5.0.8/css/all.css" />
+<div class="modal-header modal-popup-header">
+	<h5 class="modal-title">
+	    &nbsp;
+		<button type="button" class="close" data-dismiss="modal">&times;</button>
+	</h5>
+</div>
+
+<div class="modal-body" style="padding-bottom: 0px; padding-top: 0px;">
+	<div class="row grid-columns" style="margin-top: 15px;">
+		<div class="col-md-6 col" style="padding-left: 20px;">
+				<div class="panel-heading" style = "border-bottom: 1px solid">
+					<h4 class="panel-title">
+						<strong >결제 기본정보</strong>
+					</h4>
+				</div>
+				<div class="panel-body">
+					<div class="form-horizontal" role="form">
+						<div class="form-group">
+							<div class="col-md-4">
+								<label for="inputType" class="control-label">고객명</label>
+							</div>
+							<div class="col-md-8">
+								<input type="text" id="paymentCustomername" class="form-control" readonly="true" />
+							</div>
+						</div>
+						<div class="form-group">
+							<div class="col-md-4">
+								<label for="inputType" class="control-label">상품명</label>
+							</div>
+							<div class="col-md-8">
+								<input type="text" id="paymentPackagename" class="form-control" readonly="true" />
+							</div>
+						</div>
+					</div>
+				</div>
+			<ul class="nav nav-pills rounded nav-fill ml-3" role="tablist" style="text-align:center;">
+				<li class="active nav-item"><a class="nav-link active"
+					data-toggle="pill" href="#nav-tab-card" style="margin-left: 10px;">
+						<i class="fa fa-credit-card"></i> 카드
+				</a></li>
+				<li class="nav-item"><a class="nav-link" data-toggle="pill"
+					href="#nav-tab-bank"> <i class="fa fa-university"></i> 계좌
+				</a></li>
+				<li class="nav-item"><a class="nav-link" data-toggle="pill"
+					href="#nav-tab-cash"> <i class="fas fa-money-bill-alt"></i> 현금
+				</a></li>
+				<li class="nav-item"><a class="nav-link" data-toggle="pill"
+					href="#nav-tab-pay">간편결제
+				</a></li>
+<!-- 				<li class="nav-item"><a class="nav-link" data-toggle="pill"
+					href="#nav-tab-skpay">  SK-PAY
+				</a></li> -->
+		        <!--<li class="nav-item"><a class="nav-link" data-toggle="pill"
+					href="#nav-tab-11pay"> <i class="fab fa-paypal"></i> 11PAY
+				</a></li> -->
+			</ul>
+			
+			<div class="tab-content">
+				<div class="tab-pane fade in active" id="nav-tab-card">
+					<div class="col-md-12" >
+					  <div class="panel-body" style="padding-top: 0px;">
+						<form role="form" name ="card-payment-form">
+						    <input type="hidden"
+									class="form-control pamentinvoicenumber" id="pamentinvoicenumber" name="invoicenumber" />
+							<input type="hidden"
+									class="form-control pamentinvoicedate" id="pamentinvoicedate" name="invoicedate" />		
+							<input type="hidden"
+									class="form-control pamentconnumber" id="pamentconnumber" name="connumber" />
+							<input type="hidden"
+									class="form-control paymentpaymentamt" id="paymentpaymentamt" name="paymentamt" />	
+							<input type="hidden"
+									class="form-control cardapprovenumber" id="paymentpaymentamt" name="cardapprovenumber" value="1234" />	
+							<input type="hidden"
+									class="form-control cardcorporationcode" id="paymentpaymentamt" name="cardcorporationcode" value="06"/>
+							<input type="hidden"
+									class="form-control paymenttypecode" id="paymentpaymentamt" name="paymenttypecode" value="CARD"/>			
+							<input type="hidden"
+									class="form-control channelgubun" id="channelgubun" name="channelgubun" />										
+							<!-- <div class="form-group">
+								<label for="cardNumber"> 카드주명</label> <input type="text"
+									class="form-control" id="cardName" placeholder="카드주명" name="paymentownername" />
+							</div>
+							<div class="form-group">
+								<label for="cardNumber"> 카드번호</label>
+									<input type="text" class="form-control" id="cardNumber"
+										placeholder="카드번호" />
+							</div>
+							<div class="input-group">
+								<label for="expityMonth"> 유효기간</label>
+								<div class="col-xs-6 col-lg-6 pl-ziro"
+									style="padding-left: 0px;">
+									<input type="text" class="form-control" id="expityMonth"
+										placeholder="MM" />
+								</div>
+								<div class="col-xs-6 col-lg-6 pl-ziro">
+									<input type="text" class="form-control" id="expityYear"
+										placeholder="YY" />
+								</div>
+							</div> -->
+						</form>
+						<button id="paymentcardpaybt" class="btn btn-primary btn-lg btn-block" role="button">결제</button>
+						<br></br>
+						</div>
+					</div>
+				</div>
+				<div class="tab-pane fade" id="nav-tab-bank">
+					<div class="col-md-12" >
+					  <div class="panel-body" style="padding-top: 0px;">
+						<form role="form" name ="bank-payment-form">
+						    <input type="hidden"
+									class="form-control pamentinvoicenumber" name="invoicenumber" />
+							<input type="hidden"
+									class="form-control pamentinvoicedate" name="invoicedate" />		
+							<input type="hidden"
+									class="form-control pamentconnumber" name="connumber" />
+							<input type="hidden"
+									class="form-control paymentpaymentamt" name="paymentamt" />	
+							<input type="hidden"
+									class="form-control cardapprovenumber" name="cardapprovenumber" value="" />	
+							<input type="hidden"
+									class="form-control cardcorporationcode"  name="cardcorporationcode" value=""/>
+							<input type="hidden"
+									class="form-control paymenttypecode" name="paymenttypecode" value="BANK"/>	
+<!-- 							<div class="form-group">
+								<label for="cardNumber"> 예금주명</label> <input type="text"
+									class="form-control" id="bankName" placeholder="예금주명" name="paymentownername" />
+							</div>
+							<div class="form-group">
+								<label for="cardNumber"> 은행명</label> <input type="text"
+									class="form-control" id="bankName" placeholder="은행명" />
+							</div>
+							<div class="form-group">
+								<label for="cardNumber"> 계좌번호</label>
+									<input type="text" class="form-control" id="cardNumber"
+										placeholder="계좌번호" />
+							</div> -->
+						</form>
+						<button id="paymentbankpaybt" class="btn btn-primary btn-lg btn-block" role="button">결제</button>
+						<br></br>
+					  </div>
+					</div>
+				</div>
+				<!-- tab-pane.// -->
+				<div class="tab-pane fade" id="nav-tab-11pay">
+					<p>11Pay!!</p>
+
+				</div>
+				<div class="tab-pane fade" id="nav-tab-cash">
+					<div class="col-md-12">
+					  <div class="panel-body" style="padding-top: 0px;">
+					    <form role="form" name ="cash-payment-form">
+					        <input type="hidden"
+									class="form-control pamentinvoicenumber" name="invoicenumber" />
+							<input type="hidden"
+									class="form-control pamentinvoicedate" name="invoicedate" />		
+							<input type="hidden"
+									class="form-control pamentconnumber" name="connumber" />
+							<input type="hidden"
+									class="form-control paymentpaymentamt" name="paymentamt" />	
+							<input type="hidden"
+									class="form-control cardapprovenumber" name="cardapprovenumber" value="" />	
+							<input type="hidden"
+									class="form-control cardcorporationcode"  name="cardcorporationcode" value=""/>
+							<input type="hidden"
+									class="form-control paymenttypecode" name="paymenttypecode" value="CASH"/>	
+<!-- 						<div class="form-group">
+							<label for="cardNumber"> 납부금액</label> <input type="text"
+								class="form-control" id="cardName" placeholder="금액" />
+						</div> -->
+					   </form>	
+					   <button id="paymentcashpaybt" class="btn btn-primary btn-lg btn-block" role="button">결제</button>
+						</div>
+					</div>
+				</div>
+				<div class="tab-pane fade" id="nav-tab-pay">
+				   <div class="col-md-12">
+				 	<div class="panel-body" style="padding-top: 0px;">
+				 	    <div style="text-align:center;" id="payradiobtgroup">
+						 	<label class="radio-inline">
+		                    	<input type="radio" id="kakaoinput" name="paymethod" value="kakaopay" onclick="buttonsetting()"/>KaKaoPay
+			                </label>
+			                <label class="radio-inline">
+			                    <input type="radio" id="11payinput" name="paymethod" value="11pay" onclick="buttonsetting()"/>11Pay
+			                </label>
+			                <label class="radio-inline">
+			                    <input type="radio" id="skpayinput" name="paymethod" value="skpay" onclick="buttonsetting()"/>SKPAY
+			                </label>
+		                </div>
+				        <form role="form" name ="kakaopay-payment-form">
+				           <input type="hidden"
+									class="form-control pamentinvoicenumber" name="invoicenumber" />
+							<input type="hidden"
+									class="form-control pamentinvoicedate" name="invoicedate" />		
+							<input type="hidden"
+									class="form-control pamentconnumber" name="connumber" />
+							<input type="hidden"
+									class="form-control paymentpaymentamt" name="paymentamt" />	
+							<input type="hidden"
+									class="form-control cardapprovenumber" name="cardapprovenumber" value="" />	
+							<input type="hidden"
+									class="form-control cardcorporationcode"  name="cardcorporationcode" value=""/>
+							<input type="hidden"
+									class="form-control paymenttypecode" name="paymenttypecode" value="KAKAO"/>
+						</form>		
+						<button id="paymentconfirmpaybt" class="btn btn-primary btn-lg btn-block" role="button">결제</button>
+						</div>
+					</div>			
+				</div>
+<!-- 				<div class="tab-pane fade" id="nav-tab-skpay">
+				   <div class="col-md-12">
+				 	<div class="panel-body" style="padding-top: 0px;">
+				     <form role="form" name ="skpay-payment-form">
+				           <input type="hidden"
+									class="form-control pamentinvoicenumber" name="invoicenumber" />
+							<input type="hidden"
+									class="form-control pamentinvoicedate" name="invoicedate" />		
+							<input type="hidden"
+									class="form-control pamentconnumber" name="connumber" />
+							<input type="hidden"
+									class="form-control paymentpaymentamt" name="paymentamt" />	
+							<input type="hidden"
+									class="form-control cardapprovenumber" name="cardapprovenumber" value="" />	
+							<input type="hidden"
+									class="form-control cardcorporationcode"  name="cardcorporationcode" value=""/>
+							<input type="hidden"
+									class="form-control paymenttypecode" name="paymenttypecode" value="SKPAY"/>
+						</form>		
+						<button id="paymentkakaopaybt" class="btn btn-primary btn-lg btn-block" role="button" disabled="true">결제</button>
+						</div>
+					</div>			
+				</div> -->
+				<!-- tab-pane.// -->
+			</div>
+			<!-- tab-content .// -->
+		</div>
+		<!-- col-bamt text -->
+		<div class="col-md-6 col">
+			<div class="panel">
+				<div class="panel-heading" style = "border-bottom: 1px solid">
+					<h4 class="panel-title">
+						<strong>금액 정보</strong>
+					</h4>
+				</div>
+				<div class="panel-body">
+					<table class="table table-bordered">
+						<tbody>
+							<tr>
+								<td>결제일자</td>
+								<td id="paymentDate"></td>
+							</tr>
+							<tr>
+								<td>결제금액</td>
+								<td id="paymentTotalAmt">0</td>
+							</tr>
+							<tr>
+							   <td>메모</td>
+							   <td><div class="col-md-12">
+									<textarea id="paymentmsg" class="form-control"
+										style="height: 120px;"></textarea>
+					               </div>
+					           </td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+		</div>
+	</div>
+
+</div>
+
+<script type="text/javascript">
+
+var setCookie = function(name, value, exp) {
+	  var date = new Date();
+	  date.setTime(date.getTime() + exp*24*60*60*1000);
+	  document.cookie = namae + '=' + value + ';expires=' + date.toUTCString() + ';path=/';
+};
+
+function buttonsetting(){
+	var st = $(":input:radio[name=paymethod]:checked").val();
+	debugger;
+	if(st =="kakaopay"){
+		
+		$("#paymentconfirmpaybt").prop("disabled", false);
+		
+	}else if(st =="11pay"){
+		
+		$("#paymentconfirmpaybt").prop("disabled", false);
+		
+	}else if(st =="skpay"){
+		
+		$("#paymentconfirmpaybt").prop("disabled", true);
+	}
+};
+
+function elevenpayurllink(){
+	window.open("https://devqapay.syrup.co.kr/pages/users/login/?payfw","popup_window", "width=600, height=720, scrollbars=no");
+}
+
+function kakaopayurllink(){
+	debugger;
+	var queryString = $("form[name=kakaopay-payment-form]").serialize() ;
+	 queryString = queryString.replace(/-/g, '');
+	 /*<![CDATA[*/
+	 queryString = queryString.replace(/,/g, '') + "&memo=" + $('#paymentmsg').val();
+	 queryString = queryString.replace(/,/g, '') + "&itemname=" + $('#paymentPackagename').val();
+	 queryString = queryString.replace(/,/g, '') + "&vatamount=" + "0";
+	 queryString = queryString.replace(/,/g, '') + "&quantity=" + "1";
+	 /*]]>*/
+	// alert(queryString);
+	$.ajax({
+		   method : 'post',
+           url : '/billing/kakaopayready',
+           data : queryString ,
+           dataType : 'json',
+           error: function(xhr, status, error){
+     	    Common.Dialog.alert({
+		    		  title:'ERROR'
+		            , content: error
+		        });
+	        },
+	        success : function(json){
+     	           console.log(json.tid);
+     	           console.log(json.next_redirect_pc_url);
+     	           // document.cookie = "kakao_tid="+ json.tid + ';path=/';
+     	           //$.cookie("kakao_tid", json.tid, { expires: 365 });
+     	           //document.location.href = $(this).attr(json.next_redirect_pc_url);
+     	           var win = window.open(json.next_redirect_pc_url,"popup_window", "width=600, height=720, scrollbars=no");
+     	           debugger;
+     	          // win.cookie = "kakao_tid="+ json.tid ;
+     	         //debugger; 
+     	        // var win = window.open('','','toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=no,width=540,height=700,left=100,top=100');
+     	        // debugger;
+     	        // win.document.write('<iframe src= "' + json.next_redirect_pc_url + '" />');
+     	         //document.cookie = "kakao_tid="+ json.tid ;
+	        }
+     });
+}
+
+$(document).ready(function() {
+	
+	$('#paymentconfirmpaybt').click(function(){
+		var st = $(":input:radio[name=paymethod]:checked").val();
+		if(st =="kakaopay"){
+			
+			kakaopayurllink();
+			
+		}else if(st =="11pay"){
+			
+			elevenpayurllink();
+			
+		}else if(st =="skpay"){
+			
+		}
+		
+	});
+	
+	$('#paymentcardpaybt').click(function(){
+		
+		var queryString = $("form[name=card-payment-form]").serialize() ;
+		 queryString = queryString.replace(/-/g, '');
+		 /*<![CDATA[*/
+		 queryString = queryString.replace(/,/g, '') + "&memo=" + $('#paymentmsg').val();
+		 /*]]>*/
+		 //alert(queryString);
+		/*jQuery.ajaxSettings.traditional = true;*/
+		
+		$.ajax({
+			   method : 'post',
+			   async : false,
+               url : '/billing/paymentproc',
+               data : queryString ,
+               dataType : 'json',
+               error: function(xhr, status, error){
+            	 Common.Dialog.alert({
+		    		  title:'ERROR'
+		            , content: error
+		        });
+               },
+               success : function(json){
+            	 var promise = Promise.resolve(true);
+              	 
+              	 promise = new Promise(function (resolve, reject) {
+              		 Common.Dialog.alert({
+  			    		  title:''
+  			            , content: '정상처리 되었습니다.'
+  			         });
+              		 return resolve();
+              	 });
+              	 promise = promise.then(function(res) {
+              		 
+              		 $("#customerpaymentDialog").modal('hide'); 
+              		 if( $(".channelgubun").val() =="A"){
+              			$('#searchdatebt').click();
+              		 }else {
+              			$('#searchbt').click();
+              			refreshPaymentHistory($("form[name=card-payment-form] .pamentinvoicenumber").val(),$("form[name=card-payment-form] .pamentinvoicedate").val(),$("form[name=card-payment-form] .pamentconnumber").val());
+              		 }
+              		 
+              	 });
+               }
+            });
+	});
+	
+	$('#paymentbankpaybt').click(function(){
+		var queryString = $("form[name=bank-payment-form]").serialize() ;
+		 queryString = queryString.replace(/-/g, '');
+		 /*<![CDATA[*/
+		 queryString = queryString.replace(/,/g, '') + "&memo=" + $('#paymentmsg').val();
+		 /*]]>*/
+		 //alert(queryString);
+		$.ajax({
+			   method : 'post',
+               url : '/billing/paymentproc',
+               data : queryString,
+               dataType : 'json',
+               error: function(xhr, status, error){
+            	 Common.Dialog.alert({
+		    		  title:'ERROR'
+		            , content: error
+		        });
+               },
+               success : function(json){
+            	 var promise = Promise.resolve(true);
+            	 
+            	 promise = new Promise(function (resolve, reject) {
+            		 Common.Dialog.alert({
+			    		  title:''
+			            , content: '정상처리 되었습니다.'
+			         });
+            		 return resolve();
+            	 });
+            	 promise = promise.then(function(res) {
+            		 
+            		 $("#customerpaymentDialog").modal('hide'); 
+            		 if( $(".channelgubun").val() =="A"){
+               			$('#searchdatebt').click();
+               		 }else {
+               			$('#searchbt').click();
+               			refreshPaymentHistory($("form[name=bank-payment-form] .pamentinvoicenumber").val(),$("form[name=bank-payment-form] .pamentinvoicedate").val(),$("form[name=bank-payment-form] .pamentconnumber").val());
+               		 }
+            		// debugger;
+            		// getCustomerPaymentData(1,$("form[name=bank-payment-form] .pamentinvoicenumber").val(),$("form[name=bank-payment-form] .pamentinvoicedate").val(),$("form[name=bank-payment-form] .pamentconnumber").val());
+            	 });
+            	 
+               }
+               
+            });
+	});
+	
+	$('#paymentcashpaybt').click(function(){
+		var queryString = $("form[name=cash-payment-form]").serialize() ;
+		 queryString = queryString.replace(/-/g, '');
+		 /*<![CDATA[*/
+		 queryString = queryString.replace(/,/g, '') + "&memo=" + $('#paymentmsg').val();
+		 /*]]>*/
+		// alert(queryString);
+		$.ajax({
+			   method : 'post',
+               url : '/billing/paymentproc',
+               data : queryString,
+               dataType : 'json',
+               error: function(xhr, status, error){
+            	 Common.Dialog.alert({
+		    		  title:'ERROR'
+		            , content: error
+		        });
+               },
+               success : function(json){
+            	 var promise = Promise.resolve(true);
+            	 
+            	 promise = new Promise(function (resolve, reject) {
+            		 Common.Dialog.alert({
+			    		  title:''
+			            , content: '정상처리 되었습니다.'
+			         });
+            		 return resolve();
+            	 });
+            	 promise = promise.then(function(res) {
+            		 
+            		 $("#customerpaymentDialog").modal('hide'); 
+            		 if( $(".channelgubun").val() =="A"){
+               			$('#searchdatebt').click();
+               		 }else {
+               			$('#searchbt').click();
+               			refreshPaymentHistory($("form[name=card-payment-form] .pamentinvoicenumber").val(),$("form[name=card-payment-form] .pamentinvoicedate").val(),$("form[name=card-payment-form] .pamentconnumber").val());
+               		 }
+            		// debugger;
+            		// getCustomerPaymentData(1,$("form[name=bank-payment-form] .pamentinvoicenumber").val(),$("form[name=bank-payment-form] .pamentinvoicedate").val(),$("form[name=bank-payment-form] .pamentconnumber").val());
+            	 });
+            	 
+               }
+               
+            });
+	});
+
+})
+</script>
+

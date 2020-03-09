@@ -1,0 +1,281 @@
+     <!--결제정보//-->
+    <div id="popup_paymentInfor" class="trp popupfixed-wrap" th:fragment="paymentInforPop">
+        <form action="" name="paymentInfoForm" onsubmit="return false;">
+	    	<input type="hidden" id="paymentConNumberInfo" name="conNumber"/>    		
+			<input type="hidden" id="paymentInvoiceNumberInfo" name="invoiceNumber"/>
+			<input type="hidden" id="paymentProviderNumberInfo" name="providerNumber" value="0"/>
+		</form>
+        <div class="popup-dim"></div>
+        <div class="popup-align">
+            <div class="popup-vertical">
+                <div class="popup-layer option wl">
+                    <a class="btn_close" href="#">X</a>
+                    <div class="pop_tit">결제정보</div>
+                    <!-- 알림 mode0 -->
+                    <section class="section">
+                        <div class="table-wrap">
+                            <div class="con_title ">
+                                <h3 class="h3">주문정보</h3>
+                            </div>
+                            <table class="form_table">
+                                <colgroup>
+                                    <col width="130px" />
+                                    <col width="*" />
+                                    <col width="130px" />
+                                    <col width="*" />
+                                </colgroup>
+                                <tbody>
+                                    <tr>
+                                        <th>고객명</th>
+                                        <td id="customerNameInfo"></td>
+                                    <!-- </tr>
+                                    <tr> -->
+                                        <th>상품명</th>
+                                        <td id="productNameInfo"></td>
+                                    </tr>
+<!--                                     <tr>
+                                        <th>판매채널</th>
+                                        <td>Billing OSS</td>
+                                    </tr> -->
+                                    <tr>
+                                        <th>주문번호</th>
+                                        <td id="conNumberInfo">212334143455</td>
+                                   <!--  </tr>
+                                    <tr> -->
+                                        <th>결제수단</th>
+                                        <td id="cardCorporationCodeNameInfo"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- <div class="table-wrap mt40">
+                            <div class="con_title ">
+                                <h3 class="h3">결제정보</h3>
+                            </div>
+                            <table class="form_table">
+                                <colgroup>
+                                    <col width="130px" />
+                                    <col width="*" />
+                                </colgroup>
+                                <tbody>
+                                    <tr>
+                                        <th>결제일시</th>
+                                        <td id="paymentDateTimeInfo">2019.00.00 00:00</td>
+                                    </tr>
+                                    <tr>
+                                        <th>구분</th>
+                                        <td id="paymentTypeCodeNameInfo">요금수납</td>
+                                    </tr>
+                                    <tr>
+                                        <th>결제수단</th>
+                                        <td id="paymentMethodNameInfo">카드</td>
+                                    </tr>
+                                    <tr>
+                                        <th>금액</th>
+                                        <td><span id="totalInvoiceAmountInfo">45,000</span>원</td>
+                                    </tr>
+                                    <tr>
+                                        <th>결제메모</th>
+                                        <td id="etcInfo">정상수납됨</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div> -->
+						<div class="table-wrap mt40">
+                            <div class="con_title ">
+                                <h3 class="h3">청구상세정보</h3>
+                            </div>
+                            <table class="table_list" id="invoDetailList" >
+                                <colgroup>
+                                    <col style="width:10%"/>
+                                    <col style="width:auto"/>
+                                    <col style="width:15%"/>
+                                    <col style="width:15%"/>                                    
+                                    <col style="width:15%"/>
+                                    <col style="width:15%"/>
+                                </colgroup>
+                                <thead >
+                                    <tr>
+                                        <th>구분</th>
+                                        <th>항목</th>
+                                        <th>금액</th>
+                                        <th>조정금액</th>
+                                        <th>청구금액</th>
+                                        <th>결제금액</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="invoDetailListBody" >
+                                </tbody>
+                            </table>
+                        </div>                         
+						<div class="table-wrap mt40">
+                            <div class="con_title ">
+                                <h3 class="h3">결제이력정보</h3>
+                            </div>
+                            <table class="table_list" id="paymentHistoryList" >
+                                <colgroup>
+                                    <col style="width:20%"/>
+                                    <col style="width:12%"/>
+                                    <!-- <col style="width:13%"/> -->
+                                    <col style="width:15%"/>                                    
+                                    <col style="width:auto"/>
+                                    <col style="width:25%"/>                                    
+                                </colgroup>
+                                <thead >
+                                    <tr>
+                                        <th>결제일시</th>
+                                        <th>구분</th>
+                                        <!-- <th>결제수단</th> -->
+                                        <th>결제금액</th>
+                                        <th>결제메모</th>
+                                        <th>실패사유</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="payHistListBody" >
+                                </tbody>
+                            </table>
+                        </div>                        
+
+                        <div class="btn_set-center bottom_set mt30">
+                            <a class="btn btn_green radius btn_wm btn_cancel" role="button" href="#none" id="popPayInfoCancelBtn">확인</a>
+                        </div>
+
+                    </section>
+                </div>
+            </div>
+        </div>
+
+	<script type="text/javascript">
+	/*<![CDATA[*/
+		/***************************************************
+		결제 popup event
+		***************************************************/	
+		var paymentInforPopBtnEvent = function (){				
+			var bntId;
+			var popId ='popup_paymentInfor';
+			$('.paymentInfoBtn').each(function(index, item){			
+				bntId = $(this).prop('id');
+				var popup_warp = $("#"+bntId).trpLayerFixedPopup("#"+popId);	
+				$("#"+bntId).on("click", function($e) {
+					
+					var stringArray  = $(this).attr('value').split('|');
+					
+					if (stringArray.length == 2){
+						$('#paymentConNumberInfo').val(stringArray[0]);
+						$('#paymentInvoiceNumberInfo').val(stringArray[1]);
+					}
+
+					//환불 대상 조회 조건
+					var queryString = $("form[name=paymentInfoForm]").serialize();			
+					queryString = queryString.replace(/-/g, '');		
+					//청구 결제 상세 내역 조회
+					$.ajax({
+							method : 'post',				
+							url : '/billing/getInvoicePaymentDetail',
+							data : queryString, 
+							dataType : 'json',
+							success : function(data){																
+								if (data != null && data.invoDetail != null){		
+									var invoDetail = data.invoDetail;
+									if (!isEmpty(invoDetail.invoiceNumber)){										
+										$('#customerNameInfo').text(invoDetail.customerName);		//고객명
+										$('#productNameInfo').text(invoDetail.productName);			//상품명
+										$('#conNumberInfo').text(invoDetail.conNumber);					//주문번호										
+										$('#cardCorporationCodeNameInfo').text(invoDetail.cardCorporationCodeName);	//결제수단
+										
+										/* $('#paymentDateTimeInfo').text(formatDateTime(invoDetail.paymentDateTime));	//결제일시
+										$('#paymentTypeCodeNameInfo').text(invoDetail.paymentTypeCodeName);			//구분
+										$('#paymentMethodNameInfo').text(invoDetail.paymentMethodName);					//결제수단
+										$('#totalInvoiceAmountInfo').text(numberComma(invoDetail.totalInvoiceAmount));	//금액
+										$('#etcInfo').text(data.etc);											//결제메모 */
+										
+										$e.preventDefault();
+										popup_warp.open(this);
+									 }else {										
+										showAlert('청구정보가 없습니다.');										
+				              			$('#popPayInfoCancelBtn').trigger('click');
+									} 
+
+									//청구상세정보
+									if (data.invoDetailList != null){
+										var invoDetailTrHTML = '';
+										$.each(data.invoDetailList, function(i, item) {
+											invoDetailTrHTML += '<tr>';
+											invoDetailTrHTML += '    <td>'+item.invoiceClassificationCode+'</td>';		                                    
+											invoDetailTrHTML += '    <td>'+item.revenueItemCode+'</td>';		                                    
+											invoDetailTrHTML += '    <td class="tar">'+numberComma(item.invoiceItemAmount)+'원</td>';		                                    
+											invoDetailTrHTML += '    <td class="tar">'+numberComma(item.adjustAmt)+'원</td>';		                                    
+											invoDetailTrHTML += '    <td class="tar invoiceItemAmount">'+numberComma(item.invoiceItemAmount +item.adjustAmt )+'원</td>';		                                    
+											invoDetailTrHTML += '    <td class="tar paymentAmount">'+numberComma(item.paymentAmount)+'원</td>';		                                    
+											invoDetailTrHTML += '</tr>';
+										});										
+											invoDetailTrHTML += '<tr>';
+											invoDetailTrHTML += '    <td colspan="2">합계</td>';		                                                                       
+											invoDetailTrHTML += '    <td ></td>';		                                    
+											invoDetailTrHTML += '    <td ></td>';		                                    
+											/* invoDetailTrHTML += '    <td class="tar"><span id="totalPaymentAmount">'+numberComma(item.collectionBalanceAmount)+'</span>원</td>'; */		                                    
+											invoDetailTrHTML += '    <td class="tar"><span id="totalInvoiceItemAmount"></span>원</td>';		                                    
+											invoDetailTrHTML += '    <td class="tar"><span id="totalPaymentAmount"></span>원</td>';		                                    
+											invoDetailTrHTML += '</tr>';
+										$('#invoDetailListBody').empty();
+										$('#invoDetailListBody').append(invoDetailTrHTML);
+										
+										//하단 집계										
+										var tempTotal = 0;
+										
+										//청구금액
+										$('.invoiceItemAmount').each(function() {				
+											//adjustTotal += parseInt($(this).text());
+											tempTotal += parseInt(removeComma($(this).text()));
+										});										
+										$('#totalInvoiceItemAmount').text(numberComma(tempTotal));
+										
+										//결제금액
+										tempTotal = 0;
+										$('.paymentAmount').each(function() {				
+											//adjustTotal += parseInt($(this).text());
+											tempTotal += parseInt(removeComma($(this).text()));
+										});										
+										$('#totalPaymentAmount').text(numberComma(tempTotal));
+									}
+									
+									//결제이력정보
+									if (data.payHist != null){
+										var payHistTrHTML = '';
+										$.each(data.payHist, function(i, item) {
+											payHistTrHTML += '<tr>';
+		                                    payHistTrHTML += '    <td>'+formatDateTime(item.paymentDateTime)+'</td>';
+		                                    if (item.paymentTypeCode == 'PAYMENTERROR' || item.paymentTypeCode == 'REFUNDERROR'){
+		                                    	payHistTrHTML += '<td><span class="fail">' + item.paymentTypeCodeName + '</span></td>'	;					
+		                    				}else {										
+		                    					payHistTrHTML += '<td>' + item.paymentTypeCodeName + '</td>';
+		                    				}
+		                                    //payHistTrHTML += '    <td>'+item.paymentTypeCodeName+'</td>';
+		                                    /* payHistTrHTML += '    <td>'+item.paymentMethodCodeName+'</td>'; */
+		                                    payHistTrHTML += '    <td class="tar">'+numberComma(item.paymentAmount)+'원</td>';
+		                                    payHistTrHTML += '    <td class="tal ellipsis">'+item.etc+'</td>';
+		                                    payHistTrHTML += '    <td class="tal ">'+item.pgErrorMsg+'</td>';
+		                                    payHistTrHTML += '</tr>';	                                    									
+										});
+										
+										$('#payHistListBody').empty();
+										$('#payHistListBody').append(payHistTrHTML);
+									}
+								}else {										
+									showAlert('결제정보가 없습니다.');									
+			              			$('#popPayInfoCancelBtn').trigger('click');
+								}
+							}
+						});					
+				});
+				$("body").on("click", "#"+popId+" .btn_close, #"+popId+" .btn_cancel", function($e) {
+					$e.preventDefault();
+					popup_warp.close();
+				});
+			})				
+		}
+
+	/*]]>*/
+	</script>    	
+</div>

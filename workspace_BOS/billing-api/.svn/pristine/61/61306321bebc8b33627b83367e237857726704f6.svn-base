@@ -1,0 +1,35 @@
+				<!--고객정보//-->
+				<table class="form_table">
+					<colgroup>
+						<col width="170px" />
+						<col width="*" />
+						<col width="170px" />
+						<col width="*" />
+					</colgroup>
+					<tbody>
+						<tr>
+							<th>고객명</th>
+							<td id="informationCustomerName" th:text="${customer.customerName}"></td>
+							<th>전화번호</th>
+							<td id="informationPhoneNumber" class="phone" th:text="${customer.phoneNumber}"></td>
+						</tr>
+						<tr>
+							<th>이메일</th>
+							<td th:text="${customer.email}"></td>
+							<th>생년월일</th>
+							<td th:text="${#strings.length(customer.birthDay)==8?#strings.substring(customer.birthDay,0,4)+'-'+#strings.substring(customer.birthDay,4,6)+'-'+#strings.substring(customer.birthDay,6,8):customer.birthDay}"></td>
+						</tr>
+						<tr>
+							<th>주소</th>
+							<td colspan="3" th:text="${'('+customer.zipCode+') '+customer.baseAddress+' '+customer.detailAddress}"></td>
+						</tr>
+						<tr>
+							<th>비고</th>
+							<td colspan="3" th:text="${customer.remark}"></td>
+						</tr>
+					</tbody>
+				</table>
+<script>
+formatPhone();
+</script>
+				

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout" layout:decorator="layout/default">
+<!-- index.html 고유 CSS 추가 -->
+<th:block layout:fragment="css">
+</th:block>
+<!-- index.html 고유 스크립트 추가 -->
+<th:block layout:fragment="script">
+<script type="text/javascript">
+</script>
+</th:block>
+        <!-- container -->
+        <div id="container" layout:fragment="contentFragment">
+            <div id="contents" class="customer">
+                <h2 class="h2">상담관리</h2>
+
+                <section>
+                    <div class="cont-box wfull">
+                        <!--상담관리 //-->
+                        <table class="form_table">
+                            <colgroup>
+                                <col width="170px" />
+                                <col width="*" />
+                                <col width="170px" />
+                                <col width="*" />
+                            </colgroup>
+                            <tbody>
+                                <tr>
+                                    <th>등록일자</th>
+                                    <td colspan="3">
+                                        <div class="calendar mr20">
+                                            <span class="datepicker-box w_ms">
+												<input type="text" class="js-datepicker" readonly=""/>
+											</span>
+                                            <span class="ml5 mr5">~</span>
+                                            <span class="datepicker-box w_ms">
+												<input type="text" class="js-datepicker" readonly=""/>
+											</span>
+                                        </div>
+
+                                        <span class="trp radio-box">
+											<input type="radio" id="trp-radio2" name="radio2" th:checked="true"/>
+											<i></i>
+											<label for="trp-radio2">오늘</label>
+										</span>
+                                        <span class="trp radio-box">
+											<input id="radio2-2" type="radio" name="radio2"/>
+											<i></i>
+											<label for="radio2-2">7일</label>
+										</span>
+                                        <span class="trp radio-box">
+											<input id="radio2-3" type="radio" name="radio2"/>
+											<i></i>
+											<label for="radio2-3">15일</label>
+										</span>
+                                        <span class="trp radio-box">
+											<input id="radio2-4" type="radio" name="radio2"/>
+											<i></i>
+											<label for="radio2-4">한달</label>
+										</span>
+                                    </td>
+                                </tr>
+                                <tr class="hide_field">
+                                    <th>상태</th>
+                                    <td>
+                                        <span class="trp radio-box">
+											<input type="radio" id="trp-radio1" name="radio1" th:checked="true"/>
+											<i></i>
+											<label for="trp-radio1">전체</label>
+										</span>
+                                        <span class="trp radio-box">
+											<input id="radio1-2" type="radio" name="radio1"/>
+											<i></i>
+											<label for="radio1-2">처리중</label>
+										</span>
+                                        <span class="trp radio-box">
+											<input id="radio1-3" type="radio" name="radio1"/>
+											<i></i>
+											<label for="radio1-3">처리완료</label>
+										</span>
+                                    </td>
+                                    <th>주문번호</th>
+                                    <td>
+                                        <input type="text" class="w_lg_s" value="" placeholder=""/>
+                                    </td>
+                                </tr>
+                                <tr class="hide_field">
+                                    <th>상담유형</th>
+                                    <td>
+                                        <div class="select-box w_mm">
+                                            <select class="select2Basic" id="">
+												<option value="1">전체</option>
+											</select>
+                                        </div>
+                                    </td>
+                                    <th>제목</th>
+                                    <td>
+                                        <input type="text" class="w_lg_s" value="" placeholder=""/>
+                                    </td>
+                                </tr>
+                                <tr class="hide_field">
+                                    <th>고객명</th>
+                                    <td>
+                                        <input type="text" class="w_lg_s" value="" placeholder=""/>
+                                    </td>
+                                    <th>전화번호</th>
+                                    <td>
+                                        <input type="text" class="w_lg_s" value="" placeholder="-없이 입력"/>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="hide_btn open">
+                            <a href="#none"><span class="txt">더보기<em></em></span></a>
+                        </div>
+                        <script>
+                            // 상세 옵션닫기버튼
+                            $('.hide_field').hide();
+                            $('.hide_btn').click(function() {
+                                $('.hide_field').toggle();
+                                $(this).toggleClass('open');
+                                // $('#det_opt').slideToggle(300);
+                                if ($(this).hasClass('open')) {
+                                    $('.txt').html("더보기<em></em>");
+                                } else {
+                                    $('.txt').html("접기<em></em>");
+                                }
+                            });
+                        </script>
+                        <div class="btn_set-center mt30">
+                            <a class="btn btn_green btn_m radius mr5" role="button" href="#none">검색</a>
+                            <a class="btn btn_default btn_m radius" href="#none" role="button">초기화</a>
+                        </div>
+
+                        <!--리스트//-->
+                        <div class="table-wrap mt80">
+                            <div class="table-header ">
+                                <div class="con_title">총 <em>19</em>건</div>
+                                <div class="ab-r">
+                                    <div class="btn_set">
+                                        <a class="btn btn_default"><i class="icon_down">엑셀다운로드</i></a>
+                                    </div>
+                                </div>
+                            </div>
+                            <table class="table_list" id="check_table">
+                                <colgroup>
+                                    <col style="width:5%"/>
+                                    <col style="width:6%"/>
+                                    <col style="width:8%"/>
+                                    <col style="width:12%"/>
+                                    <col style="width:9%"/>
+                                    <col style="width:10%"/>
+                                    <col style="width:auto"/>
+                                    <col style="width:8%"/>
+                                    <col style="width:8%"/>
+                                    <col style="width:8%"/>
+                                </colgroup>
+                                <thead>
+                                    <tr>
+                                        <th>
+                                            <span class="trp checkbox-box">
+												<input id="checkbox_all1" class="js_item check-all" type="checkbox" name=""/>
+												<i></i>
+												<label for="checkbox_all1"></label>
+											</span>
+                                        </th>
+                                        <th>번호</th>
+                                        <th>고객명</th>
+                                        <th>전화번호</th>
+                                        <th>상담유형</th>
+                                        <th>주문번호</th>
+                                        <th>제목</th>
+                                        <th>상태</th>
+                                        <th>등록일</th>
+                                        <th>처리일</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <span class="trp checkbox-box">
+												<input id="checkbox_all1" class="js_item" type="checkbox" name=""/>
+												<i></i>
+												<label for="checkbox_all1"></label>
+											</span>
+                                        </td>
+                                        <td>15</td>
+                                        <td>김민성</td>
+                                        <td>000-0000-0000</td>
+                                        <td>배송일 변경</td>
+                                        <td>1234567890</td>
+                                        <td class="tal ellipsis"><a href="#none">White Edition</a></td>
+                                        <td><span class="fail">미배송</span></td>
+                                        <td>2019.06.25</td>
+                                        <td>2019.06.25</td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <span class="trp checkbox-box">
+												<input id="checkbox_all2" class="js_item" type="checkbox" name=""/>
+												<i></i>
+												<label for="checkbox_all2"></label>
+											</span>
+                                        </td>
+                                        <td>195</td>
+                                        <td>고아라</td>
+                                        <td>000-1111-2222</td>
+                                        <td>배송일 변경</td>
+                                        <td>1234567890</td>
+                                        <td class="tal ellipsis"><a href="#none">Black Edition</a></td>
+                                        <td>완료</td>
+                                        <td>2019.06.25</td>
+                                        <td>2019.06.25</td>
+                                    </tr>
+                                    <!-- 
+                                    <tr class="no_empty">
+                                        <td colspan="10">
+                                            <div class="data-empty">
+                                                <img src="/resources/images/common/img_no_empty.png" alt="데이터 없음" />
+                                                <span class="txt_empty">검색 결과가 없습니다.</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                     -->
+                                </tbody>
+                            </table>
+                            <script>
+                                $(".check-all").click(function() {
+                                    $(".js_item").prop("checked", $(this).is(":checked"));
+                                    if ($(this).is(":checked")) {
+                                        $(".js_item:not(.check-all)").parents("tr").addClass("selected");
+                                    } else {
+                                        $(".js_item:not(.check-all)").parents("tr").removeClass("selected");
+                                    }
+                                });
+
+                                $(".js_item").click(function() {
+                                    if ($(this).is(":checked")) {
+                                        $(this).parents("tr").addClass("selected");
+                                    } else {
+                                        $(this).parents("tr").removeClass("selected");
+                                    }
+                                    if ($(".js_item:not(.check-all)").length == $(".js_item:not(.check-all):checked").length) {
+                                        $(".check-all").prop("checked", true);
+                                    } else {
+                                        $(".check-all").prop("checked", false);
+                                    }
+                                });
+                            </script>
+
+                            <div class="paging-area">
+                                <div class="btn_set">
+                                    <div class="fl">
+                                        <button class="btn btn_gray btn_w" type="button">삭제</button>
+                                    </div>
+                                    <div class="fr">
+                                        <button class="btn btn_default btn_w" type="button"><i class="icon_add">등록</i></button>
+                                    </div>
+                                </div>
+                                <div class="paging">
+                                    <a href="#none" class="prev_end">FIRST</a><a href="#none" class="prev">PREV</a>
+                                    <strong class="on">1</strong>
+                                    <a href="#none"><em>2</em></a>
+                                    <a href="#none"><em>3</em></a>
+                                    <a href="#none"><em>4</em></a>
+                                    <a href="#none"><em>5</em></a>
+                                    <a href="#none" class="next"><em>NEXT</em></a><a href="#none" class="next_end">END</a>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+            </div>
+        </div>
+        <!-- //container -->
+</html>

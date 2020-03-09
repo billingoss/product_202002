@@ -1,0 +1,156 @@
+<script src="/js/bootstrap-datepicker.js" type="text/javascript" ></script>
+<div class="modal-header modal-popup-header">
+	<h5 class="modal-title">
+		▶ 비밀번호 초기화
+		<button id="closecustomercreate" type="button" class="close" data-dismiss="modal">&times;</button>
+	</h5>
+</div>
+<div class="modal-body">
+  
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="panel-title">
+				<strong>비밀번호 초기화</strong>
+			</h4>
+		</div>
+	</div>
+	
+	<form id="bizInputFormPopup" name="bizInputFormPopup" class="form-horizontal" onsubmit="return false;">
+		<div class="form-group">
+			<label class="col-sm-3 control-label" for="loginid">Login ID</label>
+			<div class="col-sm-4">
+				<input class="form-control" id="loginid" type="text" name="loginid" placeholder="Login ID"></input>
+			</div>			
+		</div>
+		<div class="form-group">
+			<label class="col-sm-3 control-label" for="newPassword">새 비밀번호</label>
+			<div class="col-sm-6">
+				<input class="form-control" id="newPassword" type="password" name="newPassword" placeholder="새 비밀번호"></input>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-3 control-label" for="newPasswordC">새 비밀번호 확인</label>
+			<div class="col-sm-6">
+				<input class="form-control" id="newPasswordC" type="password" name="newPasswordC" placeholder="새 비밀번호 확인"></input>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-3 control-label" for="email">E-mail</label>
+			<div class="col-sm-6">
+				<input class="form-control" id="email" type="text" name="email" placeholder="사원 등록시 E-mail (확인용)"></input>
+			</div>
+		</div>	
+	</form>
+  
+	<div class="panel">
+		<div class="form-group">
+			<div class="col-sm-12 text-center">
+			  <button id="btnSave" class="btn btn-primary" >비밀번호 변경<i class="fa fa-check spaceLeft"></i></button>
+			  <button id="btnCancel" class="btn btn-table-default">취소<i class="fa fa-times spaceLeft"></i></button>
+			</div>
+		</div>
+	</div>  
+</div>
+
+<script>
+	var titleStr ="비밀번호변경";
+	$(document).ready(function() {		
+			
+		/****************************************************
+		취소 버튼 event 설정
+		****************************************************/
+		$('#btnCancel').click(function(){	
+			var modalview = $(this).closest('.modal');
+			$(modalview).modal('hide'); 
+		});		
+		
+		/****************************************************
+		저장 버튼 event 설정
+		****************************************************/
+		$('#btnSave').click(function(){			
+			//loginid
+			if ($('input[name=loginid]').val() == '') {
+				Common.Dialog.alert({
+		    		  title:titleStr
+		            , content: 'Login ID를 입력하십시오.'
+		            , focusObj : $('input[name=loginid]')
+		        });
+				return;
+			} 
+
+			if ($('input[name=newPassword]').val() == '') {
+				Common.Dialog.alert({
+		    		  title:titleStr
+		            , content: '새 비밀번호를 입력하십시오.'
+		            , focusObj : $('input[name=newPassword]')
+		        });
+				return;
+			} 
+			
+			//newPassword
+			if ($('input[name=newPassword]').val() != $('input[name=newPasswordC]').val()) {
+				Common.Dialog.alert({
+		    		  title:titleStr
+		            , content: '비밀번호가 일치하지 않습니다.'
+		            , focusObj : $('input[name=newPassword]')
+		        });
+				$('input[name=newPassword]').val();
+				return;
+			} 
+			
+			//email
+			if ($('input[name=email]').val() == '') {
+				Common.Dialog.alert({
+		    		  title:titleStr
+		            , content: 'E-mail을 입력하십시오'
+		            , focusObj : $('input[name=email]')
+		        });
+				return;
+			} 
+			
+			if (!validateEmail($('#email').val())) {
+				Common.Dialog.alert({
+		    		  title:titleStr
+		            , content: "e-mail주소가 잘못 입력 되었습니다."
+		            , focusObj : $('input[name=email]')
+		        });
+				return false;
+			}
+			
+			Common.Dialog.confirm({
+		        content: '변경 하시겠습니다?'
+		        ,ok: function(){
+					var queryString = $("form[name=bizInputFormPopup]").serialize();
+					
+					$.ajax({
+							method:'post',
+							url: '/bizRest/updatePasswordProc',
+							data: queryString,
+							error: function(xhr, status, error){
+								debugger;			
+								var result = JSON.parse(xhr.responseText);
+								idDupFlag = false;
+								alert(result.message);						
+							},
+							success : function(json){
+								debugger;
+								var msg = "";
+								if(json.errMsg == null || json.errMsg == ""){
+									msg = '비밀번호가 변경 되었습니다. ';
+									//form clear							
+									$('#btnCancel').trigger('click');						
+								}else {
+									msg = json.errMsg;
+								}
+								Common.Dialog.alert({
+						    		  title:titleStr
+						            , content: msg
+						        });									
+							}					
+					});
+		        }
+		    })		
+			
+		});
+	});	
+</script>

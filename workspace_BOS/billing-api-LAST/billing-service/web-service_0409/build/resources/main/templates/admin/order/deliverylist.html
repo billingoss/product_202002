@@ -1,0 +1,398 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+		$("#searchbardelivery").load("searchbardelivery");
+		
+		$('#deliverytable').on('click', 'input[type=checkbox]', function(){
+			$('input[type=checkbox]').prop('checked',false);
+			$(this).prop('checked',true);
+		});
+		
+		$('#deliverytbody').on('click', 'tr', function(){
+			$('#deliverytbody input[type=checkbox]').prop('checked',false);
+			$('td input:checkbox',this).prop('checked',true);
+			$('#deliverytbody tr').attr('style','');
+			$(this).attr('style','background-color: #D9E5FF');
+		});
+		
+		
+		$('#insertdelivery').click(function(){
+			if (!$('input[type=checkbox]:checked').val()){
+				  alert("등록하실 배송일정을 선택하십시오.");
+				  return;
+			}
+			var param = new Object();
+			param.deliverynumber = $('input[type=checkbox]:checked').val().split('|')[1];
+			param.saveflag = 'I';
+			$.ajax({
+					method : 'get',
+		    		url : '/order/savedeliverypopup',
+		    		data : param,
+					error: function(xhr, status, error){ 	
+					  alert("등록하실 배송일정을 선택하십시오.");
+					},
+					success : function(data){
+						 $('#savedialog .modal-content').html(data);
+		            	 $("#savedialog").modal('show'); 
+					}
+			});
+		});
+		
+		$("#updatedelivery").click(function(){
+			if (!$('input[type=checkbox]:checked').val()){
+				  alert("수정하실 배송일정을 선택하십시오.");
+				  return;
+			}
+			var param = new Object();
+			param.deliverynumber = $('input[type=checkbox]:checked').val().split('|')[1];
+			param.saveflag = 'U';
+			$.ajax({
+					method : 'get',
+		    		url : '/order/savedeliverypopup',
+		    		data : param,
+					error: function(xhr, status, error){ 	
+					  alert("수정하실 배송일정을 선택하십시오.");
+					},
+					success : function(data){
+						 $('#savedialog .modal-content').html(data);
+		            	 $("#savedialog").modal('show'); 
+					}
+			});
+		});
+		
+		$('#terminationcontract').click(function(){
+			if (!$('input[type=checkbox]:checked').val()){
+				  alert("해지하실 주문을 선택하십시오.");
+				  return;
+			}
+			var param = new Object();
+			param.connumber = $('input[type=checkbox]:checked').val().split('|')[0];
+			param.contractstate = 'TERMINATION';
+			$.ajax({
+					method : 'post',
+		    		url : '/order/updatecontract/',
+		    		data : param,
+					error: function(xhr, status, error){ 	
+						alert(error);
+					},
+					success : function(data){
+						alert("저장되었습니다.");
+						$('#searchbutton').click();
+					}
+			});
+		});
+		
+		$('#suspendcontract').click(function(){
+			if (!$('input[type=checkbox]:checked').val()){
+				  alert("정지하실 주문을 선택하십시오.");
+				  return;
+			}
+			var param = new Object();
+			param.connumber = $('input[type=checkbox]:checked').val().split('|')[0];
+			param.contractstate = 'SUSPEND';
+			$.ajax({
+					method : 'post',
+		    		url : '/order/updatecontract/',
+		    		data : param,
+					error: function(xhr, status, error){ 	
+						alert(error);
+					},
+					success : function(data){
+						alert("저장되었습니다.");
+						$('#searchbutton').click();
+					}
+			});
+		});
+		
+		$('#deliverydetail').click(function(){
+			if (!$('input[type=checkbox]:checked').val()){
+				  alert("조회하실 배송일정을 선택하십시오.");
+				  return;
+			}
+			var param = new Object();
+			param.connumber = $('input[type=checkbox]:checked').val().split('|')[0];
+			
+			$.ajax({
+					method : 'get',
+		    		url : '/order/deliverydetailpopup',
+		    		data : param,
+					error: function(xhr, status, error){ 	
+					  alert("조회하실 배송일정을 선택하십시오.");
+					},
+					success : function(data){
+						 $('#savedialog .modal-content').html(data);
+		            	 $("#savedialog").modal('show'); 
+					}
+			});
+		});
+		
+		$('#exceldelivery').click(function(){
+			var param = new Object();
+			param.deliverydate = $("#deliveryyear").val() + $('#deliverymonth').val()+'01';
+			param.deliverytype = $("#deliverytype").val();
+			param.recurringdeliveryyn = $('#recurringdeliveryyn').val();
+			param.customername = $('#customername').val();
+			param.customerphonenumber = $('#customerphonenumber').val().replace('-','').replace('-','');
+			param.pagingyn = 'N';
+
+			$.ajax({
+				method : 'get',
+				url : '/order/getdeliverylist',
+				data : param, //JSON.stringify(paramData) , /* queryString, */
+				dataType : 'json',
+				error : function(xhr, status, error) {
+					alert(error);
+				},
+				success : handleDataExcel
+			});
+		});
+
+		function handleDataExcel(data) {
+			
+			json = data.lists; //hashmap의 list array데이타
+			displayproductdescription = data.displayproductdescription;
+			
+			if (json.length == 0) {
+				Common.Dialog.alert({
+					title : '',
+					content : '데이터가 없습니다.'
+				});
+			}
+			
+			$('#deliveryexceltbody').empty();
+			var trHTML = '';
+
+			$.each(json, function(i, item) {
+				 trHTML += '<tr>';          
+				 trHTML += setData(i, item, 0, displayproductdescription);
+				 trHTML += '</tr>';
+			});
+			$('#deliveryexceltbody').append(trHTML);
+			formatPhone();
+			
+			fnExcelReport('deliveyexceltable','배송일정조회_'+$('#deliveryyear').val()+$('#deliverymonth').val()+'.xls');
+		}
+	});
+</script>		
+<section class="page container">
+<div class="row">
+	<div id="searchbardelivery">
+	</div>
+</div>
+<div id="deliverydiv">
+	<div class="row">
+		<div class="col-md-12">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+		    		<h2 class="panel-title">
+		     			<strong>배송일정 조회</strong>
+		    		</h2>
+		   		</div>
+		   		<div class="panel-body">
+		    		<div class="table-responsive">
+						<div class="form-group">
+							<b><span id="totalcount"></span></b>
+						</div>
+ 		     			<table class="table" id="deliverytable" style="display:block; overflow-x:scroll; overflow-y:hidden; height:100%; white-space:nowrap;"> 
+			      			<thead  class="table-header-bg">
+			       				<tr>
+			        				<th>선택</th>
+			        				<th>번호</th>
+			        				<th>등록일</th>
+			        				<th>판매채널구분</th>
+			        				<th>회원구분</th>
+			        				<th>정기배송여부</th>
+			        				<th>수취인명</th>
+			        				<th>수취인연락처</th>
+			        				<th>상품명</th>
+			        				<th>신청수량</th>
+			        				<th>배송일</th>
+			        				<th>배송유형</th>
+			        				<th>우편번호</th>
+			        				<th>주소</th>
+			        				<th>배송메시지</th>
+			        				<th>배송일자</th>
+			        				<th>회차</th>
+			        				<th>배송여부</th>
+			        				<th>배송일자</th>
+			        				<th>회차</th>
+			        				<th>배송여부</th>
+			        				<th>배송일자</th>
+			        				<th>회차</th>
+			        				<th>배송여부</th>
+			        				<th>배송일자</th>
+			        				<th>회차</th>
+			        				<th>배송여부</th>
+			        				<th>배송일자</th>
+			        				<th>회차</th>
+			        				<th>배송여부</th>
+			        				<th>배송일자</th>
+			        				<th>회차</th>
+			        				<th>배송여부</th>
+			        				<th>배송시작일</th>
+			        				<th>종료일</th>
+			        				<th>이용기간(월)</th>
+			        				<th>배송주기</th>
+			        				<th>배송횟수</th>
+			        				<th>전체발송회차</th>
+			        				<th>현재발송회차</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">고객요청</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세1</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세2</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세3</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세4</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세5</th>
+			        				<th th:if="${displayproductdescription.equals('Y')}">빅이슈권수</th>
+			        				<th>신청일</th>
+			        				<th>고객명</th>
+			        				<th>연락처</th>
+			        				<th>결제일</th>
+			        				<th>결제수단</th>
+			        				<th>결제금액</th>
+			        				<th>배송비유형</th>
+			        				<th>배송비</th>
+								</tr>
+							</thead>
+							<tbody id="deliverytbody" class="table-body-row">
+								<tr th:each="result : ${lists}">
+									<td style="vertical-align: middle"></td>
+									<td style="vertical-align: middle"></td>
+									<td style="vertical-align: middle" th:text="${result.registrationdatetime}"></td>
+									<td style="vertical-align: middle" th:text="${result.channelname}"></td>
+									<td style="vertical-align: middle" th:text="${result.recurringdeliveryyn}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverycustomername}"></td>
+									<td class="phone" style="vertical-align: middle" th:text="${result.deliveryphonenumber1}"></td>
+									<td style="vertical-align: middle" th:text="${result.productname}"></td>
+									<td style="vertical-align: middle" th:text="${result.quantity}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliveryday}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverytypename}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliveryzipcode}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliveryaddress}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliveryremark}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverydate1}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliveryindex1}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverystate1}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverydate2}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliveryindex2}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverystate2}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverydate3}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliveryindex3}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverystate3}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverydate4}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliveryindex4}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverystate4}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverydate5}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliveryindex5}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverystate5}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverydate6}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliveryindex6}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverystate6}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverystartdatetime}"></td>
+									<td style="vertical-align: middle" th:text="${result.effectenddatetime}"></td>
+									<td style="vertical-align: middle" th:text="${result.duration}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverycycle}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverytimes}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverytotalcount}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliveryremaincount}"></td>
+									<td style="vertical-align: middle" th:text="${result.productoption}"></td>
+									<td style="vertical-align: middle" th:text="${result.productdescription1}"></td>
+									<td style="vertical-align: middle" th:text="${result.productdescription2}"></td>
+									<td style="vertical-align: middle" th:text="${result.productdescription3}"></td>
+									<td style="vertical-align: middle" th:text="${result.productdescription4}"></td>
+									<td style="vertical-align: middle" th:text="${result.productdescription5}"></td>
+									<td style="vertical-align: middle" th:text="${result.bigissuequantity}"></td>
+									<td style="vertical-align: middle" th:text="${result.subscribedatetime}"></td>
+									<td style="vertical-align: middle" th:text="${result.customername}"></td>
+									<td class="phone" style="vertical-align: middle" th:text="${result.customerphonenumber}"></td>
+									<td style="vertical-align: middle" th:text="${result.paymentday}"></td>
+									<td style="vertical-align: middle" th:text="${result.paymentmethodname}"></td>
+									<td style="vertical-align: middle" th:text="${result.paymentamount}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverychargetypename}"></td>
+									<td style="vertical-align: middle" th:text="${result.deliverychargeamount}"></td>
+								</tr>
+							</tbody>
+	     				</table>
+	    			</div>
+				</div>
+				<div  align="center">
+					<ul id="paginationorder" class="pagination"></ul>
+				    <button class="btn btn-primary pull-right" style="margin: 3px;" id="exceldelivery">다운로드</button>
+				    <button class="btn btn-primary pull-right" style="margin: 3px;" id="deliverydetail">상세정보</button>
+				    <button class="btn btn-primary pull-right" style="margin: 3px;" id="suspendcontract">정지</button>
+				    <button class="btn btn-primary pull-right" style="margin: 3px;" id="terminationcontract">해지</button>
+				    <button class="btn btn-primary pull-right" style="margin: 3px;" id="updatedelivery">수정</button>
+				    <button class="btn btn-primary pull-right" style="margin: 3px;" id="insertdelivery">등록</button>
+				</div>
+				<div>
+	     			<table class="table" id="deliveyexceltable" style="display:none;"> 
+	      			<thead  class="table-header-bg">
+	       				<tr>
+	        				<th>번호</th>
+	        				<th>등록일</th>
+	        				<th>판매채널구분</th>
+	        				<th>회원구분</th>
+	        				<th>정기배송여부</th>
+	        				<th>수취인명</th>
+	        				<th>수취인연락처</th>
+	        				<th>상품명</th>
+	        				<th>신청수량</th>
+	        				<th>배송일</th>
+	        				<th>배송유형</th>
+	        				<th>우편번호</th>
+	        				<th>주소</th>
+	        				<th>배송메시지</th>
+	        				<th>배송일자</th>
+	        				<th>회차</th>
+	        				<th>배송여부</th>
+	        				<th>배송일자</th>
+	        				<th>회차</th>
+	        				<th>배송여부</th>
+	        				<th>배송일자</th>
+	        				<th>회차</th>
+	        				<th>배송여부</th>
+	        				<th>배송일자</th>
+	        				<th>회차</th>
+	        				<th>배송여부</th>
+	        				<th>배송일자</th>
+	        				<th>회차</th>
+	        				<th>배송여부</th>
+	        				<th>배송일자</th>
+	        				<th>회차</th>
+	        				<th>배송여부</th>
+	        				<th>배송시작일</th>
+	        				<th>종료일</th>
+	        				<th>이용기간(월)</th>
+	        				<th>배송주기</th>
+	        				<th>배송횟수</th>
+	        				<th>전체발송회차</th>
+	        				<th>현재발송회차</th>
+	        				<th th:if="${displayproductdescription.equals('Y')}">고객요청</th>
+	        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세1</th>
+	        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세2</th>
+	        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세3</th>
+	        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세4</th>
+	        				<th th:if="${displayproductdescription.equals('Y')}">고객요청상세5</th>
+	        				<th th:if="${displayproductdescription.equals('Y')}">빅이슈권수</th>
+	        				<th>신청일</th>
+	        				<th>고객명</th>
+	        				<th>연락처</th>
+	        				<th>결제일</th>
+	        				<th>결제수단</th>
+	        				<th>결제금액</th>
+	        				<th>배송비유형</th>
+	        				<th>배송비</th>
+						</tr>
+					</thead>
+					<tbody id="deliveryexceltbody" class="table-body-row">
+					</tbody>
+					</table>
+				</div>
+		  	</div>
+	 	</div>
+	</div>
+	<div class="modal" id="savedialog" role="dialog">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content"></div>
+		</div>
+	</div>	
+</div>
+</section>

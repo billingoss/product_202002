@@ -1,0 +1,253 @@
+<!-- modal list KKH추가 -->
+<!-- Modal -->
+<div class="modal-header modal-popup-header">
+	<h5 class="modal-title">
+		&nbsp;<button type="button" class="close" data-dismiss="modal">&times;</button>
+	</h5>
+</div>
+<div class="modal-body">
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="panel-title">
+				<strong>금액조정</strong>
+			</h4>
+		</div>
+	</div>
+	<input type="hidden" class="form-control" id="adjustinvoicenumber" th:value="${invoicenumber}"/> 
+	<input type="hidden" class="form-control" id="adjustinvoicedate" th:value="${invoicedate}"/> 
+	<input type="hidden" class="form-control" id="adjustconnumber" th:value="${connumber}"/>
+	<table class="table table-hover table-bordered"
+		id="adjustmaintable">
+		<thead class="table-header-bg">
+			<tr>
+				<th style="width: 12%;">구분</th>
+				<th style="width: 40%;">항목</th>
+				<th style="width: 16%;">조정전금액</th>
+				<th style="width: 16%;display:none;">부가세여부</th>
+				<th style="width: 16%;">조정금액</th>
+				<th style="width: 16%;">조정후금액</th>
+			</tr>
+		</thead>
+		<tbody id="adjustmainTable" class="table-body-row">
+			<tr th:each="idl: ${invoiceadjustlist}">
+				<td th:text="${idl.invoiceClassificationCode}"></td>
+				<td th:text="${idl.revenueItemCodnm}"></td>
+				<td
+					style="text-align:right;" th:text="${#strings.length(idl.adjustPossibleAmount)} > 3 ? ${#numbers.formatDecimal(idl.adjustPossibleAmount, 0, 'COMMA', 0, 'POINT')} : ${idl.adjustPossibleAmount}"></td>
+				<td style="display:none;" th:text="${idl.taxYn}"></td>
+				<td><input type="text" class="adjustinput form-control-sm"
+					style="width: 126px;text-align:right;" /></td>
+				<td style="text-align:right;"
+					th:text="${#strings.length(idl.adjustPossibleAmount)} > 3 ? ${#numbers.formatDecimal(idl.adjustPossibleAmount, 0, 'COMMA', 0, 'POINT')} : ${idl.adjustPossibleAmount}"></td>
+				<td style="display: none;" th:text="${idl.adjPossibleYn}"></td>
+				<td style="display: none;" th:text="${idl.revenueItemCode}"></td>
+			</tr>
+		</tbody>
+		<tfoot>
+<!-- 			<tr>
+				<td colspan="5"><span class="pull-right">계</span></td>
+				<td id='adjustcoltotalsum'>0</td>
+			</tr>
+			<tr>
+				<td colspan="5"><span class="pull-right">부가세</span></td>
+				<td id='adjusttax'></td>
+			</tr> -->
+			<tr>
+				<td colspan="4"><span class="pull-right">합계</span></td>
+				<td style="text-align:right;" id='adjusttotalsum'></td>
+			</tr>
+		</tfoot>
+	</table>
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="panel-title">
+				<strong>▶ 금액조정사유</strong>
+			</h4>
+		</div>
+		<div class="panel-body">
+			<div class="form-horizontal" role="form">
+				<div class="form-group">
+					<div class="col-md-2">
+						<select class="form-control" id="adjustreasoncd" >
+							<option>고객불만</option>
+							<option>장애보상</option>
+							<option>기타</option>
+						</select>
+					</div>
+					<div class="col-md-6">
+						<textarea class="form-control" id="adjustreason-message"
+							style="height: 150px; width: 646px;"></textarea>
+					</div>
+				</div>
+			</div>
+			<button class="btn btn-table-default pull-right" id="adjustcancel"
+				style="margin: 3px;">취소</button>
+			<button class="btn btn-primary pull-right" id="adjustsave"
+				style="margin: 3px;">확인</button>
+		</div>
+
+	</div>
+
+</div>
+<script type="text/javascript">
+$(document).ready(function() {
+	adjustTableSum();
+	
+	$('#adjustcancel').click(function(){
+		var modalview = $(this).closest('.modal');
+		$(modalview).modal('hide');
+	});
+	
+	$('#adjustsave').click(function(){
+		 var n = $("#adjustmainTable").find("tr").length;
+		 var adjustinvoicenumber = $('#adjustinvoicenumber').val();
+		 var adjustinvoicedate   = $('#adjustinvoicedate').val();
+		 var adjustconnumber     = $('#adjustconnumber').val();
+		 var adjustreasonmessage     = $('#adjustreason-message').val();
+		 debugger;
+		 //var adjustreasonmessage     = $('#adjustreasoncd').text();
+		 var cnt = 0 ;
+		 var comparecnt = 0 ;
+		 /*<![CDATA[*/
+         for (var i = 0; i < n; i++) {
+             var invoiceClassificationCode = $("#adjustmainTable").find("tr").eq(i).find("td").eq(0).text();
+             var revenueItemCode = $("#adjustmainTable").find("tr").eq(i).find("td").eq(7).text();
+             var adjustPossibleAmount = $("#adjustmainTable").find("tr").eq(i).find("td").eq(2).text().replace(/,/g, '');
+             var adjustamt = $("#adjustmainTable").find("tr").eq(i).find("td").find("input").eq(0).val().replace(/,/g, '');
+
+             
+             var allData = { "invoiceClassificationCode": invoiceClassificationCode
+            		       , "revenueItemCode": revenueItemCode 
+            		       , "adjustPossibleAmount": adjustPossibleAmount 
+            		       , "adjustamt": adjustamt 
+            		       , "adjustinvoicenumber": adjustinvoicenumber 
+            		       , "adjustinvoicedate": adjustinvoicedate 
+            		       , "adjustconnumber": adjustconnumber
+            		       , "adjustreasonmessage": adjustreasonmessage
+            		       };
+             debugger;
+             //alert(invoiceClassificationCode + "/"+ revenueItemCode + "/" + adjustamt);
+             if(adjustamt != "" && adjustamt != 0 ){
+            	 cnt++;
+            	 $.ajax({
+                     type: "get",
+                     url : '/billing/adjust',
+                     data: allData,
+                     contentType: "application/json; charset=utf-8",	      
+                     dataType: "json",
+                     success: function () {
+                    	 debugger;
+                    	 comparecnt++;
+                    	 if(cnt == comparecnt){   
+                    		 Common.Dialog.alert({
+	   	   	 		    		  title:'조정처리'
+	   	   	 		            , content: '조정처리 완료되었습니다.'
+	   	   	 		         });
+                    		 $('#customeradjustDialog').modal('hide');
+                    	 }
+                    	 
+                    	 debugger;
+                    //  var modalview = $(this).closest('.modal');
+                 	//	$(modalview).modal('hide');
+                 	//	var modalview = $(this).closest('.modal');
+                 	//	$(modalview).modal('hide');
+                     },
+                     error: function (err) {
+                        // alert(err);
+                     }
+                 }); 
+             }
+             
+         }
+
+		 
+		 if(cnt == 0){
+			 Common.Dialog.alert({
+	 		   title:'조정처리'
+	 		  , content: '조정처리 금액을 입력하세요.'
+	 		  });
+		 }
+         /*]]>*/
+	});
+	
+	$('.adjustinput').keyup(function(event){
+		
+		var str;
+		/*<![CDATA[*/
+        if(event.keyCode != 8){
+            if (!(event.keyCode >= 37 && event.keyCode <= 40)) {
+                var inputVal = $(this).val();
+                 
+                str = inputVal.replace(/[^-0-9]/gi,'');
+                 
+                if(str.lastIndexOf("-") > 0){ //중간에 -가 있다면 replace
+                    if(str.indexOf("-")==0){ //음수라면 replace 후 - 붙여준다.
+                        str = "-"+str.replace(/[-]/gi,'');
+                    }else{
+                        str = str.replace(/[-]/gi,'');
+                    }
+                 
+                }
+                                         
+                $(this).val(str);
+                 
+            }                   
+        }
+        /*]]>*/
+		var td = $(this).parent().parent();
+		var colamt = $('td', td).eq(2).text().replace(/,/g, '');
+		var adjust = $(this).val().replace(/,/g, '');
+		if(isNaN(colamt) == true) {
+			colamt = 0;
+		}
+		if(isNaN(adjust) == true || $(this).val() == "" ) {
+			adjust = 0;
+		}
+		$(this).val(numberComma($(this).val().replace(/,/g, '')));
+		$('td', td).eq(5).text(numberComma(parseInt(colamt) + parseInt(adjust)));
+		adjustTableSum();
+	});
+
+});
+
+function adjustTableSum() {
+	var coltotal = 0;
+	var taxtotal = 0 ;
+	$('#adjustmaintable tbody tr').each(function() {
+		debugger;
+		var colvalue = 0 ;
+		if($('td', this).eq(5).text() == "-" || $('td', this).eq(5).text() == ""){
+			colvalue = 0;
+		}else {
+			colvalue = parseInt($('td', this).eq(5).text().replace(/,/g, ''));
+		}
+		
+		
+		if(isNaN(colvalue) == true) {
+			colvalue = 0;
+		}
+
+		if(colvalue == ""){
+			colvalue = 0 ;
+		}
+		coltotal += colvalue;
+		/*<![CDATA[*/
+		if ($('td', this).eq(6).text() == 'Y')
+		{
+			
+		}else {
+			$('td', this).eq(4).children().attr("disabled" ,true);
+		}
+		if($('td', this).eq(3).text() == 'Y'){
+			taxtotal +=colvalue;
+		}
+		 /*]]>*/
+	});
+
+	$('#adjustcoltotalsum').text(numberComma(coltotal));
+	$('#adjusttax').text(numberComma(Math.round(taxtotal*0.1)));
+	//$('#adjusttotalsum').text(numberComma(coltotal + Math.round(taxtotal*0.1) ));
+	$('#adjusttotalsum').text(numberComma(coltotal));
+  }
+</script>
+<!-- modal list END -->

@@ -1,0 +1,1094 @@
+   <!--상품등록//-->
+        <div id="popup_create_product" class="trp popupfixed-wrap" th:fragment="createProductPop">       
+        <form id="createProductForm" name="createProductForm" onsubmit="return false;">         	
+        <div class="popup-dim"></div>
+        <div class="popup-align">
+	            <div class="popup-vertical">
+	                <div class="popup-layer option wl">
+	                    <a class="btn_close" href="#">X</a>
+	                    <div class="pop_tit">상품등록</div>
+	                    <!-- 알림 mode0 -->
+	                    <section class="section">
+	                        <div class="table-wrap">
+	                            <div class="con_title mt0">
+	                                <h3 class="h3">상품정보</h3>
+	                                <div class="ab-r">
+	                                    <p class="comparison_text"><em>*</em> 필수입력정보</p>
+	                                </div>
+	                            </div>
+	                            
+	                            <table class="form_table">
+	                                <colgroup>
+	                                    <col width="150px" />
+	                                    <col width="*" />
+	                                    <col width="150px" />
+	                                    <col width="*" />
+	                                </colgroup>
+	                                <tbody>
+	                                    <tr>
+	                                        <th>상품유형 <i>*</i></th>
+	                                        <td>
+	                                            <div class="select-box ">
+	                                                <select class="select2Basic_pop" id="productTypeNameCreate" name='productType' >
+														<option value="">선택</option>													
+														<option th:each="result : ${productTypeList}" th:value="${result.code}" th:text="${result.codeName}"/>
+													</select>
+	                                            </div>
+	                                        </td>
+	                                        <th>패키지유형 <i>*</i></th>
+	                                        <td>
+	                                            <div class="select-box ">
+	                                                <select class="select2Basic_pop" id="packagePriceReferenceYnCreate" name="packagePriceReferenceYn">
+														<option value="">선택</option>
+														<option value="Y">종량형</option>
+														<option value="N">정액형</option>
+													</select>
+	                                            </div>
+	                                        </td>
+	                                     </tr>
+	                                     <tr>
+	                                        <th>상품명 <i>*</i></th>
+	                                        <td colspan="3">
+	                                            <input type="text" class="" value="" placeholder="" id="productNameCreate" name="productName" maxlength="25"/>
+	                                            <input type="hidden" id="productIdCreate" name="productId"/>
+	                                            <input type="hidden" id="updateProductFlag" name="updateProductFlag"/>
+	                                            <input type="hidden" id="packageIdCreate" name="packageId"/>
+	                                        </td>
+	                                    </tr>
+	                                    <tr>
+	                                        <th>옵션여부 <i>*</i></th>
+	                                        <td>
+		                                        <span class="trp radio-box">
+													<input type="radio" id="optionYnCreate1" name="optionYn" value="Y" />
+													<i></i>
+													<label for="optionYnCreate1">예</label>
+												</span>
+		                                        <span class="trp radio-box">
+													<input id="optionYnCreate2" type="radio" name="optionYn"  value="N" checked="checked" />
+													<i></i>
+													<label for="optionYnCreate2">아니요</label>
+												</span>
+	                                        </td>
+	                                        <th>가격 <i>*</i></th>
+	                                        <td>
+	                                            <input type="text" class="tar" value="" placeholder="숫자만 입력" id="priceAmountCreateTemp"   maxlength="10"/>
+	                                        	<!-- <div class="input_txt">
+	                                        		<span>
+			                                            <input type="text" class="tar" value="" placeholder="숫자만 입력" id="priceAmountCreateTemp" name="priceAmountTemp" />
+	                                        		</span>
+		                                            <em class="won">원</em>
+	                                            </div> -->
+	                                            <input type="hidden" id="priceAmountCreate" name="priceAmount" />
+	                                        </td>
+	                                    </tr>
+	                                    <tr id="productStateDiv" >
+	                                        <th>판매중지여부 <i>*</i></th>
+	                                        <td>
+		                                        <span class="trp radio-box">
+													<input type="radio" id="saleStopYnCreate1" name="saleStopYn" value="Y"/>
+													<i></i>
+													<label for="saleStopYnCreate1">예</label>
+												</span>
+		                                        <span class="trp radio-box">
+													<input id="saleStopYnCreate2" type="radio" name="saleStopYn" value="N" checked="checked"/>
+													<i></i>
+													<label for="saleStopYnCreate2">아니요</label>
+												</span>	                                            
+	                                        </td>
+	                                        <th>노출여부 <i>*</i></th>
+	                                        <td>
+		                                        <span class="trp radio-box">
+													<input type="radio" id="exposureYnCreate1" name="exposureYn" value="Y" />
+													<i></i>
+													<label for="exposureYnCreate1">예</label>
+												</span>
+		                                        <span class="trp radio-box">
+													<input id="exposureYnCreate2" type="radio" name="exposureYn"  value="N" checked="checked" />
+													<i></i>
+													<label for="exposureYnCreate2">아니요</label>
+												</span>	                                            
+	                                        </td>
+	                                    </tr>	                                    
+	                                    <tr>
+	                                        <th>판매기간 <i>*</i></th>
+	                                        <td colspan="3">
+	                                            <span class="datepicker-box w_ms">
+													<input type="text" class="js-datepicker" id="subscribeStartDateTimeCreate" name="subscribeStartDateTime"/>
+												</span>
+	                                            <span class="ml5 mr5">~</span>
+	                                            <span class="datepicker-box w_ms">
+													<input type="text" class="js-datepicker"  id="subscribeEndDateTimeCreate" name="subscribeEndDateTime"/>
+												</span>
+	                                        </td>
+	                                    </tr>	                                    
+	                                    <tr>
+	                                        <th>상품설명</th>
+	                                        <td colspan="3">
+	                                            <!-- <input type="text" class="" value="" placeholder="" id="productDescriptionCreate" name="productDescription"/> -->
+	                                            <div class="textarea-box min">
+                                                	<textarea name="productDescription" id="productDescriptionCreate" cols="30" rows="30" style="height:70px" placeholder=""  maxlength="1000"></textarea>
+                                            	</div>
+	                                        </td>
+	                                    </tr>
+	                                </tbody>
+	                            </table>
+	                        </div>
+	
+	                        <div class="table-wrap mt40 " id="discountListDiv">
+	                            <div class="con_title ">
+	                                <h3 class="h3">할인정보</h3>	                                
+	                            </div>
+	                            <table class="table_list no_hover" >
+	                                <colgroup>
+	                                    <col style="width:auto"/>
+	                                    <col style="width:15%"/>
+	                                    <col style="width:20%"/>
+	                                    <col style="width:20%"/>
+	                                    <col style="width:15%"/>
+	                                </colgroup>
+	                                <thead>
+	                                    <tr>
+	                                        <th>할인명</th>
+	                                        <th>할인율/금액</th>
+	                                        <th>판매시작일</th>
+	                                        <th>판매종료일</th>
+	                                        <th>추가/삭제</th>
+	                                    </tr>
+	                                </thead>
+	                                <tbody id="productDiscountListBody">
+	                                </tbody>
+	                            </table>
+	                        </div>
+	                        
+	                        <div class="table-wrap mt40" id="pakageListDiv">
+	                            <div class="con_title ">
+	                                <h3 class="h3">패키지정보</h3>
+	                                <div class="ab-r">
+	                                    <p class="notice_icon mt10">최대 5개까지 구성 가능합니다.</p>
+	                                </div>
+	                            </div>
+	                            <table class="table_list no_hover">
+	                                <colgroup>
+	                                    <col style="width:auto"/>
+	                                    <col style="width:20%"/>
+	                                    <col style="width:20%"/>
+	                                    <col style="width:20%"/>
+	                                    <col style="width:15%"/>
+	                                </colgroup>
+	                                <thead>
+	                                    <tr>
+	                                        <th>패키지상품명</th>
+	                                        <th>상품가격</th>
+	                                        <th>시작일</th>
+	                                        <th>종료일</th>
+	                                        <th>추가/삭제</th>
+	                                    </tr>
+	                                </thead>
+	                                <tbody id="productPackageListBody">
+	                                </tbody>
+	                            </table>
+	                        </div>
+	
+	                        <div class="btn_set-center mt30">
+	                            <a class="btn btn_green btn_wm radius mr5" role="button" href="#none" id="saveProductBtn">등록</a>
+	                            <a class="btn btn_default btn_wm radius btn_cancel" href="#none" role="button" id="popSaveProductCancelBtn">취소</a>
+	                        </div>
+	
+	                    </section>
+	                </div>
+	            </div>
+        </div>
+		</form>
+	        
+	<script type="text/javascript">
+	/*<![CDATA[*/	
+		var packTrIndex = 0;		
+		var discountTrIndex = 0;
+		/***************************************************
+		상품등록 popup event
+		***************************************************/	
+		var normalProductList ;
+		var productDiscountList ;
+		var updateProductFlag = false;
+		var useContractCnt = 0;			//현재 상품 계약에서 사용 건수
+		var createProductBtnEvent = function (btnClass){				
+			var btnId;
+			var popId ='popup_create_product';	
+			if(isEmpty(btnClass)){
+				btnClass = '.createProductBtn'
+			}
+			$(btnClass).each(function(index, item){				
+				btnId = $(this).prop('id');				
+				var popup_warp = $("#"+btnId).trpLayerFixedPopup("#"+popId);	
+				$("#"+btnId).on("click", function($e) {				
+					//상품 아이디 유무에 따라 수정 또는 신규 등록 모드를 분기 한다.
+					if (!isEmpty($(this).attr('value'))){
+						updateProductFlag = true;
+						$('#productIdCreate').val($(this).attr('value'));
+						$('#saveProductBtn').text("수정");
+					}else {
+						updateProductFlag = false;
+						$('#productIdCreate').val('');
+						$('#saveProductBtn').text("등록");
+					}
+					
+					/*********************************************************************
+					//입력 폼 초기화
+					***********************************************************************/
+					$('#createProductForm')[0].reset();	
+					
+					/*********************************************************************
+					//패키지 row 초기화
+					***********************************************************************/
+					packTrIndex = 0;
+					$('#pakageListDiv').hide();		
+					
+					/*********************************************************************
+					//할인 row 초기화
+					***********************************************************************/
+					discountTrIndex = 0;
+					
+					/*********************************************************************					
+					//판매기간 설정
+					***********************************************************************/
+					$('#subscribeStartDateTimeCreate').val(getToday());
+					$('#subscribeEndDateTimeCreate').val('9999-12-31');
+					
+					/*********************************************************************
+					//패키지 유형 활성화								
+					***********************************************************************/
+					$('#packagePriceReferenceYnCreate').attr("disabled", false);
+			
+					/*********************************************************************
+					//변경된 패키지정보 비우기
+					***********************************************************************/
+					$('#productPackageListBody').empty();
+					/*********************************************************************
+					//할인 정보 비우기
+					***********************************************************************/
+					$('#productDiscountListBody').empty();
+					
+					/*********************************************************************
+					//화면 사용 상태로 설정
+					***********************************************************************/
+              		setFormDisabled(updateProductFlag);
+					
+					/*********************************************************************
+              		//상품 상태 코드			
+					***********************************************************************/
+        			 //makeSelectCode('productState', 'productStateCreate','Y');					
+              		//$('#productStateDiv').hide(); 
+              		
+              		/*********************************************************************					
+					//회원사의 패키지에 선택 가능한 일반 상품 목록을 조회 한다.
+					***********************************************************************/
+					var queryString ='packageYn=N&pagingYn=N&exposureYn=Y';
+					queryString = queryString.replace(/-/g, '');
+					
+					//패키지 상품에서 사용 가능한 일반 상품을 조회 한다.
+					$.ajax({
+						method : 'get',
+						url : '/product/selectProductDiscountList',
+						data : queryString, 
+						dataType : 'json',
+						error : function(xhr, status, error) {
+		              		//창닫기	
+							$('#popSaveProductCancelBtn').trigger('click');								
+						},
+						success : function(data){						
+	 						 var promise = Promise.resolve(true);              	 
+							promise = new Promise(function (resolve, reject) {            		
+								if(data != null){
+									normalProductList = data.productList;
+									productDiscountList = data.discountList;
+								}
+							 return resolve();
+							});
+							promise = promise.then(function(res) {								
+								//수정일 경우 화면을 setting 한다.	
+								if (updateProductFlag){									
+									searchProductDetail();
+								}else{									
+									//할인정보
+				              		makeDiscountList();
+									setSelect2BasicPopClass();
+								}
+							}); 
+						}
+					});
+					$e.preventDefault();
+					popup_warp.open(this);
+					
+				});
+				$("body").on("click", "#"+popId+" .btn_close, #"+popId+" .btn_cancel", function($e) {
+					$e.preventDefault();
+					popup_warp.close();
+				});
+			});
+		}
+		
+		/***************************************************
+		상품 등록 버튼 Event
+		***************************************************/	
+		createProductBtnEvent();
+		
+		/***************************************************
+		상품 상세 내역 조회 및 화면 수정 가능 상태 설정
+		***************************************************/	
+		var searchProductDetail = function(){
+			
+			var param = new Object();
+			param.productId = $('#productIdCreate').val(); 			
+			 				
+			$.ajax({
+				   method : 'post',
+				   url: '/product/selectProductDetail',
+	               data : param,
+	               dataType : 'json',
+	               error: function(xhr, status, error){			            	
+	            	   var result = JSON.parse(xhr.responseText);								
+				        showAlert(result.message);	
+	               },
+	               success : function(json){		       			
+	            	   var promise = Promise.resolve(true);              	 
+		              	 promise = new Promise(function (resolve, reject) {             		
+	              			//showAlert(json.resultMsg);
+		              		 return resolve();
+		              	 });
+		              	 promise = promise.then(function(res) {		              		
+		              		//상품정보 화면 설정
+		              		if(json.productDetail != null){
+		              			var item = json.productDetail;
+		              			$('#productTypeNameCreate').val(item.productType);
+		              			$('#productNameCreate').val(item.productName);
+		              			$('#packagePriceReferenceYnCreate').val(item.packagePriceReferenceYn);
+		              			$('#priceAmountCreateTemp').val(numberComma(item.priceAmount));
+		              			$('#subscribeStartDateTimeCreate').val(formatDate(item.subscribeStartDateTime));
+		              			$('#subscribeEndDateTimeCreate').val(formatDate(item.subscribeEndDateTime));
+		              			var tempText = item.productDescription;
+		              			tempText = tempText.replace(/(<br>|<br\/>|<br \/>)/g, '\r\n');
+		              			$('#productDescriptionCreate').val(tempText);
+		                  		$('#productStateCreate').val(item.productState);
+		                  		$('#packageIdCreate').val(item.packageId);
+		                  		/* $('#exposureYnCreate').val(item.exposureYn); 
+		                  		$('#saleStopYnCreate').val(item.saleStopYn); */ 
+		                  		$("#createProductForm").find("input:radio[name='saleStopYn']:radio[value='"+item.saleStopYn+"']").prop('checked', true); // 선택하기
+		                  		$("#createProductForm").find("input:radio[name='exposureYn']:radio[value='"+item.exposureYn+"']").prop('checked', true); // 선택하기
+		                  		$("#createProductForm").find("input:radio[name='optionYn']:radio[value='"+item.optionYn+"']").prop('checked', true); // 선택하기
+		                  		//$('#productStateDiv').show();
+
+		              			if(item.packageYn == "Y"){
+		              				$('#pakageListDiv').show();
+		              			}
+			              		//패키지정보 설정
+			              		if(json.packageList != null){
+			              			$.each(json.packageList, function(i, item) {		              				
+				              			makeNormalProductList(item);
+			              			});
+			              		}
+			              		
+			              		
+			              		//할인 설정
+			              		if(json.productDiscountList != null && json.productDiscountList.length > 0){
+			              			$.each(json.productDiscountList, function(i, item) {		              				
+			              				makeDiscountList(item);
+			              			});
+			              		}else{
+			              			makeDiscountList();
+			              		}
+
+			              		setSelect2BasicPopClass();
+			              		
+			              		//화면 불가 상태로 설정
+			              		useContractCnt = item.useContractCnt;			              		
+			              		setFormDisabled(true);
+			              		/* if(item.useContractCnt > 0){
+			              			//계약에서 사용중일 경우
+			              		}else {
+			              			//상품을 계약에서 사용하지 않을 경우
+			              			$('#createProductForm').find('button').attr( 'disabled', true);
+			              		} */
+			              		
+		              		}
+		              	 });       			              	 
+	               }
+			});
+		}
+		
+		/***************************************************
+		화면 disabled 상태 변경
+		***************************************************/
+		var setFormDisabled = function(updateFlag){
+           			
+      		if(updateFlag){
+	      		if(useContractCnt == 0){
+           			//상품을 계약에서 사용하지 않을 경우
+           			$('#createProductForm').find('select').attr( 'disabled', false);
+		      		$('#createProductForm').find('input').attr( 'disabled', false);
+		      		$('#createProductForm').find('button').attr( 'disabled', false);
+		      		
+           			$('#productTypeNameCreate').attr( 'disabled', true);
+           			$('#packagePriceReferenceYnCreate').attr( 'disabled', true);
+           			$('.compPriceAmount').attr( 'disabled', true);
+           			//패키지정보
+	      		}else {
+           			//상품을 계약에서 사용 할 경우
+					$('#createProductForm').find('select').attr( 'disabled', true);
+		      		$('#createProductForm').find('input').attr( 'disabled', true);
+		      		$('#createProductForm').find('button').attr( 'disabled', true);
+           			$('.compPriceAmount').attr( 'disabled', true);
+           			//이미 계약에서 사용 중인 건으로 시작 일자 변경 불가
+          			$('#subscribeStartDateTimeCreate').attr( 'disabled', true); 
+		      		           			
+           			$('#productStateCreate').attr( 'disabled', false);           			 
+           			$('#subscribeEndDateTimeCreate').attr( 'disabled', false);          			 
+           			//$('#productDescriptionCreate').attr( 'disabled', !flag);           			
+	      		}
+	      			      		
+	      		//할인 내역 상태 설정
+    			var trIndex = 0;
+	      		$("#productDiscountListBody").find("tr").each(function(i, e){
+	    			trIndex = $(this).attr('trIndex');
+	    			var discountStartDate = $('#discountApplyStartDate'+trIndex).val().replace(/-/g, '');;
+					var discountEndDate =  $('#discountApplyEndDate'+trIndex).val().replace(/-/g, '');;
+					
+					$('#discountValue'+trIndex).attr('disabled',true);	    			
+	    			
+	    			if(discountStartDate<=getTodayType('')){					
+						$('#discountId'+trIndex).attr("disabled", true);
+						$('#discountApplyStartDate'+trIndex).attr("disabled", true);
+						$('#delDiscountBtn'+trIndex).attr("disabled", true);
+					}else {						
+						$('#discountId'+trIndex).attr("disabled", false);
+						$('#discountApplyStartDate'+trIndex).attr("disabled", false);
+						$('#delDiscountBtn'+trIndex).attr("disabled", false);
+					}
+					//할인 적용 종료일이 경과한 경우 종료 일자를 수정 할 수 없도록 한다.
+					if(discountEndDate<=getTodayType('')){
+						$('#discountApplyEndDate'+trIndex).attr("disabled", true);					
+					}else {
+						$('#discountApplyEndDate'+trIndex).attr("disabled", false);
+					}	    			
+	    		});
+	      		
+	      		if(trIndex == 0 && isEmpty($('#discountId0').val())){
+		      		//할인 정보 활성화
+					$('#discountId0').attr("disabled", false);
+					$('#discountApplyStartDate0').attr("disabled", false);
+					$('#discountApplyEndDate0').attr("disabled", false);
+					$('#delDiscountBtn0').attr("disabled", false);
+	      		}
+	      		
+      		}else {
+				$('#createProductForm').find('select').attr( 'disabled', false);
+	      		$('#createProductForm').find('input').attr( 'disabled', false);
+	      		$('#createProductForm').find('button').attr( 'disabled', false);    
+	      		
+	      		//할인 정보 활성화
+				$('#discountId0').attr("disabled", false);
+				$('#discountApplyStartDate0').attr("disabled", false);
+				$('#delDiscountBtn0').attr("disabled", false);
+      		}
+      		//판매중지여부, 노출여부 어떤 상태든 수정 가능
+      		$("#createProductForm").find("input:radio[name='saleStopYn']").attr( 'disabled', false);
+      		$("#createProductForm").find("input:radio[name='exposureYn']").attr( 'disabled', false);
+      		
+		}
+		
+		/***************************************************
+		할인 정보 설정
+		***************************************************/
+		var makeDiscountList = function(data){			
+			var discountTrHTML = "";			
+			var discountLength = $('.prodDiscountTr').length;			
+			
+			//할인 항목 생성
+			discountTrHTML += '<tr class="prodDiscountTr" id="prodDiscountTr'+discountTrIndex+'" trIndex ="'+discountTrIndex+'">';
+			discountTrHTML += '	<td>';
+			discountTrHTML += '		<div class="select-box ">';
+			discountTrHTML += '			<select class="select2Basic_pop" id="discountId'+discountTrIndex+'" onChange="setDiscount(this.id,'+discountTrIndex+')" name="productDiscountList['+discountTrIndex+'].discountId">';
+			discountTrHTML += '				<option value="">선택</option>';
+			$.each(productDiscountList, function(i, item) {
+				discountTrHTML += '				<option value="'+item.discountId+'" discountType = "'+item.discountType+'" discountValue="'+item.discountValue+'" applyStartDate="'+item.subscribeStartDateTime+'" applyEndDate="'+item.subscribeEndDateTime+'">'+item.discountName+'</option>';				
+			});
+			discountTrHTML += '			</select>';
+			discountTrHTML += '		</div>';
+			discountTrHTML += '	</td>';
+			discountTrHTML += '	<td><input type="text" class="tar discountValue" value="" placeholder="자동입력" disabled="" id="discountValue'+discountTrIndex+'"/></td>';
+			discountTrHTML += '	<td>';
+			discountTrHTML += '		<span class="datepicker-box ">';
+			discountTrHTML += '			<input type="text" class="js-datepicker discountApplyStartDate" id="discountApplyStartDate'+discountTrIndex+'" name="productDiscountList['+discountTrIndex+'].subscribeStartDateTime"/>';
+			discountTrHTML += '			<input type="hidden" id="productDiscountId'+discountTrIndex+'"name="productDiscountList['+discountTrIndex+'].productDiscountId" value="0"/>';
+			discountTrHTML += '			<input type="hidden" id="productDiscountModiFlag'+discountTrIndex+'"name="productDiscountList['+discountTrIndex+'].productDiscountModiFlag" value="C"/>';
+			discountTrHTML += '		</span>';
+			discountTrHTML += '	</td>';
+			discountTrHTML += '	<td>';
+			discountTrHTML += '		<span class="datepicker-box">';
+			discountTrHTML += '			<input type="text" class="js-datepicker discountApplyEndDate" id="discountApplyEndDate'+discountTrIndex+'" name="productDiscountList['+discountTrIndex+'].subscribeEndDateTime"/>';
+			discountTrHTML += '		</span>';
+			discountTrHTML += '	</td>';
+			discountTrHTML += '	<td>';
+			discountTrHTML += '		<button class="btn btn_default icon" type="button" id="addDiscountBtn" onClick="makeDiscountList()"><i class="icon_plus">+</i></button>';
+			discountTrHTML += '		<button class="btn btn_default icon" type="button" id="delDiscountBtn'+discountTrIndex+'" onClick="delDiscount('+discountTrIndex+')"><i class="icon_del">-</i></button>';
+			discountTrHTML += '	</td>';
+			discountTrHTML += '</tr>';			
+			$('#productDiscountListBody').append(discountTrHTML);
+			
+			//Date Picker활성화
+		    $(".js-datepicker").datepicker({ 
+		        dateFormat: "yy-mm-dd", 
+		        dayNames: ["S","M","T","W","T","F","S"]
+		    });
+			
+			$(".discountApplyStartDate, .discountApplyEndDate").on("change keyup paste", function(){				
+				var trIdx = $(this).parents("tr").attr("trIndex");
+				setDiscountModiFlag(trIdx);
+			})
+		         
+						
+			//기본 설정 값이 있을 경우 값을 설정 한다.
+			if(data != null){				
+				
+				var discountStartDate = data.subscribeStartDateTime;
+				var discountEndDate = data.subscribeEndDateTime;
+				
+				$('#discountId'+discountTrIndex).val(data.discountId);
+				if (data.discountType == "RATE"){					
+					$('#discountValue'+discountTrIndex).val(numberComma(data.discountValue)+"%");
+				}else {
+					$('#discountValue'+discountTrIndex).val(numberComma(data.discountValue)+"원");					
+				}
+				$('#discountApplyStartDate'+discountTrIndex).val(formatDate(discountStartDate));
+				$('#discountApplyEndDate'+discountTrIndex).val(formatDate(discountEndDate));				
+				$('#productDiscountId'+discountTrIndex).val(data.productDiscountId);				
+				$('#productDiscountModiFlag'+discountTrIndex).val('S');		
+				
+			}
+			
+			// 팝업 선택박스 index 높이기
+			$("#discountId"+discountTrIndex).select2({   
+		        dropdownCssClass : 'increasedzindexclass_pop',
+		        minimumResultsForSearch: Infinity,
+		        width:"100%"
+	    	}); 	
+			discountTrIndex++;
+		} 
+		
+		/***************************************************
+		할인 수정 상태 변경
+		***************************************************/
+		var setDiscountModiFlag = function(idx){
+			if(!isEmpty($('#productDiscountId'+idx).val()) && $('#productDiscountId'+idx).val() != 0){
+				$('#productDiscountModiFlag'+idx).val('U');						
+			}
+		}
+		
+		
+		/***************************************************
+		패키지 정보 기본 설정
+		***************************************************/
+		var makeNormalProductList = function(data){			
+			var packagTrHTML = "";			
+			var packLength = $('.packTr').length;	
+						
+			//최대 5개 구성 가능
+			if(packLength > 4){
+				showAlert("최대 5개까지 구성 가능합니다.");
+				return false;
+			}
+			
+			//패키지 항목 생성
+			packagTrHTML += '<tr class="packTr" id="packTr'+packTrIndex+'" trIndex ="'+packTrIndex+'">';
+			packagTrHTML += '	<td>';
+			packagTrHTML += '		<div class="select-box ">';
+			packagTrHTML += '			<select class="select2Basic_pop" id="packProductId'+packTrIndex+'" onChange="setPrice(this.id,'+packTrIndex+')" name="productPackageList['+packTrIndex+'].compositionProductId">';
+			packagTrHTML += '				<option value="">선택</option>';
+			$.each(normalProductList, function(i, item) {
+				packagTrHTML += '				<option value="'+item.productId+'" price = "'+item.priceAmount+'" applyStartDate="'+item.subscribeStartDateTime+'" applyEndDate="'+item.subscribeEndDateTime+'">'+item.productName+'</option>';				
+			});
+			packagTrHTML += '			</select>';
+			packagTrHTML += '		</div>';
+			packagTrHTML += '	</td>';
+			packagTrHTML += '	<td><input type="text" class="tar compPriceAmount" value="" placeholder="자동입력" disabled="" id="compPriceAmount'+packTrIndex+'"/></td>';
+			packagTrHTML += '	<td>';
+			packagTrHTML += '		<span class="datepicker-box ">';
+			packagTrHTML += '			<input type="text" class="js-datepicker applyStartDate" id="applyStartDate'+packTrIndex+'" name="productPackageList['+packTrIndex+'].effectStartDateTime"/>';
+			packagTrHTML += '			<input type="hidden" id="packageId'+packTrIndex+'"name="productPackageList['+packTrIndex+'].packageId"/>';
+			packagTrHTML += '			<input type="hidden" id="packageModiFlag'+packTrIndex+'"name="productPackageList['+packTrIndex+'].packageModiFlag" value="C"/>';
+			packagTrHTML += '		</span>';
+			packagTrHTML += '	</td>';
+			packagTrHTML += '	<td>';
+			packagTrHTML += '		<span class="datepicker-box">';
+			packagTrHTML += '			<input type="text" class="js-datepicker applyEndDate" id="applyEndDate'+packTrIndex+'" name="productPackageList['+packTrIndex+'].effectEndDateTime"/>';
+			packagTrHTML += '		</span>';
+			packagTrHTML += '	</td>';
+			packagTrHTML += '	<td>';
+			packagTrHTML += '		<button class="btn btn_default icon" type="button" id="addPackBtn" onClick="makeNormalProductList()"><i class="icon_plus">+</i></button>';
+			packagTrHTML += '		<button class="btn btn_default icon" type="button" id="delPackBtn" onClick="delPackage('+packTrIndex+')"><i class="icon_del">-</i></button>';
+			packagTrHTML += '	</td>';
+			packagTrHTML += '</tr>';			
+			$('#productPackageListBody').append(packagTrHTML);
+			
+			//Date Picker활성화
+		    $(".js-datepicker").datepicker({ 
+		        dateFormat: "yy-mm-dd", 
+		        dayNames: ["S","M","T","W","T","F","S"]
+		    });
+			
+			$(".applyStartDate, .applyEndDate").on("change keyup paste", function(){				
+				var trIdx = $(this).parents("tr").attr("trIndex");
+				//패키지 수정상태 변경
+				setPackageModiFlag(trIdx);
+				
+			})
+		         						
+			//기본 설정 값이 있을 경우 값을 설정 한다.
+			if(data != null){				
+				$('#packProductId'+packTrIndex).val(data.compositionProductId);
+				$('#compPriceAmount'+packTrIndex).val(numberComma(data.compPriceAmount)+"원");
+				$('#applyStartDate'+packTrIndex).val(formatDate(data.effectStartDateTime));
+				$('#applyEndDate'+packTrIndex).val(formatDate(data.effectEndDateTime));				
+				$('#packageId'+packTrIndex).val(data.packageId);				
+				$('#packageModiFlag'+packTrIndex).val('S');				
+				
+			}
+			
+			// 팝업 선택박스 index 높이기
+			$("#packProductId"+packTrIndex).select2({   
+		        dropdownCssClass : 'increasedzindexclass_pop',
+		        minimumResultsForSearch: Infinity,
+		        width:"100%"
+	    	}); 	
+			packTrIndex++;
+		} 
+		
+		/***************************************************
+		//패키지 수정상태 변경
+		***************************************************/
+		var setPackageModiFlag = function(idx){
+			if(!isEmpty($('#packageId'+idx).val())){
+				$('#packageModiFlag'+idx).val('U');						
+			}
+		}
+		
+		/***************************************************
+		패키지정보 항목 confirm
+		***************************************************/
+		var deletePackRow = 0;
+		var delPackage = function(index){			
+			//회원 정보 저장 호출
+			deletePackRow = index;
+			showConfirm('삭제 하시겠습니까?', delPackageProc);			
+		}
+		
+		/***************************************************
+		패키지정보 항목 삭제
+		***************************************************/
+		var delPackageProc = function (){	
+			var param = new Object();
+			param.packageId = $('#packageId'+deletePackRow).val();
+			param.mainProductId = $('#productIdCreate').val();
+			param.compositionProductId = $('#packProductId'+deletePackRow).val();
+						
+			//저장 전의 Data는 row만 삭제
+			if(isEmpty(param.packageId)){
+				$('#packTr'+deletePackRow).remove();
+    			var packLength = $('.packTr').length;	
+    			if (packLength == 0){
+    				makeNormalProductList();
+    			}	
+			}else {				
+				$.ajax({
+					   method : 'post',
+					   url: '/product/deletePackage',
+		               data : param,
+		               dataType : 'json',
+		               error: function(xhr, status, error){			            	
+		            	   var result = JSON.parse(xhr.responseText);								
+					        showAlert(result.message);	
+					        setFormDisabled(updateProductFlag);
+		               },
+		               success : function(json){		       			
+		            	   var promise = Promise.resolve(true);              	 
+			              	 promise = new Promise(function (resolve, reject) {             		
+		              			showAlert(json.resultMsg);
+		              			setFormDisabled(updateProductFlag);
+			              		 return resolve();
+			              	 });
+			              	 promise = promise.then(function(res) {
+			              		if (json.resultCnt > 0){				              			
+			            			$('#packTr'+deletePackRow).remove();
+			            			var packLength = $('.packTr').length;	
+			            			if (packLength == 0){
+			            				makeNormalProductList();
+			            			}	
+			              		}
+			              	 });       			              	 
+		               }
+				});
+			}
+		}
+		
+		/***************************************************
+		할인정보 항목 confirm
+		***************************************************/
+		var deleteDiscountRow = 0;
+		var delDiscount = function(index){			
+			//회원 정보 저장 호출
+			deleteDiscountRow = index;
+			showConfirm('삭제 하시겠습니까?', delDsicountProc);			
+		}
+		
+		/***************************************************
+		패키지정보 항목 삭제
+		***************************************************/
+		var delDsicountProc = function (){
+			
+			var param = new Object();
+			param.productDiscountId = $('#productDiscountId'+deleteDiscountRow).val();
+			param.productId = $('#productIdCreate').val();
+			param.discountId = $('#discountId'+deleteDiscountRow).val();
+									
+			//저장 전의 Data는 row만 삭제
+			if(isEmpty(param.productDiscountId)){
+				$('#prodDiscountTr'+deleteDiscountRow).remove();
+				var packLength = $('.prodDiscountTr').length;	
+				if (packLength == 0){
+					makeDiscountList();
+				}			
+			}else {				
+				$.ajax({
+					   method : 'post',
+					   url: '/product/deleteDiscount',
+		               data : param,
+		               dataType : 'json',
+		               error: function(xhr, status, error){			            	
+		            	   var result = JSON.parse(xhr.responseText);								
+					        showAlert(result.message);	
+					        setFormDisabled(updateProductFlag);
+		               },
+		               success : function(json){		       			
+		            	   var promise = Promise.resolve(true);              	 
+			              	 promise = new Promise(function (resolve, reject) {             		
+		              			showAlert(json.resultMsg);
+		              			setFormDisabled(updateProductFlag);
+			              		 return resolve();
+			              	 });
+			              	 promise = promise.then(function(res) {
+			              		if (json.resultCnt > 0){				              			
+			              			$('#prodDiscountTr'+deleteDiscountRow).remove();
+			            			var packLength = $('.prodDiscountTr').length;	
+			            			if (packLength == 0){
+			            				makeDiscountList();
+			            			}			
+			              		}
+			              	 });       			              	 
+		               }
+				});
+			}
+			
+					
+		}
+
+		/***************************************************
+		패키지 상품 변경시 패키지 상품 가격 설정
+		***************************************************/	
+		var setPrice = function(selObjectId, index){
+			var tempPrice = $("#"+selObjectId+" option:selected").attr('price');
+			var startDate = $("#"+selObjectId+" option:selected").attr('applyStartDate');
+			var endDate = $("#"+selObjectId+" option:selected").attr('applyEndDate');
+						
+			var overLayFlag = false;
+ 			$("#productPackageListBody").find("tr").each(function(i, e){
+    			var selectObj = $(this).find("select");	    	
+    			if(selObjectId != selectObj.prop('id') && $("#"+selObjectId).val() == selectObj.val()){
+    				overLayFlag = true;
+    			}
+    		});
+ 			
+ 			//중복된 상품 선택 체크
+ 			if(overLayFlag){
+ 				$("#"+selObjectId).val("");
+ 				setSelect2BasicPopClass();
+ 				showAlert("이미 선택한 상품 입니다.",$("#"+selObjectId));
+ 				return false;
+ 			}
+ 			
+			if(isEmpty(tempPrice)){
+				$('#compPriceAmount'+index).val("");
+				$('#applyStartDate'+index).val("");
+				$('#applyEndDate'+index).val("");
+				
+			}else {				
+				$('#compPriceAmount'+index).val(numberComma(tempPrice)+"원");
+				$('#applyStartDate'+index).val(formatDate(startDate));
+				$('#applyEndDate'+index).val(formatDate(endDate));
+			}
+			
+			//패키지 수정상태 변경
+			setPackageModiFlag(index);
+		}
+		
+		/***************************************************
+		할인 변경시 할인 정보 설정
+		***************************************************/	
+		var setDiscount = function(selObjectId, index){
+			var discountType = $("#"+selObjectId+" option:selected").attr('discountType');
+			var discountValue = $("#"+selObjectId+" option:selected").attr('discountValue');
+			var startDate = $("#"+selObjectId+" option:selected").attr('applyStartDate');
+			var endDate = $("#"+selObjectId+" option:selected").attr('applyEndDate');
+	
+			var overLayIdFlag = false;
+			var overLayTermFlag = 
+ 			$("#productDiscountListBody").find("tr").each(function(i, e){
+    			var selectObj = $(this).find("select");	    	
+				
+				//할인 중복 선택
+    			if(selObjectId != selectObj.prop('id') && $("#"+selObjectId).val() == selectObj.val()){
+    				overLayIdFlag = true;
+    			}
+    			
+    		});
+ 			
+ 			//중복된 상품 선택 체크
+ 			if(overLayIdFlag){
+ 				$("#"+selObjectId).val("");
+ 				setSelect2BasicPopClass();
+ 				showAlert("이미 선택한 할인 입니다.",$("#"+selObjectId));
+ 				return false;
+ 			}
+ 			
+			if(isEmpty(discountValue)){
+				$('#discountValue'+index).val("");
+				$('#discountApplyStartDate'+index).val("");
+				$('#discountApplyEndDate'+index).val("");
+				
+			}else {				
+				if (discountType == "RATE"){
+					$('#discountValue'+index).val(numberComma(discountValue)+"%");				
+				}else {
+					$('#discountValue'+index).val(numberComma(discountValue)+"원");
+				}
+				//할인은 오늘 이후를 시작일로 설정 한다.
+				$('#discountApplyStartDate'+index).val(getToday());
+				$('#discountApplyEndDate'+index).val(formatDate(endDate));				
+			}
+			
+			setDiscountModiFlag(index);
+		}
+		
+		/***************************************************
+		상품유형 변경 Event
+		***************************************************/	
+		$('#productTypeNameCreate').change(function(){			
+			if($(this).val() == 'PACKAGE'){
+				//패키지 유형 활성화								
+				$('#packagePriceReferenceYnCreate').attr("disabled", false);				
+				$('#pakageListDiv').show();				
+				makeNormalProductList();
+			}else{
+				//선택으로 변경
+				$('#packagePriceReferenceYnCreate  option:eq(0)').attr("selected", "selected");				
+				
+				//패키지 유형 비활성화
+				$('#packagePriceReferenceYnCreate').attr("disabled", true);				
+				$('#pakageListDiv').hide();				
+				//변경된 패키지정보 수정
+				$('#productPackageListBody').empty();
+				packTrIndex = 0;
+			}
+		});
+		
+		/***************************************************
+		상품금액 입력
+		***************************************************/	
+		$('#priceAmountCreateTemp').keyup(function (){
+			var tempVal = $(this).val();
+			if(isEmpty(tempVal)){
+				tempVal = 0;
+			}
+			tempVal = numberComma(getNumber(tempVal));
+			
+			$(this).val(tempVal);
+		});
+		
+		/***************************************************
+		상품 저장
+		***************************************************/		
+		$('#saveProductBtn').click(function (){
+			
+			//validation check
+			if(isEmpty($('#productTypeNameCreate').val())){
+				showAlert("상품 유형을 선택하세요.",$('#productTypeNameCreate'));
+				return false;
+			}
+			
+			if(isEmpty($('#productNameCreate').val())){
+				showAlert("상품명을 입력 하십시오.",$('#productNameCreate'));
+				return false;
+			}
+			
+			if("PACKAGE" == $('#productTypeNameCreate').val() && isEmpty($('#packagePriceReferenceYnCreate').val())){
+				showAlert("상품유형을 선택하세요.",$('#packagePriceReferenceYnCreate'));
+				return false;
+			}
+			
+			if(isEmpty($('#priceAmountCreateTemp').val())){
+				showAlert("상품 가격을 입력 하십시오.",$('#priceAmountCreateTemp'));
+				return false;
+			}
+			$('#priceAmountCreate').val(getNumber($('#priceAmountCreateTemp').val()));
+			
+			//수정일 경우 상품 상태 필수 선택 체크
+			/* if(updateProductFlag && isEmpty($('#productStateCreate').val())){
+				showAlert("상품 상태를 선택하세요.",$('#productState'));
+				return false;
+			} */
+			
+			//판매기간 체크
+			if(!checkDateTerm($('#subscribeStartDateTimeCreate').val(), $('#subscribeEndDateTimeCreate').val())){			    	
+				$('#subscribeEndDateTimeCreate').val(getToday());
+				return false;
+		    }
+						
+	    	if (isHtmlTag($('#productDescriptionCreate').val())){
+				showAlert("입력 불가한 내용을 삭제 했습니다.\n내용을 확인 하세요.",$('#productDescriptionCreate'));
+				$('#productDescriptionCreate').val(removeHtmlTag($('#productDescriptionCreate').val()));
+				return false;
+			}
+	    	
+	    	//할인  정보가 모두 입력 되 있는지 확인 한다
+	    	var discountFlag = false;
+	    	var discountTermFlag = false;
+	    	var discountTermDupFlag = false;
+	    	$("#productDiscountListBody").find("tr").each(function(i, e){
+    			var selectObj = $(this).find("select");
+    			var selectObjId = $(this).find("select").prop("id");
+    			var trIndex = $(this).attr('trIndex');
+    			var outApplyStartDate = $('#discountApplyStartDate'+trIndex).val();
+    			var outApplyEndDate = $('#discountApplyEndDate'+trIndex).val();
+    			
+    			if (!isEmpty(selectObj.val())){    				
+	    			//선택 여부 체크
+	    			if(isEmpty(outApplyStartDate || outApplyEndDate)){
+	    				discountFlag = true;	    				
+	    			}
+	    			
+	    			//기간 입력 체크
+	    			if(!checkDateTerm(outApplyStartDate, outApplyEndDate)){
+	    				discountTermFlag =  true;
+	    		    }
+	    			
+	    			//기간 중복 체크
+	    			$("#productDiscountListBody").find("tr").each(function(j, e){
+	    				var inSelectObj = $(this).find("select");
+		    			var inSelectObjId = $(this).find("select").prop("id");
+	        			var InTrIndex = $(this).attr('trIndex');
+	        			outApplyStartDate = outApplyStartDate.replace(/-/g, '');
+	        			outApplyEndDate = outApplyEndDate.replace(/-/g, '');
+	        			var inApplyStartDate = $('#discountApplyStartDate'+InTrIndex).val().replace(/-/g, '');
+	        			var inApplyEndDate = $('#discountApplyEndDate'+InTrIndex).val().replace(/-/g, '');
+	
+	    				if(j > i){    						    	
+		        			var condition1 = outApplyStartDate <= inApplyStartDate &&  inApplyStartDate <= outApplyEndDate; 
+		        			var condition2 = outApplyStartDate <= inApplyEndDate &&  inApplyEndDate <= outApplyEndDate;
+		        			var condition3 = inApplyStartDate <= outApplyStartDate &&  outApplyStartDate <= inApplyEndDate; 
+		        			var condition4 = inApplyStartDate <= outApplyEndDate &&  outApplyEndDate <= inApplyEndDate;
+		        			
+		        			//할인 기간 중복 체크
+	    	    			if(condition1 || condition2 || condition3 || condition4){
+	    	    				discountTermDupFlag = true;
+	    	    			}
+	    				}
+		    		});
+    			}    			
+    		});
+	    	
+	    	
+	    	if(discountFlag){
+	    		showAlert("할인 정보를 선택하세요.",$('#discountId0'));
+				return false;
+	    	}
+	    	
+	    	if(discountTermFlag){
+	    		showAlert("할인 적용 일자를 확인 하세요.",$('#discountId0'));
+				return false;
+	    	}
+	    	
+	    	if(discountTermDupFlag){
+	    		showAlert("할인 기간이 중복 됩니다.",$('#discountId0'));
+				return false;
+	    	}	    	 	
+	    	
+	    	//패키지일 경우 하단 패키지 정보가 모두 입력 되 있는지 확인 한다.
+	    	var packProductFlag = false;
+	    	var packTermFlag = false;
+	    	
+	    	//TODO  중복된 패캐지 구성 요소가 있을 경우 제거 해야 한다.
+	    	if("PACKAGE" == $('#productTypeNameCreate').val()){	    		
+	    		$("#productPackageListBody").find("tr").each(function(i, e){
+	    			var selectObj = $(this).find("select");
+	    			var trIndex = $(this).attr('trIndex');
+	    			if(isEmpty(selectObj.val())){
+	    				packProductFlag = true;	    				
+	    			}
+	    			
+	    			if(!checkDateTerm($('#applyStartDate'+trIndex).val(), $('#applyEndDate'+trIndex).val())){
+	    				packTermFlag =  true;
+	    		    }
+	    				
+	    		});	    		  
+	    	}	    	
+	    	
+	    	if(packTermFlag){
+	    		showAlert("패키지 상품을 판매 일자를 확인 하세요.",$('#packProductId0'));
+				return false;
+	    	}
+	    	
+	    	if(packProductFlag){
+	    		showAlert("패키지 상품을 선택하세요.",$('#packProductId0'));
+				return false;
+	    	}	    	
+			$('#updateProductFlag').val(updateProductFlag);
+	    		
+			
+			//화면의 모든 상태를 변경 한다
+			setFormDisabled(false);
+			
+			//상품저장 			  			 
+ 			var queryString = $("form[name=createProductForm]").serialize();			
+ 			queryString = queryString.replace(/-/g, '');
+ 			
+			$.ajax({
+				   method : 'post',
+				   url: '/product/saveProduct',
+	               data : queryString,
+	               dataType : 'json',
+	               error: function(xhr, status, error){			            	
+	            	   var result = JSON.parse(xhr.responseText);								
+				        showAlert(result.message);	
+				        setFormDisabled(updateProductFlag);
+	               },
+	               success : function(json){		       			
+	            	   var promise = Promise.resolve(true);              	 
+		              	 promise = new Promise(function (resolve, reject) {             		
+	              			showAlert(json.resultMsg);
+	              			setFormDisabled(updateProductFlag);
+		              		 return resolve();
+		              	 });
+		              	 promise = promise.then(function(res) {
+		              		if (json.resultCnt > 0){				              			
+								//성공일 경우 창 닫기
+		              			$('#popSaveProductCancelBtn').trigger('click');	
+		              		}
+		              		//조회
+		              		getPagingData(currPage);
+		              	 });       			              	 
+	               }
+			});
+			
+		});
+		/*]]>*/
+	</script>
+		
+    </div>

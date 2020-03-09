@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout" layout:decorator="layout/default">
+<!-- index.html 고유 CSS 추가 -->
+<th:block layout:fragment="css">
+</th:block>
+<!-- index.html 고유 스크립트 추가 -->
+<th:block layout:fragment="script">
+<script type="text/javascript">
+/*<![CDATA[*/
+var today = getToday();
+
+function getData(page) {
+	
+	if ($('#startDate').val() == ''){
+		showAlert('등록시작일자를 입력하십시오.');
+		$('#startDate').focus();
+		return;
+	}
+	if ($('#endDate').val() == ''){
+		showAlert('등록종료일자를 입력하십시오.');
+		$('#endDate').focus();
+		return;
+	}
+	if($('#startDate').val().replace(/-/g, '') > $('#endDate').val().replace(/-/g, '')){
+    	showAlert('조회시작일자가 종료일자보다 큽니다.');
+    	return;
+    }
+	
+	if ($('#strConNumber').val() == ''){
+		$('#conNumber').val(0);
+	} else {
+		$('#conNumber').val($('#strConNumber').val());
+	}
+	
+	var queryString = $("form[name=searchForm]").serialize();
+	queryString = queryString + '&page='+page+'&perPageNum=10&pagingYn=Y';
+	queryString = queryString.replace(/-/g, '');
+	
+	$.ajax({
+		method : 'get',
+		url : '/counselling/getcounsellinglist',
+		data : queryString, 
+		dataType : 'json',
+		success : handleData
+	});
+}
+
+function handleData(data) {
+	debugger;
+	
+	json = data.lists;
+	pageMaker = data.pageMaker; 
+
+	$('#totalCount').html(pageMaker.totalCount);
+	$('#counsellingTbody').empty();
+	var trHTML = '';
+
+	if (json.length == 0) {
+		trHTML = '<tr class="no_empty"><td colspan=11><div class="data-empty"><img src="/resources/images/common/img_no_empty.png" alt="데이터 없음" /><span class="txt_empty">검색 결과가 없습니다.</span></div></td></tr>';
+	} else {
+		$.each(json, function(i, item) {
+			trHTML += '<tr>'
+			       +  '<td><span class="trp checkbox-box"><input id="checkbox_all'+(i+1)+'" class="js_item" type="checkbox" name="check" value="'+item.customerNumber+'|'+item.counsellingDate+'|'+item.counsellingTime + '"><i></i><label for="checkbox_all"'+(i+1)+'"></label></span></td>'
+			       +  '<td>' + ((pageMaker.cri.page-1)*10+i+1) + '</td>'
+			       +  '<td>' + item.customerName + '</td>'
+			       +  '<td class="phone">' + item.phoneNumber + '</td>'
+			       +  '<td>' + item.categoryName + '</td>'
+			       +  '<td>' + (item.conNumber==0?'':item.conNumber) + '</td>'
+			       +  '<td class="tal ellipsis">' + item.title + '</td>'
+			       +  '<td>' + (item.state=='PROGRESS'?'<span class="fail">':'') + item.stateName + (item.state=='PROGRESS'?'</span>':'') + '</td>'
+			       +  '<td>' + formatDate(item.counsellingDate) + ' ' + formatTime(item.counsellingTime.substring(0,4)) + '</td>'
+				   +  '<td>' + (item.state=='DONE'?formatDateTime(item.auditDateTime):'') + '</td>'
+			       +  '<td>' + item.employeeName + '</td>'
+			       +  '</tr>';
+		});
+	}
+
+	$('#counsellingTbody').append(trHTML);
+	formatPhone();
+	pagingProc(pageMaker);
+}
+
+function getPagingData(page){
+	getData(page);
+}
+
+$(document).ready(function(){
+    $('#startDate').val(today);
+	$('#endDate').val(today);
+
+	//조회기간 라디어 클릭
+	$('input[name=searchDate]').click(function(){
+    	var endDate = $('#endDate').val().replace(/-/g, '');
+    	var startDate;
+    	if ($(this).val() == 31){
+        	startDate = dateAddDel(dateAddDel(endDate,-1,'m'),1,'d');
+        	$('#startDate').val(startDate);
+    	} else if ($(this).val() == 365){
+           	startDate = dateAddDel(dateAddDel(endDate,-1,'y'),1,'d');
+           	$('#startDate').val(startDate);
+    	} else if ($(this).val() == 0) {
+    		$('#startDate').val(today);
+    		$('#endDate').val(today);
+    	} else {
+        	startDate = dateAddDel(endDate,-1*parseInt($(this).val()),'d');
+        	$('#startDate').val(startDate);
+    	}
+	});
+	
+	//조회버튼 클릭
+	$('#searchButton').click(function(){
+		getData(1);
+	});
+	
+	//초기화버튼 클릭
+	$('#resetButton').click(function(){
+		$('#startDate').val(today);
+		$('#endDate').val(today);
+		$('#searchDate1').prop('checked',true);
+		$('#state1').prop('checked',true);
+		$('#strConNumber').val('');
+		$('#category').val('');
+		$('#title').val('');
+		$('#customerName').val('');
+		$('#phoneNumber').val('');
+
+		$(".select2Basic").select2({			
+			minimumResultsForSearch: Infinity
+		});
+	});
+
+	//엑셀다운로드 버튼 클릭
+	$('#excelButton').click(function(){
+		if($('#startDate').val().replace(/-/g, '') > $('#endDate').val().replace(/-/g, '')){
+			showAlert('조회시작일자가 종료일자보다 큽니다.');
+			return;
+		}
+		var f = document.searchForm;
+		f.method = 'post';
+		f.action = '/counselling/getcounsellinglistexcel';
+		f.submit();
+	});
+	
+    var popCounselling = $("#insertButton").trpLayerFixedPopup("#popCounsellingDiv");
+
+    //등록버튼
+	$('#insertButton').click(function($e){
+	    $e.preventDefault();
+	    popCounselling.open(this);
+	    insertCounselling('','','');
+	});
+    
+    //수정
+	$('#counsellingTbody').on('click','td',function($e){
+		if (!$(this).find('input[name=check]').val()){
+	        $e.preventDefault();
+	        popCounselling.open(this);
+			var counselling = $(this).parents('tr').find('input[name=check]').val().split('|');
+			updateCounselling(counselling[0], counselling[1], counselling[2]);
+		}
+	});
+
+	$("body").on("click", "#popCounsellingDiv .btn_close, #popCounsellingDiv .btn_cancel", function($e) {
+	    $e.preventDefault();
+	    popCounselling.close();
+	});
+
+	//삭제버튼
+	$('#deleteButton').click(function(){
+		
+		var param = new Array();
+		
+		$('input[name=check]:checked').each(function(){
+			param.push($(this).val());
+		});
+		
+		if (param.length > 0){
+			jQuery.ajaxSettings.traditional = true;
+			$.ajax({
+				method : 'post',
+				url : '/counselling/deletecounselling',
+				data : {counselling : param},
+				success : function(data) {
+					showAlert('저장되었습니다.');
+					getData(1);
+				}
+			});
+		} else {
+			showAlert("삭제할 상담내역을 선택하십시오.");
+		}
+	});
+	
+	// 상세 옵션닫기버튼
+	$('.hide_field').hide();
+	$('.hide_btn').click(function() {
+		$('.hide_field').toggle();
+		$(this).toggleClass('open');
+		// $('#det_opt').slideToggle(300);
+		if ($(this).hasClass('open')) {
+			$('.txt').html("더보기<em></em>");
+		} else {
+			$('.txt').html("접기<em></em>");
+		}
+	});
+	
+	$(".check-all").click(function() {
+		$(".js_item").prop("checked", $(this).is(":checked"));
+		if ($(this).is(":checked")) {
+			$(".js_item:not(.check-all)").parents("tr").addClass("selected");
+		} else {
+			$(".js_item:not(.check-all)").parents("tr").removeClass("selected");
+		}
+	});
+	
+	$(".js_item").click(function() {
+		if ($(this).is(":checked")) {
+			$(this).parents("tr").addClass("selected");
+		} else {
+			$(this).parents("tr").removeClass("selected");
+		}
+		if ($(".js_item:not(.check-all)").length == $(".js_item:not(.check-all):checked").length) {
+			$(".check-all").prop("checked", true);
+		} else {
+			$(".check-all").prop("checked", false);
+		}
+	});
+});
+/*]]>*/
+</script>
+</th:block>
+
+<!-- container -->
+<div id="container" layout:fragment="contentFragment">
+	<div id="contents" class="customer">
+		<h2 class="h2">상담관리</h2>
+		<section>
+			<div class="cont-box wfull">
+				<form name="searchForm" onsubmit="return false;">
+				<input type="hidden" name="conNumber" id="conNumber"/>
+				<!--상담관리 //-->
+				<table class="form_table">
+					<colgroup>
+						<col width="170px" />
+						<col width="*" />
+						<col width="170px" />
+						<col width="*" />
+					</colgroup>
+					<tbody>
+						<tr>
+							<th>등록일자</th>
+								<td colspan="3">
+								<div class="calendar mr20">
+									<span class="datepicker-box w_ms">
+										<input type="text" class="js-datepicker" id="startDate" name="startDate"/>
+									</span>
+									<span class="ml5 mr5">~</span>
+									<span class="datepicker-box w_ms">
+										<input type="text" class="js-datepicker" id="endDate" name="endDate"/>
+									</span>
+								</div>
+								<span class="trp radio-box">
+									<input type="radio" id="searchDate1" name="searchDate" th:checked="true" value="0"/>
+									<i></i>
+									<label for="searchDate1">오늘</label>
+								</span>
+								<span class="trp radio-box">
+									<input id="searchDate2" type="radio" name="searchDate" value="7"/>
+									<i></i>
+									<label for="searchDate2">7일</label>
+								</span>
+								<span class="trp radio-box">
+									<input id="searchDate3" type="radio" name="searchDate" value="15"/>
+									<i></i>
+									<label for="searchDate3">15일</label>
+								</span>
+								<span class="trp radio-box">
+									<input id="searchDate4" type="radio" name="searchDate" value="31"/>
+									<i></i>
+									<label for="searchDate4">한달</label>
+								</span>
+								<span class="trp radio-box">
+									<input id="searchDate5" type="radio" name="searchDate" value="365"/>
+									<i></i>
+									<label for="searchDate5">1년</label>
+								</span>
+							</td>
+						</tr>
+						<tr class="hide_field">
+							<th>상태</th>
+							<td>
+                                <span class="trp radio-box">
+									<input type="radio" id="state1" name="state" value="" th:checked="true"/>
+									<i></i>
+									<label for="state1">전체</label>
+								</span>
+						        <span class="trp radio-box">
+									<input id="state2" type="radio" name="state" value="PROGRESS"/>
+									<i></i>
+									<label for="state2">처리중</label>
+								</span>
+						        <span class="trp radio-box">
+									<input id="state3" type="radio" name="state" value="DONE"/>
+									<i></i>
+									<label for="state3">처리완료</label>
+								</span>
+							</td>
+							<th>주문번호</th>
+							<td>
+								<input type="text" class="w_lg_s" id="strConNumber" name="strConNumber" value="" placeholder=""/>
+							</td>
+						</tr>
+						<tr class="hide_field">
+							<th>상담유형</th>
+							<td>
+								<div class="select-box w_mm">
+									<select class="select2Basic" id="category" name="category">
+										<option value="">전체</option>
+										<option th:each="result : ${categoryList}" th:value="${result.code}" th:text="${result.codeName}"/>
+									</select>
+								</div>
+							</td>
+							<th>제목</th>
+							<td>
+								<input type="text" class="w_lg_s" id="title" name="title" value="" placeholder=""/>
+							</td>
+						</tr>
+						<tr class="hide_field">
+							<th>고객명</th>
+							<td>
+								<input type="text" class="w_lg_s" id="customerName" name="customerName" value="" placeholder=""/>
+							</td>
+							<th>전화번호</th>
+							<td>
+								<input type="text" class="w_lg_s" id="phoneNumber" name="phoneNumber" value="" placeholder="-없이 입력"/>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				</form>
+				<div class="hide_btn open">
+					<a href="#none"><span class="txt">더보기<em></em></span></a>
+				</div>
+				<div class="btn_set-center mt30">
+					<a class="btn btn_green btn_m radius mr5" role="button" href="#none" id="searchButton">검색</a>
+					<a class="btn btn_default btn_m radius" href="#none" role="button" id="resetButton">초기화</a>
+				</div>
+				<!--리스트//-->
+				<div class="table-wrap mt80">
+					<div class="table-header ">
+						<div class="con_title" >총 <em id="totalCount">0</em>건</div>
+						<div class="ab-r">
+							<div class="btn_set">
+								<a class="btn btn_default" id="excelButton"><i class="icon_down">엑셀다운로드</i></a>
+							</div>
+						</div>
+					</div>
+					<table class="table_list" id="check_table">
+						<colgroup>
+							<col style="width:4%"/>
+							<col style="width:4%"/>
+							<col style="width:7%"/>
+							<col style="width:10%"/>
+							<col style="width:9%"/>
+							<col style="width:8%"/>
+							<col style="width:auto"/>
+							<col style="width:7%"/>
+							<col style="width:10%"/>
+							<col style="width:10%"/>
+							<col style="width:7%"/>
+						</colgroup>
+						<thead>
+							<tr>
+								<th>
+									<span class="trp checkbox-box">
+										<input id="checkbox_all1" class="js_item check-all" type="checkbox" name="checkAll"/>
+										<i></i>
+										<label for="checkbox_all1"></label>
+									</span>
+								</th>
+								<th>번호</th>
+								<th>고객명</th>
+								<th>전화번호</th>
+								<th>상담유형</th>
+								<th>주문번호</th>
+								<th>제목</th>
+								<th>상태</th>
+								<th>등록일시</th>
+								<th>처리일시</th>
+								<th>처리자</th>
+							</tr>
+						</thead>
+						<tbody id="counsellingTbody">
+						</tbody>
+					</table>
+                    <div class="paging-area">
+						<div class="btn_set">
+						    <div class="fl">
+						        <button class="btn btn_gray btn_w" type="button" id="deleteButton">삭제</button>
+						    </div>
+						    <div class="fr">
+						        <button class="btn btn_default btn_w" type="button" id="insertButton"><i class="icon_add">등록</i></button>
+						    </div>
+						</div>
+                        <div class="paging" id="pagination">
+                        </div>
+                    </div>
+				</div>
+			</div>
+		</section>
+	</div>
+</div>
+<span id="popSpan" layout:fragment="popupFragment" >      
+  	<div id="counsellingDiv" th:replace="online/counselling/counselling::counsellingPopup"></div>
+  	<div id="customerSearchDiv" th:replace="online/customer/customersearch::customerSearchPopup"></div>
+  	<div id="contractSearchDiv" th:replace="online/contract/contractsearch::contractSearchPopup"></div>
+</span>        
+<!-- //container -->
+</html>

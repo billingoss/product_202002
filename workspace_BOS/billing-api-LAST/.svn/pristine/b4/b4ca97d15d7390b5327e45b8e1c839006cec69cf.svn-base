@@ -1,0 +1,74 @@
+<div id="popupContractProductDiv" class="trp popupfixed-wrap" th:fragment="contractProductPop">
+<script type="text/javascript">
+/*<![CDATA[*/
+function setContractProductData(conNumber) {
+	var param = new Object();
+	param.conNumber = conNumber;
+	
+	$.ajax({
+		method : 'get',
+		url : '/contractlist/getcontractproduct',
+ 		data : param,
+		success : handleDataContractProduct
+	});
+}
+
+function handleDataContractProduct(data) {
+	
+	json = data.lists;
+	
+	$('#popContractProductTbody').empty();
+	var trHTML = '';
+
+	if (json.length == 0) {
+		trHTML = '<tr class="no_empty"><td colspan=4><div class="data-empty"><img src="/resources/images/common/img_no_empty.png" alt="데이터 없음" /><span class="txt_empty">검색 결과가 없습니다.</span></div></td></tr>';
+	} else {
+		$.each(json, function(i, item) {
+			trHTML += '<tr>'
+			       +  '<td>' + item.productId + '</td>'
+			       +  '<td class="tal ellipsis" title="' + item.productName + '">' + item.productName + '</td>'
+			       +  '<td>' + numberComma(item.quantity) + '</td>'
+			       +  '<td>' + numberComma(item.priceAmount) + '원' + '</a></td>'
+			       +  '</tr>';
+		});
+	}
+	$('#popContractProductTbody').append(trHTML);
+}
+/*]]>*/
+</script>
+<form name="popContractProductForm" onsubmit="return false;">
+<input type="hidden" id="popContractProductConNumber" name="conNumber"/>
+<div class="popup-dim"></div>
+<div class="popup-align">	
+	<div class="popup-vertical">
+		<div class="popup-layer option wl">
+			<a class="btn_close" href="#">X</a>
+			<div class="pop_tit">주문상세정보</div>
+			<!-- �˸� mode0 -->
+			<section class="section">
+				<div class="table-wrap">
+					<table class="table_list">
+						<colgroup>
+							<col style="width:15%"/>
+							<col style="width:auto"/>
+							<col style="width:14%"/>
+							<col style="width:14%"/>
+						</colgroup>
+						<thead>
+							<tr>
+								<th>상품번호</th>
+								<th>상품명</th>
+								<th>수량</th>
+								<th>가격</th>
+							</tr>
+						</thead>
+						<tbody id="popContractProductTbody">
+						</tbody>
+					</table>
+				</div>
+			</section>
+		</div>
+	</div>
+</div>
+</form>
+</div>

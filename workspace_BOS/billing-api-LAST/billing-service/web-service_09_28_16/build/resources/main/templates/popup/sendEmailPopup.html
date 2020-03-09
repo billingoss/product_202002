@@ -1,0 +1,89 @@
+<div class="modal-header modal-popup-header">
+	<h5 class="modal-title">
+		<span id="emailtitle">▶ Email발송</span>
+		<button type="button" class="close" id="sendemailclose" >&times;</button>
+	</h5>
+</div>
+
+<div class="modal-body" style="padding-bottom: 0px; padding-top: 0px;">
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="panel-title">
+				<strong>▶발송 정보</strong>
+			</h4>
+		</div>
+		<div class="panel-body">
+			<div class="form-horizontal" role="form">
+				<div class="form-group">
+					<div class="col-md-4">
+						<label for="inputType" class="control-label">고객명</label>
+					</div>
+					<div class="col-md-8">
+						<input type="text" id="sendEmailCustomer" class="form-control"
+							readonly="true" />
+					</div>
+				</div>
+				<div class="form-group">
+					<div class="col-md-4">
+						<label for="inputType" class="control-label">Email 주소</label>
+					</div>
+					<div class="col-md-8">
+						<input type="text" id="sendEmailAddress" class="form-control" />
+					</div>
+				</div>
+			</div>
+			<button id="sendinvoicebt" class="pull-right btn btn-primary"
+			style="margin: 8px;">발송</button>
+		</div>
+		
+	</div>
+</div>
+<script type="text/javascript">
+$(document).ready(function() {
+	//$('#sendEmailPopupModal').on('hidden.bs.modal', '.modal', function () {
+	//    $(this).removeData('bs.modal');
+	//});
+	
+	$('#sendemailclose').click(function(){
+		$('#sendEmailPopupModal').modal('hide');
+		$('#sendEmailPopupModal .modal-content').empty();
+	});
+	
+	$('#sendinvoicebt').click(function(){
+		var invoicenumber = $('#emailinvoicenumber').val();
+		var invoicedate   = $('#emailinvoicedate').val();
+		var connumber     = $('#emailconnumber').val();
+		var sendEmailAddress = $('#sendEmailAddress').val();
+		var allData = { "invoicenumber": invoicenumber 
+ 		       , "invoicedate": invoicedate 
+ 		       , "connumber": connumber
+ 		       , "sendEmailAddress" : sendEmailAddress
+ 		       };
+		$.ajax({
+            type: "get",
+            url : '/sendmail',
+            data: allData,
+            contentType: "application/json; charset=utf-8",	
+            success: function () {
+           	 Common.Dialog.alert({
+	 		    		  title:'발송 완료'
+	 		            , content: '발송 완료되었습니다.'
+	 		        });
+               //var modalview = $(this).closest('.modal');
+        		//$('#sendEmailPopupModal').modal('hide');
+        		//$(this).removeData('hidden.bs.modal');
+        		//$(this).removeData('bs.modal');
+        		$('#customerinvoiceDetailDialog').removeData('hidden.bs.modal');
+        		
+            },
+            error: function (err) {
+            	Common.Dialog.alert({
+		    		  title:'발송 실패'
+		            , content: err
+		        });
+            }
+        }); 
+	});
+});
+</script>
+

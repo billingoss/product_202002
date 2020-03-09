@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></meta>
+<title>How to sum values from table column and update when
+	remove or add new row in jQuery</title>
+<link rel="stylesheet" type="text/css" media="screen"
+	href="http://cdn.jsdelivr.net/webjars/bootstrap/3.3.4/css/bootstrap.min.css"
+	th:href="@{/webjars/bootstrap/3.3.4/css/bootstrap.min.css}" />
+<script
+	src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"
+	th:src="@{/webjars/jquery/1.11.3/jquery.min.js}"></script>
+<script
+	src="http://cdn.jsdelivr.net/webjars/bootstrap/3.3.4/js/bootstrap.min.js"
+	th:src="@{/webjars/bootstrap/3.3.4/js/bootstrap.min.js}"></script>
+<script
+	src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"
+	th:src="@{/webjars/jquery/1.11.3/jquery.min.js}"></script>
+<link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css"/>
+<link rel="stylesheet" th:href="@{/css/dataTables.bootstrap4.css}" />
+<link href="/css/customize-template.css" type="text/css" media="screen, projection" rel="stylesheet" />
+<style>
+  table td{
+  vertical-align: middle;
+  
+  }
+</style>
+</head>
+<body>
+<script type="text/javascript">
+$(document).ready(function(){
+
+});
+
+
+
+function sumColbamt(){
+	var total = 0;
+	$('table tbody tr').each(function(){
+		
+		if($(this).find("input").is(":checked")) {
+			var value = parseInt($('td', this).eq(6).text());
+		    if (!isNaN(value))
+			{
+			     total += value;
+			}
+		}
+	    
+	}); 
+	$('#totalprice').text(total);
+}
+
+function invoicedetail(){
+	$.ajax({
+        url : '/invoiceDetail' ,
+        type : "get",
+        success : function(data) {
+        	$('#addBookDialog').modal('show'); 
+        }
+	});
+}
+
+</script>
+
+<div class="span16">
+<div  th:include="searchbar2::searchbar">
+    </div>
+<div class="row">
+</div>   
+	<div class="row">
+		<div class="col-md-12">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h2 class="panel-title">
+						<strong>Invoice list</strong>
+					</h2>
+				</div>
+				<div class="panel-body">
+					<div class="table-responsive">
+						<table class="table table-striped ">
+							<thead>
+								<tr>
+									<th style="width:4%;"></th>
+									<th style="width:12%;">청구번호</th>
+									<th style="width:12%;">고객명</th>
+									<th style="width:12%;">상품명</th>
+									<th style="width:12%;">청구일자</th>
+									<th style="width:12%;">청구금액</th>
+									<th style="width:12%;">미납금액</th>
+									<th style="width:8%;">상태코드</th>
+									<th style="width:16%;"></th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>
+				                        <input class="tot_amount" type="checkbox" value="" onclick="sumColbamt()"/>
+									</td>
+									<td style="vertical-align: middle">1234</td>
+									<td style="vertical-align: middle">김강현</td>
+									<td style="vertical-align: middle">product1</td>
+									<td >2018.06.30</td>
+									<td>1000</td>
+									<td>800</td>
+									<td></td>
+									<td><a href="/invoiceDetail" data-toggle="modal" data-target="#addBookDialog"><button class="btn btn-small btn-danger">상세</button></a></td>
+								</tr>
+								<tr>
+									<td><input class="tot_amount" type="checkbox" value="" onclick="sumColbamt()"/></td>
+									<td>1234</td>
+									<td>김강현</td>
+									<td>product2</td>
+									<td>2018.06.30</td>
+									<td>1000</td>
+									<td>600</td>
+									<td></td>
+									<td><button class="btn btn-small btn-danger">상세</button></td>
+								</tr>
+								<tr>
+									<td><input class="tot_amount" type="checkbox" value="" onclick="sumColbamt()"/></td>
+									<td>1234</td>
+									<td>김강현</td>
+									<td>product3</td>
+									<td>2018.06.30</td>
+									<td>1000</td>
+									<td>1000</td>
+									<td></td>
+									<td><button class="btn btn-small btn-danger" onclick="sumColbamt()">상세</button></td>
+								</tr>
+							</tbody>
+							<tfoot >
+							    <tr >
+    								<td class="no-line"></td>
+    								<td class="no-line"></td>
+    								<td class="no-line"></td>
+    								<td class="no-line"></td>
+    								<td class="no-line"></td>
+    								<td class="no-line"></td>
+    								<td></td>
+    								<td><strong>배송비</strong></td>
+    								<td id="deliveryprice">2500</td>
+    							</tr>
+    							<tr>
+    								<td class="no-line"></td>
+    								<td class="no-line"></td>
+    								<td class="no-line"></td>
+    								<td class="no-line"></td>
+    								<td class="no-line"></td>
+    								<td class="no-line"></td>
+    								<td></td>
+    								<td><strong>Total</strong></td>
+    								<td id="totalprice"></td>
+    							</tr>
+    							<tr>
+    								<td class="no-line"></td>
+    								<td class="no-line"></td>
+    								<td class="no-line"></td>
+    								<td class="no-line"></td>
+    								<td class="no-line"></td>
+    								<td class="no-line"></td>
+    								<td class="no-line"></td>
+    								<td></td>
+    								<td><button class="btn btn-small btn-info" style="margin:3px;">수납</button><button class="btn btn-small btn-success">정기결제</button></td>
+    							</tr>
+							</tfoot>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="modal" id="addBookDialog" role="dialog">
+      <div class="modal-dialog modal-lg">
+         <div class="modal-content">
+         </div>
+      </div>
+</div>  
+
+</body>
+</html>

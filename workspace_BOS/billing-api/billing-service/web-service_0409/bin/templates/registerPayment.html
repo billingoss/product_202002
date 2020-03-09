@@ -1,0 +1,72 @@
+<!-- modal list KKH추가 -->
+<!-- Modal -->
+<div class="modal-header">
+        <h4 class="modal-title">계약정보 변경</h4>
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+          
+        </div>
+        <div class="modal-body">
+        <form name="contractDetailform">
+          <div class="row grid-columns">
+   <div class="col-md-6 col">
+   <div style="padding-left: 10px;">
+   <b>계약정보</b>
+   <br></br>
+       <input type="hidden" class="form-control" readonly="true" id="modalpaymentNumber" name="paymentNumber" />
+       <label>계약번호</label>
+    <input type="text" class="form-control" readonly="true" id="modalcontractNum" name="conNumber" />
+    <label>고객명</label>
+    <input type="text" class="form-control" readonly="true" id="modalcontractName"/>
+    <label>수량</label>
+    <input type="text" class="form-control" id="modalcontractQuantity" name="contractQuantity" />
+    <label>계약기간</label>
+    <input type="text" class="form-control" id="modalconstractduedt"/>
+    <label>유효시작일</label>
+    <input type="text" class="form-control" id="modaleffectiveStartDate" name="effectiveStartDate"/>
+    <label>유효종료일</label>
+    <input type="text" class="form-control" id="modaleffectiveEndDate" name="effectiveEndDate" />
+   </div>
+   </div>
+   <div class="col-md-6 col">
+   <div>
+   
+   <b>납부정보</b>
+   <br></br>
+    <label>납부주기</label>
+    <input type="text" class="form-control" id="paycycl" name="paymentCycle"/>
+    <label>납기일</label>
+    <input type="text" class="form-control" id="prddt" name="recurringPayDate"/>
+    <label>납부방법</label>
+    <select class="form-control" id="paymthcd" name="payMethod"  >
+          <option value="bank">은행 </option>  
+                      <option value="card">카드 </option>        
+                </select>
+                <div id ="selecbankcardtdiv">
+                 <label>은행/카드</label>
+                 <select style="display: none;" class="form-control hidden" id="cardselect" name="card"  >
+           <option value="hanac">하나카드 </option>  
+                       <option value="shanc">신한카드 </option>        
+                 </select>
+                 <select style="display: none;" class="form-control" id="bankselect" name="bank"  >
+           <option value="hanab">하나은행 </option>  
+                       <option value="worib">우리은행</option>        
+                 </select>
+                </div>
+    <label>계좌/카드명의자</label>
+    <input type="text" class="form-control" id="cardbankowner" name="owner"/>
+    <label>계좌/카드번호</label>
+    <input type="text" class="form-control" id="cardbanknum" name="number"/>
+    <div id="cardeffdtdiv">
+    <label>카드유효기간</label>
+    <input type="text" class="form-control" id="cardeffdt" name="validDate"/>
+    </div>
+    <br></br>
+   </div>
+   </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-dismiss="modal" id="savecontractbt">저장</button>
+        </div>
+        </form>
+</div>
+<!-- modal list END -->

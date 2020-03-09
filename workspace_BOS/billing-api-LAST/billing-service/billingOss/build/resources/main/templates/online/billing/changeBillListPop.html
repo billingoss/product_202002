@@ -1,0 +1,100 @@
+ <!-- Bill Key  변경 이력 pop -->
+						<div id="popup_changeBillList" class="trp popupfixed-wrap"  th:fragment="changeBillListPop">	    
+						        <div class="popup-dim"></div>
+						        <div class="popup-align">
+						            <div class="popup-vertical">
+						                <div class="popup-layer option ws">
+						                    <a class="btn_close" href="#">X</a>
+						                    <div class="pop_tit">결제정보 변경 이력</div>
+						                    <!-- 알림 mode0 -->
+						                    <section class="section">
+						                        <div class="table-wrap "  >            
+												<table class="table_list"  style="height:200px;  width:100%;" >
+					                            <!-- 스크롤필요시 width 값 늘려주면 됨 //-->
+					                                <colgroup>
+					                                    <col style="width:178px"/>
+					                                    <col style="width:270px"/>
+					                                </colgroup>
+					                                <thead>
+					                                    <tr>
+					                                        <th >변경일자</th>
+					                                        <th>카드사명</th>	                                        
+					                                    </tr>
+					                                </thead>
+					                                <tbody id="billKeyChangeListBody" style="display: block; height: 300px ; overflow-y: scroll; overflow-x: hidden; width:460px">
+					                                </tbody>
+					                            </table>						                            
+						                        </div>
+						                        <div class="btn_set-center mt30">
+						                            <a class="btn btn_green btn_wm radius mr5 btn_cancel" role="button" href="javascirpt:void(0)" id="billKeyHistOkPopBtn">확인</a>
+						                        </div>
+						                    </section>
+						                </div>
+						            </div>
+						        </div>    			                
+							<script type="text/javascript">
+							/*<![CDATA[*/
+								/***************************************************
+								결제정보 변경 popup event
+								***************************************************/	
+								var billKeyHistBtnEvent = function (){				
+									var bntId;
+									var popId ='popup_changeBillList';
+									$('.billKeyHistBtn').each(function(index, item){
+										bntId = $(this).prop('id')
+										var popup_warp = $("#"+bntId).trpLayerFixedPopup("#"+popId);	
+										$("#"+bntId).on("click", function($e) {										    
+											var param = new Object();
+											param.conNumber = $('#billKeyConNumber').text();
+											
+											$.ajax({
+												method : 'post',				
+												url : '/billing/getBillKeyHistory',
+												data : param, 
+												dataType : 'json',
+												success : function(data){
+													if (data != null && data.billKeyList != null && data.billKeyList.length > 0){		
+														var billKeyList = data.billKeyList;
+														var trHTML = "";
+														$.each(billKeyList, function(i, item) {
+															trHTML += '<tr >';
+															trHTML += '<td style="width:190px">' + item.changeDate+ '</td>';
+															trHTML += '<td style="width:270px">' + item.cardCorporationCodeName+ '</td>';
+															trHTML += '</tr>';															
+														});	
+														
+														$('#billKeyChangeListBody').mCustomScrollbar();
+																												
+														$('#billKeyChangeListBody').empty();
+														$('#billKeyChangeListBody').append(trHTML);
+														
+														//table 속성 
+														if(data.billKeyList.length < 7){															
+														 $('#billKeyChangeListBody').css('height','');
+														}														
+														
+														$e.preventDefault();
+														popup_warp.open(this);
+													}else {										
+														showAlert('변경이력이 없습니다.');									
+								              			$('#billKeyHistOkPopBtn').trigger('click');
+													}
+												}
+											});
+										});
+										
+										$("body").on("click", "#"+popId+" .btn_close, #"+popId+" .btn_cancel", function($e) {
+											$e.preventDefault();
+											popup_warp.close();
+										});
+										
+									})			
+								};
+							
+								//결제정보 변경 버튼 event 설정
+								billKeyHistBtnEvent();
+								
+			
+							/*]]>*/
+							</script> 
+						</div>

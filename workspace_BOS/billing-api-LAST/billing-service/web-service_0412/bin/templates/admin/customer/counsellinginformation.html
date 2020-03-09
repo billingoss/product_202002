@@ -1,0 +1,90 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+		//alert("$(document).ready ALERT 경고창");
+		$("#buttonCustomerCounselling").click(function(){
+		//alert("buttonCustomerCounselling click");
+			//$("input[name=customerListBox]:checked").each(function() {
+			$("#customerlisttable tr.selectedbgcolor").each(function() {
+				//alert($(this).html());
+				var tr = $(this);
+		  	var td = tr.children();
+				customerNumber = td.eq(0).text();			
+				//alert("customerNumber = " + customerNumber);
+			}); 
+				
+			$.ajax({
+				method : 'get',
+	      url : '/customer/customercounselling' + '/' + customerNumber,
+	      //data : customerNumber,
+	      error: function(xhr, status, error) {
+	      	//alert(error);
+	      },
+	      success : function(json){
+	      	$('#customerCounsellingDialog .modal-content').html(json);
+	      	$("#customerCounsellingDialog").modal('show');
+				}
+			});
+    })
+	});
+</script>
+
+
+				
+				<div class="panel-body">
+					<div class="table-responsive">
+						<table class="table">
+							<thead  class="table-header-bg">
+								<tr>
+									<th style="width: 8%;">일시</th>
+									<th style="width: 8%;">고객특성</th>
+									<th style="width: 8%;">특성내용</th>
+								</tr>
+							</thead>
+							<tbody class="table-body-row">	
+								<tr th:each="result : ${customerCharacteristicResult}">
+									<td style="vertical-align: middle" th:text="${result.createDate} + ' ' + ${result.createTime}"></td>
+									<td style="vertical-align: middle" th:text="${result.characteristic}"></td>
+									<td style="vertical-align: middle" th:text="${result.memo}"></td>
+								</tr>
+							</tbody>
+							<tfoot>
+								<tr>
+									<td class="no-line"></td>
+									<td class="no-line"></td>
+									<td class="no-line"></td>
+									</tr>
+							</tfoot>
+						</table>
+						<table class="table ">
+							<thead class="table-header-bg">
+								<tr>
+									<th style="width: 8%;">상담일시</th>
+									<th style="width: 8%;">상담분류</th>
+									<th style="width: 8%;">인입경로</th>
+									<th style="width: 8%;">상담내용</th>
+								</tr>
+							</thead>
+							<tbody class="table-body-row">	
+								<tr th:each="result : ${counsellingHistoryListResult}">
+									<td style="vertical-align: middle" th:text="${result.counsellingDate} + ' ' + ${result.counsellingTime}"></td>
+									<td style="vertical-align: middle" th:text="${result.category}"></td>
+									<td style="vertical-align: middle" th:text="${result.inboundPath}"></td>
+									<td style="vertical-align: middle" th:text="${result.memo}"></td>
+								</tr>
+							</tbody>
+							<tfoot>
+								<tr>
+									<td class="no-line"></td>
+									<td class="no-line"></td>
+									<td class="no-line"></td>
+									<td class="no-line"></td>
+									</tr>
+							</tfoot>
+						</table>
+					</div>
+				</div>
+			  <div class="panel-footer" style="padding-bottom: 40px;">
+	   			<div>
+	   				<button class="btn btn-primary pull-right" style="margin: 3px;" id="buttonCustomerCounselling">상담 등록</button>
+	   			</div>
+	   		</div>

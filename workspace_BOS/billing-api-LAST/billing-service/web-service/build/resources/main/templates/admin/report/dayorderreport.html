@@ -1,0 +1,163 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+
+		var today = getToday().replace('-','').replace('-','');
+		$('#year').val(today.substring(0,4));
+		if (today.substring(4,5) == '0'){
+			$('#month').val(today.substring(5,6));
+		} else {
+			$('#month').val(today.substring(4,6));
+		}
+		
+		$("#searchbutton").click(function(){
+			
+			$('#subscribedatetime').val($('#year').val() + ($('#month').val().length==1?'0'+$('#month').val():$('#month').val()));
+			var param = new Object();
+			param.subscribedatetime = $("#subscribedatetime").val();
+			param.recurringdeliveryyn = $("#recurringdeliveryyn").val();
+			param.searchflag = $("#searchflag").val();
+			
+			$.ajax({
+				method : 'get',
+				url : '/report/getdayorderreport',
+				data : param, 
+				dataType : 'json',
+				error : function(xhr, status, error) {
+					alert(error);
+				},
+				success : handleData
+			});
+		});
+
+		function handleData(data) {
+			debugger;
+
+			json = data.list; //hashmap의 list array데이타
+			
+			if (json.length == 0) {
+				Common.Dialog.alert({
+					title : '',
+					content : '데이터가 없습니다.'
+				});
+			}
+			
+			$('#reporttbody').empty();
+			var trHTML = '';
+
+			$.each(json, function(i, item) {
+				/*<![CDATA[*/
+				 trHTML += '<tr' + (item.recurringdeliveryyn==null?' class="table-header-bg"':'') + '>'          
+						+ '<td style="vertical-align: middle">' + (item.subscribedatetime==null?'합계':(item.subscribedatetime.substring(0,4)+'-'+item.subscribedatetime.substring(4,6)+'-'+item.subscribedatetime.substring(6,8))) + '</td>'
+						+ '<td style="vertical-align: middle">' + (item.recurringdeliveryyn=='Y'?'정기배송':(item.recurringdeliveryyn=='N'?'일반배송':(item.subscribedatetime==null?'':'소계'))) + '</td>'
+						+ '<td style="vertical-align: middle">' + (item.channelname==null?'':item.channelname) + '</td>'
+						+ '<td style="vertical-align: middle">' + (item.customertype==null?'':item.customertype) + '</td>'
+						+ '<td style="vertical-align: middle">' + item.quantity + '</td>'
+                        + '</tr>';
+  				/*]]>*/
+			});
+			
+			$('#reporttbody').append(trHTML);
+			
+			var th = $('#reporttable thead tr').children();
+			if ($('#searchflag').val() == 'order'){
+				th.eq(0).html('판매일');
+			} else {
+				th.eq(0).html('배송일');
+			}
+		}
+	});
+	
+	function saveExcel(){
+		var f = document.searchform;
+		f.method = 'post';
+		/*<![CDATA[*/
+		f.action = '/report/getdayorderreportexcel';
+		/*]]>*/
+		f.submit();
+	}
+</script>		
+<div class="row">
+	<div id="searchbarreport">
+		<div class="col-md-12">
+			<div class="panel panel-heading" style="vertical-align: middle; text-align: center;
+				margin-left: auto; margin-right: auto;  padding-bottom: 0px;">
+				<div class="form-section">
+					<div class="row" style="text-align: center">
+						<form id="searchform" name="searchform" class="form-inline" role="form" style="margin-bottom: 10px;">
+							<div class="col-md-3">
+								<div class="form-group">
+									<span>조회년월</span>
+									<select name="year" id="year" class="form-control">
+										<option th:each="result : ${yearList}" th:value="${result.subscribedatetime}" th:text="${result.subscribedatetime}"/>
+									</select>&nbsp;년&nbsp;&nbsp;
+									<select name="month" id="month" class="form-control">
+										<option th:each="num : ${#numbers.sequence(1,12)}" th:value="${num}" th:text="${num}"/>
+									</select>&nbsp;월&nbsp;&nbsp;
+									<input type="hidden" id="subscribedatetime" name="subscribedatetime"/>
+								</div>
+							</div>
+							<div class="col-md-3">
+								<div class="form-group">
+									<span>정기배송여부</span>
+									<select id="recurringdeliveryyn" name="recurringdeliveryyn" class="form-control">
+										<option value="">전체</option>
+										<option value="Y">정기배송</option>
+										<option value="N">일반배송</option>
+									</select>       
+								</div>
+							</div>
+							<div class="col-md-3">
+								<div class="form-group">
+									<span>조회기준</span>
+									<select name="searchflag" id="searchflag" class="form-control">
+										<option value="order">판매기준</option>
+										<option value="delivery">배송기준</option>
+									</select>       
+								</div>
+							</div>
+							<div class="col-md-3">
+								<button id="searchbutton" type="button" class="btn btn-primary">조회</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<div id="monthorderreportdiv">
+	<div class="row">
+		<div class="col-md-12">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+		    		<h2 class="panel-title">
+		     			<strong>일별 판매내역 조회</strong>
+		    		</h2>
+		   		</div>
+		   		<div class="panel-body">
+		    		<div class="table-responsive">
+						<div class="form-group">
+							<b><span id="totalcount"></span></b>
+						</div>
+		     			<table class="table" id="reporttable">
+			      			<thead  class="table-header-bg">
+			       				<tr>
+			        				<th>판매일</th>
+			        				<th>정기배송여부</th>
+			        				<th>판매채널구분</th>
+			        				<th>회원구분</th>
+			        				<th>수량</th>
+								</tr>
+							</thead>
+							<tbody id="reporttbody" class="table-body-row">
+							</tbody>
+	     				</table>
+	    			</div>
+				</div>
+				<div  align="center">
+				    <button class="btn btn-primary pull-right" style="margin: 3px;" id="exceldown" onclick="saveExcel();">다운로드</button>
+				</div>
+		  	</div>
+	 	</div>
+	</div>
+</div>

@@ -1,0 +1,392 @@
+   <!--금액조정//-->
+    <div id="popup_adjust" class="trp popupfixed-wrap" th:fragment="adjustPop">
+        <form action="" name="adjustForm" id="adjustForm" onsubmit="return false;">
+    		<input type="hidden" id="adjustConNumber" name="conNumber"/>    		
+			<input type="hidden" id="adjustInvoiceNumber" name="invoiceNumber"/>
+			<input type="hidden" id="adjustInvoiceDate" name="invoiceDate"/>			
+			<input type="hidden" id="adjustCollectionCloseYn" name="collectionCloseYn"/>
+			
+        <div class="popup-dim"></div>
+        <div class="popup-align">
+            <div class="popup-vertical">
+                <div class="popup-layer option wl">
+                    <a class="btn_close" href="#">X</a>
+                    <div class="pop_tit">금액조정</div>
+                    <!-- 알림 mode0 -->
+                    <section class="section">
+                        <div class="table-wrap">
+                            <div class="con_title ">
+                                <h3 class="h3">금액조정</h3>
+                                <div class="ab-r">
+                                    <p class="notice_icon mt10">차감 시 금액 왼쪽에 "-"를 입력해 주세요.</p>
+                                </div>
+                            </div>
+                            <table class="table_list no_hover">
+                                <colgroup>
+                                    <col style="width:15%"/>
+                                    <col style="width:auto"/>
+                                    <col style="width:14%"/>
+                                    <col style="width:18%"/>
+                                    <col style="width:16%"/>
+                                </colgroup>
+                                <thead>
+                                    <tr>
+                                        <th>구분</th>
+                                        <th>항목</th>
+                                        <th>조정 전</th>
+                                        <th>조정</th>
+                                        <th>조정 후</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adjustListBody">
+                                    <!-- <tr>
+                                        <td>기본금액</td>
+                                        <td class="tal ellipsis">재구매고객 5% 할인</td>
+                                        <td class="tar">75,000원</td>
+                                        <td class="tar">
+                                            <div class="input_txt">
+                                                <span><input type="text" class="tar" value="" placeholder=""/></span>
+                                                <em class="won">원</em>
+                                            </div>
+                                        </td>
+                                        <td class="tar">72,000원</td>
+                                    </tr>
+                                    <tr>
+                                        <td>할인</td>
+                                        <td class="tal ellipsis">10% 할인</td>
+                                        <td class="tar">5,000원</td>
+                                        <td class="tar"></td>
+                                        <td class="tar">-7,200원</td>
+                                    </tr> -->
+                                </tbody>
+                                <tfoot>
+									<tr>
+									    <td colspan="4">합계</td>
+									    <td class="tar"><span id="adjustTotal">0</span>원</td>
+									</tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <div class="table-wrap mt40">
+                            <div class="con_title ">
+                                <h3 class="h3">금액조정사유</h3>
+                            </div>
+                            <table class="">
+                                <colgroup>
+                                    <col width="*" />
+                                </colgroup>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <div class="select-box w_mm mb10">
+                                                <select class="select2Basic_pop" id="adjustRequestReasonCode"></select>
+                                            </div>
+                                            <div class="textarea-box min">
+                                                <textarea name="adjusTreasonMessage" id="adjusTreasonMessage" cols="30" rows="20" placeholder=""></textarea>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="btn_set-center bottom_set mt30">
+                            <a class="btn btn_green btn_wm radius mr5" role="button" href="#none" id="popAdjustSaveBtn">저장</a>
+                            <a class="btn btn_default btn_wm radius btn_cancel" href="#none" role="button" id="popAdjustCancelBtn">취소</a>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </form>
+    
+	<script type="text/javascript">
+		/***************************************************
+		결제 popup event
+		***************************************************/	
+		var adjustPopBtnEvent = function (){				
+			var bntId;
+			var popId ='popup_adjust';
+			$('.adjustBtn').each(function(index, item){			
+					
+				bntId = $(this).prop('id')
+				var popup_warp = $("#"+bntId).trpLayerFixedPopup("#"+popId);	
+				$("#"+bntId).on("click", function($e) {
+					//validation 
+					
+					//필수 입력 값 확인
+					if (isEmpty($('#adjustConNumber').val()) || isEmpty($('#adjustInvoiceNumber').val()) || isEmpty($('#adjustInvoiceDate').val())){
+						showAlert('금액조정 대상을 선택 하세요.',$('#adjustConNumber'));						
+						return false;
+					}
+					//금액조정 가능 상태 여부 확인
+					if($('#adjustCollectionCloseYn').val() =='Y' ){
+						showAlert('결제 완료된 내역은 금액조정이 불가능 합니다.', $('#adjustCollectionCloseYn'));
+						return false;
+					}
+					
+					
+					//화면 초기화
+				    $("#adjustRequestReasonCode option:eq(0)").attr("selected", "selected");
+					$('#adjusTreasonMessage').val("");
+					
+					//환불 대상 조회 조건
+					var queryString = $("form[name=adjustForm]").serialize();			
+					queryString = queryString.replace(/-/g, '');		
+					//청구 결제 상세 내역 조회
+					$.ajax({
+						method : 'post',				
+						url : '/billing//getInvoiceByAdjustInfo',
+						data : queryString, 
+						dataType : 'json',
+						success : function(data){
+							if (data != null ){
+								var adjustTrHTML = '';
+								$.each(data.adjustList, function(i, item) {
+									adjustTrHTML += '<tr>';
+									adjustTrHTML += '<td>'+item.invoiceClassificationCode+'</td>';
+									adjustTrHTML += '<td class="tal ellipsis">'+item.revenueItemCodnm+'</td>';
+									//if(item.invoiceClassificationCode =="기본료"){
+									if(item.adjPossibleYn =="Y"){
+										adjustTrHTML += '<td class="tar" ><span id="adjustPossibleAmount'+i+'">'+numberComma(item.adjustPossibleAmount)+'</span>원</td>';										
+										adjustTrHTML += '<td class="tar">';
+										adjustTrHTML += '    <div class="input_txt">';
+										adjustTrHTML += '        <span><input type="text" class="tar adjustAmt" id="adjustAmt'+i+'" adjustIndex="'+i+'" value="" placeholder=""/></span>';
+										adjustTrHTML += '        <em class="won">원</em>';
+										adjustTrHTML += '    </div>';
+										adjustTrHTML += '</td>';
+										adjustTrHTML += '<td class="tar"><span class="adjustRowTotal" id="adjustRowTotal'+i+'">'+numberComma(item.adjustPossibleAmount)+'</span>원</td>';										
+									}else {										
+										adjustTrHTML += '<td class="tar" ><span id="adjustPossibleAmount'+i+'">'+numberComma(item.invoiceItemAmount)+'</span>원</td>';
+										adjustTrHTML += '<td class="tar"></td>';
+										adjustTrHTML += '<td class="tar"><span class="adjustRowTotal" id="adjustRowTotal'+i+'">'+numberComma(item.invoiceItemAmount)+'</span>원</td>';																				
+									}
+									adjustTrHTML += '<input type="hidden" id="adjustPossibleAmountValue'+i+'" value="'+item.adjustPossibleAmount+'"/>';
+									adjustTrHTML += '<input type="hidden" id="revenueItemCode'+i+'" value="'+item.revenueItemCode+'"/>';
+									adjustTrHTML += '<input type="hidden" id="adjustTotalInvoiceAmount'+i+'" value="'+item.adjustPossibleAmount+'"/>';
+									adjustTrHTML += '</tr>';
+																	});
+								
+/* 								adjustTrHTML += '<tr>';
+								adjustTrHTML += '    <td colspan="4">합계</td>';
+								adjustTrHTML += '    <td class="tar"><span id="adjustTotal">0</span>원</td>';
+								adjustTrHTML += '</tr>'; */
+								
+								
+								$('#adjustListBody').empty();
+								$('#adjustListBody').append(adjustTrHTML);
+								
+								//하단 집계 금액
+								adjustTableSum();
+								
+								//조정금액 이벤트
+								setAdjustKeyEvent();
+								
+								//결제 상태 Code 조회																
+								makeSelectCode('adjustRequestReasonCode', 'adjustRequestReasonCode','N','0001');
+								
+								$e.preventDefault();
+								popup_warp.open(this);
+							}else {
+									showAlert('선택된 조정 대상 정보가 없습니다.');									
+							}
+						}
+					});		
+				});
+				$("body").on("click", "#"+popId+" .btn_close, #"+popId+" .btn_cancel", function($e) {
+					$e.preventDefault();
+					popup_warp.close();
+				});
+			})				
+		}	
+		
+		/***************************************************
+		조정 저장 버튼 event
+		***************************************************/	
+	    $('#popAdjustSaveBtn').click(function (){			    	
+	    	var targetCnt = 0;
+	    	var comparecnt = 0 ;    	
+
+	    	//validation 체크
+	    	var inputAmt = false;
+	    	$("#adjustListBody").find("tr").each(function(i, e){
+	    		if (removeComma($('#adjustAmt'+i).val()) != 0){
+	    			inputAmt = true;	    			
+	    		}
+	    	});
+	    	
+	    	//조정 금액 확인
+	    	if (inputAmt == false){
+	    		showAlert("조정 금액을 입력하세요.",$('#adjustAmt0'));
+	    		return false;
+	    	}
+	    	
+	    	//조정 사유 확인
+	    	if (isEmpty($('#adjusTreasonMessage').val())){
+	    		showAlert("조정 사유를 입력하세요.",$('#adjusTreasonMessage'));
+	    		return false;
+	    	}
+	    	
+	    	if (isOverByte($('#adjusTreasonMessage').val(), 2000)){
+	    		showAlert("조정 사유는 최대 2000byte 입니다.", $('#adjusTreasonMessage'));
+		        $('#adjusTreasonMessage').focus();
+		    	return false;
+	    	}
+	    	
+	    	//HTML tag 포함
+	    	if (isHtmlTag($('#adjusTreasonMessage').val())){
+				showAlert("입력 불가한 내용을 삭제 했습니다.\n내용을 확인 하세요.",$('#adjusTreasonMessage'));
+				$('#adjusTreasonMessage').val(removeHtmlTag($('#adjusTreasonMessage').val()));
+				return false;
+			}
+	    	
+	    	$("#adjustListBody").find("tr").each(function(i, e){
+	    		var param = new Object();
+				param.invoiceNumber = $('#adjustInvoiceNumber').val();
+				param.conNumber = $('#adjustConNumber').val();
+				param.invoiceDate = $('#adjustInvoiceDate').val();
+				param.adjustAmt = removeComma($('#adjustAmt'+i).val());
+				param.adjustPossibleAmount = removeComma($('#adjustPossibleAmountValue'+i).val());
+				param.adjustRequestReasonCode = $('#adjustRequestReasonCode').val();
+				param.adjusTreasonMessage = $('#adjusTreasonMessage').val();
+				param.revenueItemCode = $('#revenueItemCode'+i).val();
+	    		
+	    		/*<![CDATA[*/
+	    		if (!isEmpty(param.adjustAmt) && param.adjustAmt != 0){    			
+	    	targetCnt++;
+	    			 
+	    			$.ajax({
+	                     type: "POST",
+	                     url : '/billing/adjust',
+	                     data: param,	                   	      
+	                     dataType: "json",
+	                     success: function () {
+	                    	 debugger;
+	                    	 comparecnt++;
+	                    	 if(targetCnt == comparecnt){
+	                    		 
+	                    		 var promise = Promise.resolve(true);              	 
+	    		              	 promise = new Promise(function (resolve, reject) {              		    		        			
+	    		  			       	showAlert('조정처리 완료되었습니다.');			  			       
+	    		              		 return resolve();
+	    		              	 });
+	    		              	 promise = promise.then(function(res) {
+	    		 					//선택 조정 대상 초기화
+									$('#adjustConNumber').val('');
+	    							$('#adjustInvoiceNumber').val('');
+	    							$('#adjustInvoiceDate').val('');		
+	    							
+	    		              		$('#popAdjustCancelBtn').trigger('click');
+	    		              		getPagingData(currPage);			        						              		
+	    		              	 });       		
+	    		              	 
+	                    	 }
+	                    	 
+	                    	 debugger;
+	                     }
+	                 });
+	    		}		    		
+	    	    /*]]>*/
+	    	});
+	    	
+	//    	if(targetCnt == 0){
+		//		/*  Common.Dialog.alert({
+		 //		   title:'조정처리'
+		 	//	  , content: '조정처리 금액을 입력하세요.'
+		 		//  }); */
+//		 		  alert('조정처리 금액을 입력하세요.');
+	//		 }
+
+		});
+		
+		/***************************************************
+		조정금액 Key input event
+		***************************************************/
+		var setAdjustKeyEvent = function (){
+			$('.adjustAmt').keyup(function(event){				
+				var str;
+				/*<![CDATA[*/
+		        if(event.keyCode != 8){
+		            if (!(event.keyCode >= 37 && event.keyCode <= 40)) {
+		                var inputVal = $(this).val();
+		                
+		                str = inputVal.replace(/[^-0-9]/gi,'');
+		                 
+		                if(str.lastIndexOf("-") > 0){ //중간에 -가 있다면 replace
+		                    if(str.indexOf("-")==0){ //음수라면 replace 후 - 붙여준다.
+		                    
+		                        str = "-"+str.replace(/[-]/gi,'');
+		                    }else{		            	
+		                        str = str.replace(/[-]/gi,'');
+		                    }	                 
+		                }   
+		                //str = getNumber(str);		                
+		                $(this).val(str);	                 
+		            }                   
+		        }
+		        
+		        var adjustIndex = $(this).attr('adjustIndex');
+		        
+				//조정 가능 금액 
+				var basePrice = $('#adjustPossibleAmountValue'+adjustIndex).val().replace(/,/g, '');
+				var possTotAmt = $('#adjustTotalInvoiceAmount'+adjustIndex).val().replace(/,/g, '');
+				
+				debugger;
+		        
+				if (isEmpty(possTotAmt)){
+					possTotAmt = 0;
+				}else {
+					possTotAmt = parseInt(possTotAmt);
+				}
+				//조정금액
+				var adjust = $(this).val().replace(/,/g, '');
+				if (isEmpty(adjust) || adjust =='-'){
+					adjust = 0;
+				}else {
+					adjust = parseInt(adjust);
+				}
+				//조정가능 금액보다 조정 금액이 클 경우
+				if (possTotAmt+adjust < 0){
+					showAlert('결제 금액( '+numberComma(possTotAmt)+' 원)을 초과 할 수 없습니다.');
+					var subStr = $(this).val().replace(/,/g, '');
+					subStr = $(this).val().substring( 0, subStr.length-1 );					
+					$(this).val(numberComma(subStr));
+					return false;	
+				}
+
+				//조정 가능 금액 + 조정금액 합산
+				//alert(str)
+				if (str != "-"){					
+					var totalAmt = numberComma(parseInt(basePrice)+adjust);
+					$(this).val(numberComma($(this).val().replace(/,/g, '')));
+					$('#adjustRowTotal'+adjustIndex).text(totalAmt);					
+					//하단 집계 금액 호출
+					adjustTableSum();					
+				}
+		        /*]]>*/
+			});
+		}
+		
+		/***************************************************
+		합계 금액 계산
+		***************************************************/
+		var adjustTableSum = function() {
+			var adjustTotal = 0;			
+			$('.adjustRowTotal').each(function() {				
+				//adjustTotal += parseInt($(this).text());
+				adjustTotal += parseInt(removeComma($(this).text()));
+			});
+			$('#adjustTotal').text(numberComma(adjustTotal));
+		  }
+		
+		/***************************************************
+		조정 대상 정보 값 설정
+		***************************************************/	
+		var setAdjustInfo = function (conNumber, invoiceNumber, invoiceDate, collectionCloseYn){
+			$('#adjustConNumber').val(conNumber);
+			$('#adjustInvoiceNumber').val(invoiceNumber);
+			$('#adjustInvoiceDate').val(invoiceDate);
+			$('#adjustCollectionCloseYn').val(collectionCloseYn);			
+		}
+	</script>    	        
+    </div>

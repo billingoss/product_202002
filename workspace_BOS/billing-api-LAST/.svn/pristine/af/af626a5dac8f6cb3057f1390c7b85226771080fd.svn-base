@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout" layout:decorator="layout/default">
+<!-- index.html 고유 CSS 추가 -->
+<th:block layout:fragment="css">
+</th:block>
+<!-- index.html 고유 스크립트 추가 -->
+<th:block layout:fragment="script">
+<script type="text/javascript">
+/*<![CDATA[*/	
+	var currPage = 1;
+	$(document).ready(function(){		
+		//조회버튼 클릭
+		$('#searchBtn').click(function(){
+			getData(1);
+		});
+		
+		/***************************************************
+		기간 검색 radio event
+		***************************************************/
+		$("input[name=termSet]").click(function (){			
+			setSearchTerm('subscribeStartDateTime', 'subscribeEndDateTime', $(this).val());
+		})
+		
+		/***************************************************
+		초기화버튼 클릭
+		***************************************************/
+		$('#initBtn').click(function(){
+			$('#searchForm')[0].reset();
+			var today = getToday();
+			//기본값 설정
+			$('#subscribeStartDateTime').val(today);
+			$('#subscribeEndDateTime').val(today);
+			
+		    $(".select2Basic").select2({            
+		        minimumResultsForSearch: Infinity
+		    });		    
+		});
+		
+		/***************************************************
+		엑셀다운로드 버튼 Event
+		***************************************************/
+		$('#excelDownBtn').click(function(){			
+			debugger;
+			var f = document.searchForm;
+			f.method = 'post';
+			f.action = '/discount/getDiscountListExcel';
+			f.submit();
+		});
+		
+		/***************************************************
+		전체 선택 체크박스 Event
+		***************************************************/
+	    $(".check-all").click(function() {
+	        console.log($(".js_item").length)
+	    	$(".js_item").prop("checked", $(this).is(":checked"));
+	        if ($(this).is(":checked")) {
+	            $(".js_item:not(.check-all)").parents("tr").addClass("selected");
+	        } else {
+	            $(".js_item:not(.check-all)").parents("tr").removeClass("selected");
+	        }
+	    });
+	
+	    /***************************************************
+		조회 목록 선택 체크박스 Event
+		***************************************************/
+		$(".js_item").click(function() {
+	        if ($(this).is(":checked")) {
+	            $(this).parents("tr").addClass("selected");
+	        } else {
+	            $(this).parents("tr").removeClass("selected");
+	        }
+	        if ($(".js_item:not(.check-all)").length == $(".js_item:not(.check-all):checked").length) {
+	            $(".check-all").prop("checked", true);
+	        } else {
+	            $(".check-all").prop("checked", false);
+	        }
+	    });
+	    
+
+		//초기화 버튼 한번 실행
+		$('#initBtn'). trigger('click');
+	    
+	});
+
+	/*************************************************************************
+	할인 목록 조회 
+	*************************************************************************/	
+	function getData(page) {		
+		var queryString = $("form[name=searchForm]").serialize();
+		queryString = queryString + '&page='+page+'&perPageNum=10&pagingYn=Y';
+		queryString = queryString.replace(/-/g, '');
+		
+		currPage = page;
+		$.ajax({
+			method : 'get',
+			url : '/discount/getDiscountList',
+			data : queryString, 
+			dataType : 'json',
+			success : handleData
+		});
+	}
+	
+	/*************************************************************************
+	할인 목록 결과 설정
+	*************************************************************************/
+	function handleData(data) {
+		//PageMaker정보를 Json으로부터 분리한다.
+		json = data.lists; //hashmap의 list array데이타
+		pageMaker = data.pageMaker; //pageMaker 
+	
+		$('#totalCount').html(numberComma(pageMaker.totalCount));
+		$('#discountbody').empty();
+		var trHTML = '';
+		if (json.length == 0) {			
+			trHTML += '<tr class="no_empty">';
+			trHTML += '	<td colspan=9>';
+			trHTML += '		<div class="data-empty">';
+			trHTML += '			<img src="/resources/images/common/img_no_empty.png" alt="데이터 없음" /><span class="txt_empty">검색 결과가 없습니다.</span>';
+			trHTML += '		</div>';
+			trHTML += '	</td>';
+			trHTML += '</tr>';
+		} else {
+			$.each(json, function(i, item) {
+				console.log(item)
+				trHTML += '<tr>';
+			    trHTML += '    <td>';
+			    trHTML += '        <span class="trp checkbox-box">';
+				trHTML += '			<input id="checkbox_all'+(i+1)+'" class="js_item" type="checkbox" name="selectProductChk" value="'+item.productNumber+'|'+item.productState+'">';
+				trHTML += '			<i></i>';
+				trHTML += '			<label for="checkbox_all'+(i+1)+'"></label>';
+				trHTML += '		</span>';
+			    trHTML += '    </td>';
+			    trHTML += '    <td>'+((pageMaker.cri.page-1)*10+i+1)+'</td>';
+	            trHTML += '    <td>'+item.discountTypeName+'</td>';
+	            trHTML += '    <td>'+item.discountTargetName+'</td>';
+	            trHTML += '    <td class="tal ellipsis"><a href="#none" class="updateDiscountBtn" id="updateDiscountBtn'+(i+1)+'" value="'+item.discountId+'">'+item.discountName+'</a></td>';	            
+	            if(item.discountType == "RATE"){
+	            	//정률일 경우  % 설정
+	            trHTML += '    <td class="tar">'+numberComma(item.discountValue)+'%</td>';
+	            }else {
+	            trHTML += '    <td class="tar">'+numberComma(item.discountValue)+'원</td>';	            	
+	            }
+	            /* trHTML += '    <td>'+item.discountStateName+'</td>'; */
+	            trHTML += '    <td>' + formatDate(item.subscribeStartDateTime) + '</td>';
+			    trHTML += '    <td>' + formatDate(item.subscribeEndDateTime) + '</td>';
+	            trHTML += '    <td class="tal ellipsis">' + item.discountDescription + '</td>';
+	            trHTML += '    <td>'+formatDate(item.auditDateTime)+'</td>';
+			    trHTML += '</tr>';
+			});		
+		}
+	
+		$('#discountbody').append(trHTML);
+		formatPhone();
+		pagingProc(pageMaker);
+		
+		/***************************************************
+		할인 수장 버튼 Event
+		***************************************************/	
+		createDiscountBtnEvent('.updateDiscountBtn');
+		
+	}
+	
+	/*************************************************************************
+	Page 이동
+	*************************************************************************/
+	function getPagingData(page){
+		getData(page);
+	}
+
+/*]]>*/
+</script>
+</th:block>
+        <!-- container -->
+        <div id="container" layout:fragment="contentFragment">
+		<form name="searchForm" id="searchForm" onsubmit="return false;">
+            <div id="contents" class="product">
+                <h2 class="h2">상품관리</h2>
+
+                <section th:include="fragments/topMenu::topMenuFragmemt"></section>
+
+                <section>
+                    <div class="cont-box wfull">
+                        <!--상품관리//-->
+                        <table class="form_table">
+                            <colgroup>
+                                <col width="170px" />
+                                <col width="*" />
+                                <col width="170px" />
+                                <col width="*" />
+                            </colgroup>
+                            <tbody>
+                                <tr>
+                                    <th>할인유형</th>
+                                    <td>
+                                        <div class="select-box w_mm">
+                                            <select class="select2Basic" id="discountType" name="discountType">
+												<option value="">전체</option>
+												<option th:each="result : ${discountTypeList}" th:value="${result.code}" th:text="${result.codeName}"/>
+											</select>
+                                        </div>
+                                    </td>
+                                    <th>상태</th>
+                                    <td>
+                                        <div class="select-box w_mm">
+                                            <select class="select2Basic" id="discountState" name="discountState">
+												<option value="">전체</option>
+												<option th:each="result : ${discountStateList}" th:value="${result.code}" th:text="${result.codeName}"/>
+											</select>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>할인명</th>
+                                    <td>
+                                        <input type="text" class="w_lg" value="" placeholder="" id="discountName" name="discountName"/>
+                                    </td>
+                                    <th>적용대상</th>
+                                    <td>
+                                        <div class="select-box w_mm">
+                                            <select class="select2Basic" id="discountTarget" name="discountTarget">
+												<option value="">전체</option>
+												<option th:each="result : ${discountTargetList}" th:value="${result.code}" th:text="${result.codeName}"/>
+											</select>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>사용기간</th>
+                                    <td colspan="3">
+                                        <div class="calendar mr20">
+                                            <span class="datepicker-box w_ms">
+												<input type="text" class="js-datepicker" id="subscribeStartDateTime" name="subscribeStartDateTime"/>
+											</span>
+                                            <span class="ml5 mr5">~</span>
+                                            <span class="datepicker-box w_ms">
+												<input type="text" class="js-datepicker"  id="subscribeEndDateTime" name="subscribeEndDateTime"/>
+											</span>
+                                        </div>
+
+                                        <span class="trp radio-box">
+											<input type="radio" id="termSet1" name="termSet" checked="checked"  value="0"/>
+											<i></i>
+											<label for="termSet1">오늘</label>
+										</span>
+                                        <span class="trp radio-box">
+											<input id="termSet2" type="radio" name="termSet"  value="-7"/>
+											<i></i>
+											<label for="termSet2">7일</label>
+										</span>
+                                        <span class="trp radio-box">
+											<input id="termSet3" type="radio" name="termSet"  value="-15"/>
+											<i></i>
+											<label for="termSet3">15일</label>
+										</span>
+                                        <span class="trp radio-box">
+											<input id="termSet4" type="radio" name="termSet"  value="-1M"/>
+											<i></i>
+											<label for="termSet4">한달</label>
+										</span>
+										<span class="trp radio-box">
+											<input id="termSet5" type="radio" name="termSet"  value="-1Y"/>
+											<i></i>
+											<label for="termSet5">1년</label>
+										</span>
+                                    </td>
+                                </tr>                                  
+                            </tbody>
+                        </table>
+                        <div class="btn_set-center mt30">
+                            <a class="btn btn_green btn_m radius mr5" role="button" href="javascript:void(0)" id="searchBtn">검색</a>
+                            <a class="btn btn_default btn_m radius" href="#none" role="button" id="initBtn">초기화</a>
+                        </div>
+
+                        <!--리스트//-->
+                        <div class="table-wrap mt80">
+                            <div class="table-header ">
+                                <div class="con_title">총 <em id="totalCount">0</em>건</div>
+                                <div class="ab-r">
+                                    <div class="btn_set">
+                                        <a class="btn btn_default"><i class="icon_down" id="excelDownBtn" >엑셀다운로드</i></a>
+                                    </div>
+                                </div>
+                            </div>
+                            <table class="table_list" id="check_table">
+                                <colgroup>
+                                    <col style="width:5%"/>
+                                    <col style="width:5%"/>
+                                    <col style="width:9%"/>
+                                    <col style="width:8%"/>
+                                    <col style="width:auto"/>
+                                    <col style="width:8%"/>
+                                    <col style="width:8%"/>
+                                    <col style="width:8%"/>
+                                    <col style="width:auto"/>
+                                    <col style="width:8%"/>
+                                </colgroup>
+                                <thead>
+                                    <tr>
+                                        <th>
+                                            <span class="trp checkbox-box">
+												<input id="checkbox_all1" class="js_item check-all" type="checkbox" name=""/>
+												<i></i>
+												<label for="checkbox_all1"></label>
+											</span>
+                                        </th>
+                                        <th>번호</th>
+                                        <th>할인유형</th>
+                                        <th>적용대상</th>
+                                        <th>할인명</th>
+                                        <th>할인율/금액</th>
+                                        <th>할인시작일</th>
+                                        <th>할인종료일</th>
+                                        <th>할인설명</th>
+                                        <th>등록일</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="discountbody">
+                                </tbody>
+                            </table>
+                            <div class="paging-area">
+                                <div class="btn_set">
+                                    <div class="fl">
+                                        <button class="btn btn_gray btn_w" type="button" id="deleteDiscountBtn">삭제</button>
+                                    </div>
+                                    <div class="fr">
+                                        <button class="btn btn_default btn_w createDiscountBtn" type="button" id="createDiscountBtn"><i class="icon_add">등록</i></button>
+                                    </div>
+                                </div>
+                                <div class="paging" id="pagination"></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+            </div>
+        </form>
+        </div>
+        <!-- //container -->
+        <span id="popupTemp" layout:fragment="popupFragment" >      
+         	<div th:replace="online/product/createDiscountPop::createDiscountPop"></div>
+		</span>                
+</html>

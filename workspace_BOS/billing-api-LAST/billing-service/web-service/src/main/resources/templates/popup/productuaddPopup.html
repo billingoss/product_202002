@@ -1,0 +1,189 @@
+<script type="text/javascript">
+$(document).ready(function() {
+	var gl_productId = '';
+	/* 신규ID 생성버튼 클릭  */
+	$('#buttonProductId').click(function() {
+		if($("input:checkbox[name='maintenanceId']").is(":checked") == true) {
+			alert("기존계약 적용에 체크하셨네요. 해제하셔야 신규ID 생성가능합니다.");
+		} else{
+			$.ajax({
+				url : '/product/findProductid',
+				method : 'get',
+				error : function(xhr, status, error) {
+					alert(error);
+				},
+				success : function(data) {
+					//alert("data1 = " + data);
+					$('#productidset').html(data);
+/* 					alert("productId = "+ $('#productId').val()); */
+				}
+			});
+		}
+		gl_productId = $('#productId').val();
+		//alert("gl_productId = "+ gl_productId);
+	});
+	
+	/* 저장버튼 클릭  */
+	$('#productupdatebutton').click(function() {
+		/* 기존상품에 Update  */
+		if($("input:checkbox[name='maintenanceId']").is(":checked") == true) {
+			alert("[기존계약 적용]에 체크하셨네요. 기존상품에 업데이트합니다. ");
+			gl_productId = $('#productId').val();
+			//alert("gl_productId = "+ gl_productId);
+			var queryString = $("form[name=updateproductform]").serialize();
+			//debugger;
+			$.ajax({
+				url : '/product/updateProduct',
+				data : queryString,
+				type : 'post',
+				error : function(xhr, status, error) {
+					alert("error = " + error);
+				},
+				success : function(data) {
+					//alert("queryString = " + queryString);
+					alert("기존상품에 변경되었습니다."); 
+				}
+			});				
+		} 
+		/* 신규상품으로 Regist  */
+		else{
+			alert("새로운 상품으로 등록됩니다. ");
+			/* debugger; */
+			$.ajax({
+				url : '/product/findProductid',
+				method : 'get',
+				error : function(xhr, status, error) {
+					alert(error);
+				},
+				success : function(data) {
+					//alert(data);
+					$('#productidset').html(data);
+					var queryString = $("form[name=updateproductform]").serialize();
+						//alert("queryString = " + queryString);
+					//debugger;
+					$.ajax({
+						url : '/product/saveProduct',
+						data : queryString,
+						type : 'post',
+						error : function(xhr, status, error) {
+							alert("error = " + error);
+						},
+						success : function(data) {
+							//alert("queryString = " + queryString);
+							alert("신규상품 등록이 완료되었습니다."); 
+						}
+
+					});						
+				}
+			});
+
+		}	
+	});
+}); 
+</script>
+<div class="modal-header modal-popup-header">
+	<h5 class="modal-title">
+		■ 상품 정보 변경
+		<button type="button" class="close" data-dismiss="modal">&times;</button>
+	</h5>
+</div>
+<!--팝업메인-->
+<div class="modal-body" style="padding-bottom: 0px; padding-top: 0px;">
+	<div class="row grid-columns" style="margin-top: 15px;">
+		<div class="col-md-12 col">
+			<div class="tab-pane fade in active" id="productUpdate">
+				<div class="col-md-12 col">
+					<form role="form" name="updateproductform" th:each="checkproduct: ${checkproduct}">
+						<div class="form-group ">
+						<label for="productType">상품분류</label> 
+							<input type="text" class="form-control" id="productType"  readonly="true" th:value="${checkproduct.productType}"
+								name="productType" />
+				      	</div> 
+ 						<div class="form-group">
+							<label for="productName"> 상품명 </label> 
+							<input type="text" class="form-control" id="productName" readonly="true" th:value="${checkproduct.productName}" 
+								name="productName" />
+						</div>
+						<div class="form-group">
+							<label for="productDescription"> 상품설명 </label> 
+							<input type="text" class="form-control" id="productDescription" readonly="true" th:value="${checkproduct.productDescription}" 
+								name="productDescription" />
+						</div>		
+						<div class="form-group">
+							<label for="subscribeStartDateTime"> 가입가능시작일 </label> 
+							<input type="text" class="form-control" id="subscribeStartDateTime" th:value="${checkproduct.subscribeStartDateTime}" placeholder="ex) 20180801" 
+								name="subscribeStartDateTime" />
+						</div>		
+						<div class="form-group">
+							<label for="subscribeEndDateTime"> 가입가능종료일 </label> 
+							<input type="text" class="form-control" id="subscribeEndDateTime" th:value="${checkproduct.subscribeEndDateTime}" placeholder="ex) 20180831" 
+								name="subscribeEndDateTime" />							
+						</div>																			
+						<div class="form-group">
+					       <label for="recurringDeleveryYn"> 정기배송여부 </label> 
+							<input type="text" class="form-control" id="subscribeEndDateTime" readonly="true" th:value="${checkproduct.recurringDeleveryYn}" 
+								name="recurringDeleveryYn" />
+						</div>			
+						<div class="form-group">
+							<label for="priceAmount"> 금액 </label> 
+							<input type="text" class="form-control" id="priceAmount" th:value="${checkproduct.priceAmount} " placeholder="ex) 500(숫자만 입력하세요.)"
+								name="priceAmount" />									
+						</div>			
+						<div class="form-group">
+					       <label for="taxObjectYn"> 과세여부 </label> 
+							<input type="text" class="form-control" id="taxObjectYn" readonly="true" th:value="${checkproduct.taxObjectYn} "
+								name="taxObjectYn" />										
+						</div>	
+						<div class="form-group"> 
+					       <label for="packagePriceReferenceYn"> 패키지금액 참조여부 </label> 
+							<input type="text" class="form-control" id="packagePriceReferenceYn" readonly="true" th:value="${checkproduct.packagePriceReferenceYn} "
+								name="packagePriceReferenceYn" />	
+						</div>	
+						<div class="form-group">
+							<label for="packagePriceBandwidth"> 패키지금액범위 </label> 
+							<input type="text" class="form-control" id="packagePriceBandwidth" th:value="${checkproduct.packagePriceBandwidth} " placeholder="ex) 2700~3000(범위를 입력하세요.)"
+								name="packagePriceBandwidth" />									
+						</div>
+						<div class="form-group">      
+					         <label for="packageVarietyYn"> 패키지구성변동여부 </label> 
+							<input type="text" class="form-control" id="packageVarietyYn" readonly="true" th:value="${checkproduct.packageVarietyYn} " 
+								name="packageVarietyYn" />									
+						</div>
+<!-- 						<div class="form-group"> // 테이블 수정필요
+					        <label for="suspendPriceYn"> 정지시 과금여부 </label> 
+							<input type="text" class="form-control" id="suspendPriceYn" readonly="true" th:value="${checkproduct.suspendPriceYn} " 
+								name="suspendPriceYn" />									
+						</div>				      	 -->
+						<div class="form-group">
+							<label for="suspendPriceAmount"> 정지시 과금액</label> 
+							<input type="text" class="form-control" id="suspendPriceAmount" th:value="${checkproduct.suspendPriceAmount} " placeholder="ex) 500(숫자만 입력하세요.)"
+								name="suspendPriceAmount" />									
+						</div>
+						<div class="form-group">
+							<!-- <label for="productId"> 기존 계약 적용여부</label>  -->
+							<!-- <input type="hidden" class="form-control" id="productId" th:value="${checkproduct.productId} "
+								name="productId" />	 -->
+							<input type="checkbox" name="maintenanceId" value=""/> 기존계약 적용					
+						</div>	
+						<div id="productidset">
+							<div class="form-group">
+								<label for="productId"> 상품ID (신규등록을 원하시면 아래 "신규 상품ID 생성" 버튼을 클릭하세요.) </label> 
+								<input class="form-control" id="productId" type="text" readonly="true"
+									name="productId" th:value="${checkproduct.productId}" placeholder="신규 상품으로 등록하시려면  ID생성을 하세요."></input>
+								<span class="input-group-btn">
+					              <button type="button" id="buttonProductId" class="btn btn-success">신규 상품ID 생성
+						                <i class="fa fa-mail-forward spaceLeft"></i>
+						            </button>
+					            </span>
+							</div>
+						</div>			
+					</form>
+					<button id="productupdatebutton"
+						class="btn btn-success btn-lg btn-block" role="button">저장</button>
+					<br></br>
+				</div>
+			</div>
+			<!-- tab-pane.// -->
+		</div>
+	</div>
+</div>

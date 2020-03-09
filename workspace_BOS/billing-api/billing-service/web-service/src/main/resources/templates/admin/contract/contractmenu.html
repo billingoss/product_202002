@@ -1,0 +1,69 @@
+<style>
+table td {
+	vertical-align: middle;
+}
+</style>
+<script type="text/javascript">
+	$(document).ready(function() {
+		$("#productsale").load("/contract/productsale");
+			//alert("productsale");
+		$("#batchproductsale").load("/contract/batchproductsale");
+		$("#customersearch").load("/contract/customersearch");
+		$("#customerupdate").load("/contract/customerupdate");
+		$("#couponusetemplate").load("/contract/couponusetemplate");
+		
+		$('#tabCustomerUpdate').click(function() {
+			$('#customerupdate').empty();
+			$("#customerupdate").load("/contract/customerupdate");
+		});
+	});
+	
+	function emptyElement(elementid){
+		$('.modal-content').empty();
+	}
+	
+	//추가
+	function button_newcontract() {
+		debugger;
+		var customerNumber = parseInt($('#customerListTbody')[0].firstElementChild.childNodes[1].innerText);
+		console.log('customerNumber =>'+ customerNumber);
+	 	$("#body-content").load("/contract/newcontract/"+customerNumber);		
+	};
+	
+</script>
+<section class="page container">
+	<!-- tab line start -->
+		<div class="span16" id="contractmaintab">
+			<ul class="nav nav-tabs font-size18px">
+			  <li class="active">
+			  	<a data-toggle="tab" href="#productsale" onclick="emptyElement('productsale')">상품판매</a>
+			  </li>
+			  <li>
+			  	<a data-toggle="tab" href="#batchproductsale" onclick="emptyElement('batchproductsale')">상품판매(일괄등록)</a>
+			  </li>
+			  <li id="tabCustomerSearch">
+			  	<a data-toggle="tab" href="#customersearch" onclick="emptyElement('customersearch')">판매정보조회</a>
+			  </li>
+			  <li id="tabCustomerUpdate">
+			  	<a data-toggle="tab" href="#customerupdate" onclick="emptyElement('customerupdate')">고객등록/변경</a>
+			  </li>
+			  <li id="tabCouponUse">
+			  	<a data-toggle="tab" href="#couponusetemplate" onclick="emptyElement('couponusetemplate')">쿠폰사용</a>
+			  </li>
+			</ul>
+		
+		<div class="span16 tab-content">
+		  <div id="productsale" class="tab-pane fade in active">
+		  </div>
+			<div id="batchproductsale" class="tab-pane fade">
+			</div>
+			<div id="customersearch" class="tab-pane fade">
+		  </div>
+			<div id="customerupdate" class="tab-pane fade">
+			</div>
+			<div id="couponusetemplate" class="tab-pane fade">
+			</div>
+		</div>	
+	   </div>	
+	  <!-- tab line start -->
+</section>

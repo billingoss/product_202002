@@ -1,0 +1,325 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+
+		$("#searchbutton").click(function(){
+			if ($('#searchcustomername').val() == ''){
+				alert("조회하실 고객명을 입력하십시오.");
+				return;
+			}
+			getDataCustomer(1);
+		});
+		
+		function getDataCustomer(page) {
+			var param = new Object();
+			param.page = page;
+			param.customername = $('#searchcustomername').val();
+			param.customerphonenumber = $('#searchcustomerphonenumber').val().replace('-','').replace('-','');
+			param.perPageNum = 20; /*만약값을셋팅하지 않으면 기본 페이지당 row수 10*/
+			
+			$.ajax({
+				method : 'get',
+				url : '/order/getcustomerlist',
+				data : param, //JSON.stringify(paramData) , /* queryString, */
+				dataType : 'json',
+				error : function(xhr, status, error) {
+					alert(error);
+				},
+				success : handleDataCustomer
+			});
+		}
+
+		function handleDataCustomer(data) {
+			json = data.lists; //hashmap의 list array데이타
+
+			if (json.length == 0) {
+				Common.Dialog.alert({
+					title : '',
+					content : '데이터가 없습니다.'
+				});
+			} else if (json.length == 1){
+				$.each(json, function(i, item) {
+					$('#customernumber').val(item.customernumber);
+					$('#customername').val(item.customername);
+					$('#customerphonenumber').val(item.deliveryphonenumber1);
+					$('#searchcustomername').val(item.customername);
+					$('#searchcustomerphonenumber').val(item.deliveryphonenumber1);
+				});
+				getDataContract(1);
+				getDataCounsel(1);
+				inputFormatPhone();
+			} else {
+				viewCustomerPopup();
+			}
+		}
+		
+		function viewCustomerPopup(){
+			var param = new Object();
+			param.customername = $('#searchcustomername').val();
+			param.customerphonenumber = $('#searchcustomerphonenumber').val();
+			$.ajax({
+					method : 'get',
+		    		url : '/order/customerpopup/',
+		    		data : param,
+					error: function(xhr, status, error){ 	
+					  alert(error);
+					},
+					success : function(data){
+						 $('#savedialog .modal-content').html(data);
+		            	 $("#savedialog").modal('show'); 
+					}
+			});
+		}
+
+		//===================페이지이벤트처리시작==========================
+        $(document).on("click", "#paginationcontract .goBackPage", function(){
+        	page = Number(pageMaker.startPage) - 1;
+			getDataContract(page);
+        });
+
+
+		$(document).on("click", "#paginationcontract .goPage", function(){
+			page = $(this).attr("data-page");
+			getDataContract(page);
+		});
+
+        $(document).on("click", "#paginationcontract .goNextPage", function(){
+			page = Number(pageMaker.endPage) + 1;
+			getDataContract(page);
+		});
+        
+        $(document).on("click", "#paginationcontract .goBackPage", function(){
+        	page = Number(pageMaker.startPage) - 1;
+        	getDataContract(page);
+        	
+        });
+
+        $(document).on("click", "#paginationcounsel .goBackPage", function(){
+        	page = Number(pageMakerCousel.startPage) - 1;
+			getDataCounsel(page);
+        });
+
+
+		$(document).on("click", "#paginationcounsel .goPage", function(){
+			page = $(this).attr("data-page");
+			getDataCounsel(page);
+		});
+
+        $(document).on("click", "#paginationcounsel .goNextPage", function(){
+			page = Number(pageMakerCousel.endPage) + 1;
+			getDataCounsel(page);
+		});
+        
+        $(document).on("click", "#paginationcounsel .goBackPage", function(){
+        	page = Number(pageMakerCousel.startPage) - 1;
+			getDataCounsel(page);
+        	
+        });
+	});
+	
+	function getDataContract(page) {
+		var param = new Object();
+		param.page = page;
+		param.customernumber = $('#customernumber').val();
+		param.perPageNum = 5; /*만약값을셋팅하지 않으면 기본 페이지당 row수 10*/
+		
+		$.ajax({
+			method : 'get',
+			url : '/order/getcustomercontractlist',
+			data : param, //JSON.stringify(paramData) , /* queryString, */
+			dataType : 'json',
+			error : function(xhr, status, error) {
+				alert(error);
+			},
+			success : handleDataContract
+		});
+	}
+
+	function handleDataContract(data) {
+		debugger;
+		
+		//PageMaker정보를 Json으로부터 분리한다.
+		json = data.lists; //hashmap의 list array데이타
+		pageMaker = data.pageMaker; //pageMaker 
+		displayproductdescription = data.displayproductdescription;
+
+		if (json.length == 0) {
+			Common.Dialog.alert({
+				title : '',
+				content : '데이터가 없습니다.'
+			});
+		}
+		
+		$('#contracttotalcount').html('총 : ' + pageMaker.totalCount + '건');
+
+		$('#contracttbody').empty();
+		$('#deliverytbody').empty();
+		$('#paginationdelivery').empty();
+		
+		var trHTML = '';
+
+		$.each(json, function(i, item) {
+			 trHTML += '<tr>'          
+			 		+ '<td style="vertical-align: middle"><input type="checkbox" value="' + item.connumber + '|' + item.customername + '|' + item.customerphonenumber + '|' + item.contractstate + '"/></td>'
+			 		+ '<td style="vertical-align: middle">' + ((pageMaker.cri.page-1) * 5 + i + 1) + '</td>'
+					+ '<td style="vertical-align: middle">' + (item.registrationdatetime.length==8?item.registrationdatetime.substring(0,4)+'-'+item.registrationdatetime.substring(4,6)+'-'+item.registrationdatetime.substring(6,8):item.registrationdatetime) + '</td>'
+					+ '<td style="vertical-align: middle">' + item.channelname + '</td>'
+					+ '<td style="vertical-align: middle">' + item.customertype + '</td>'
+					+ '<td style="vertical-align: middle">' + item.recurringdeliveryyn + '</td>'
+					+ '<td style="vertical-align: middle">' + item.contractstatename + '</td>'
+					+ '<td style="vertical-align: middle">' + item.deliverycustomername + '</td>'
+					+ '<td class="phone" style="vertical-align: middle">' + item.deliveryphonenumber1 + '</td>'
+					+ '<td style="vertical-align: middle">' + item.productname + '</td>'
+					+ '<td style="vertical-align: middle">' + item.quantity + '</td>'
+					+ '<td style="vertical-align: middle">' + item.deliveryday + '</td>'
+					+ '<td style="vertical-align: middle">' + item.deliverytypename + '</td>'
+					+ '<td style="vertical-align: middle">' + item.deliveryzipcode + '</td>'
+					+ '<td style="vertical-align: middle">' + item.deliveryaddress + '</td>'
+					+ '<td style="vertical-align: middle">' + item.deliveryremark + '</td>'
+					+ '<td style="vertical-align: middle">' + (item.deliverystartdatetime.length==8?item.deliverystartdatetime.substring(0,4)+'-'+item.deliverystartdatetime.substring(4,6)+'-'+item.deliverystartdatetime.substring(6,8):item.deliverystartdatetime) + '</td>'
+					+ '<td style="vertical-align: middle">' + (item.effectenddatetime.length==8?item.effectenddatetime.substring(0,4)+'-'+item.effectenddatetime.substring(4,6)+'-'+item.effectenddatetime.substring(6,8):item.effectenddatetime) + '</td>'
+					+ '<td style="vertical-align: middle">' + item.duration + '</td>'
+					+ '<td style="vertical-align: middle">' + item.deliverycyclename + '</td>'
+					+ '<td style="vertical-align: middle">' + item.deliverytimes + '</td>'
+					+ '<td style="vertical-align: middle">' + item.deliverytotalcount + '</td>'
+					+ '<td style="vertical-align: middle">' + item.currentdeliverycount + '</td>';
+			if (displayproductdescription == 'Y'){
+				trHTML += '<td style="vertical-align: middle">' + item.productoption + '</td>'
+					+ '<td style="vertical-align: middle">' + item.productdescription1 + '</td>'
+					+ '<td style="vertical-align: middle">' + item.productdescription2 + '</td>'
+					+ '<td style="vertical-align: middle">' + item.productdescription3 + '</td>'
+					+ '<td style="vertical-align: middle">' + item.productdescription4 + '</td>'
+					+ '<td style="vertical-align: middle">' + item.productdescription5 + '</td>'
+					+ '<td style="vertical-align: middle">' + item.bigissuequantity + '</td>';				 
+			}
+			trHTML += '<td style="vertical-align: middle">' + (item.subscribedatetime.length==8?item.subscribedatetime.substring(0,4)+'-'+item.subscribedatetime.substring(4,6)+'-'+item.subscribedatetime.substring(6,8):item.subscribedatetime) + '</td>'
+					+ '<td style="vertical-align: middle">' + item.customername + '</td>'
+					+ '<td class="phone" style="vertical-align: middle">' + item.customerphonenumber + '</td>'
+			        + '<td style="vertical-align: middle">' + item.paymentday + '</td>'
+					+ '<td style="vertical-align: middle">' + item.paymentmethodname + '</td>'
+					+ '<td style="vertical-align: middle">' + item.paymentamount + '</td>'
+					+ '<td style="vertical-align: middle">' + item.deliverychargetypename + '</td>'
+					+ '<td style="vertical-align: middle">' + item.deliverychargeamount + '</td>'
+                 + '</tr>';
+		});
+		$('#contracttbody').append(trHTML);
+		formatPhone();
+		pagingDeliveryProc('paginationcontract', pageMaker);
+		
+		if (json.length > 0){
+			$('#contracttable input:checkbox:eq(0)').click();
+		}
+	}
+
+    function getDataCounsel(page) {
+		var param = new Object();
+		param.page = page;
+		param.customernumber = $('#customernumber').val();
+		param.perPageNum = 5; /*만약값을셋팅하지 않으면 기본 페이지당 row수 10*/
+
+		$.ajax({
+			method : 'get',
+			url : '/order/getcounsellist',
+			data : param, //JSON.stringify(paramData) , /* queryString, */
+			dataType : 'json',
+			error : function(xhr, status, error) {
+				alert(error);
+			},
+			success : handleDataCounsel
+		});
+	}
+
+	function handleDataCounsel(data) {
+		debugger;
+		
+		//PageMaker정보를 Json으로부터 분리한다.
+		json = data.lists; //hashmap의 list array데이타
+		pageMakerCounsel = data.pageMaker; //pageMaker 
+
+		$('#counseltotalcount').html('총 : ' + pageMakerCounsel.totalCount + '건');
+
+		$('#counseltbody').empty();
+		var trHTML = '';
+
+		$.each(json, function(i, item) {
+			 trHTML += '<tr>'          
+			        + '<td style="vertical-align: middle"><input name="chk" type="checkbox" value="' + item.counsellingdate + item.counsellingtime + '"/></td>'
+			 		+ '<td style="vertical-align: middle">' + ((pageMakerCounsel.cri.page-1) * 5 + i + 1) + '</td>'
+					+ '<td style="vertical-align: middle">' + item.counsellingdate.substring(0,4)+'-'+item.counsellingdate.substring(4,6)+'-'+item.counsellingdate.substring(6,8)+' '+item.counsellingtime.substring(0,2)+':'+item.counsellingtime.substring(2,4)+':'+item.counsellingtime.substring(4,6) + '</td>'
+					+ '<td style="vertical-align: middle">' + item.categoryname + '</td>'
+					+ '<td style="vertical-align: middle">' + item.memo + '</td>'
+					+ '<td style="vertical-align: middle">' + item.inboundpathname + '</td>'
+					+ '<td style="vertical-align: middle">' + item.answer + '</td>'
+					+ '<td style="vertical-align: middle">' + item.statename + '</td>'
+					+ '</tr>';
+		});
+		$('#counseltbody').append(trHTML);
+		pagingDeliveryProc('paginationcousel',pageMakerCounsel);
+	}
+
+	function pagingDeliveryProc(paginationname, pageMaker) {
+		//=============paginationcontract 시작=====================
+			
+		$("#"+paginationname).empty();
+		if (pageMaker.totalCount != 0) {
+			$("#"+paginationname).empty();
+			if (pageMaker.prev == true) {
+				
+				/*<![CDATA[*/  //타임리프에서 부등호상용시 조심해야함 반드시 CDATA로 감싸야함
+				$("#"+paginationname).append('<li class="goBackPage"><a><<</a></li>'); //다음페이지로 가기 버튼 활성화
+				/*]]>*/
+			}
+
+
+			//아래는 타임리프사용시 조시매야한다. for하기와 같이 쓰지않음 에러발생함
+			/*<![CDATA[*/
+			for (var i = pageMaker.startPage; i <= pageMaker.endPage; i++) {
+				/*]]>*/
+
+				//alert(i);
+				if (pageMaker.cri.page == i) { 
+					$("#"+paginationname).append('<li class="disabled active" style="color: red;"><a>' + i + "</a></li>"); //버튼 비활성화
+
+				} else {
+
+					$("#"+paginationname).append('<li class="goPage" data-page="' + i + '"><a>' + i + "</a></li>"); //버튼 활성화
+
+				}
+			}
+
+			if (pageMaker.next == true) {
+				$("#"+paginationname).append('<li class="goNextPage"><a>>></a></li>'); //다음페이지로 가기 버튼 활성화
+			}
+		}
+	//=============paginationcontract 끝=====================
+	}
+</script>
+<script src="/js/bootstrap-datepicker.js" type="text/javascript" ></script>
+<div class="col-md-12">
+	<div class="panel panel-heading" style="vertical-align: middle; text-align: center;
+		margin-left: auto; margin-right: auto;  padding-bottom: 0px;">
+		<div class="form-section">
+			<div class="row" style="text-align: center">
+				<form id="customerDataForm" name="customerDataForm" class="form-inline" role="form" style="margin-bottom: 10px;">
+					<div class="col-md-4">
+						<div class="form-group">
+							<span>고객명</span>
+							<input type="text" class="form-control" id="searchcustomername"/>
+							<input type="hidden" id="customernumber" value=""/>
+							<input type="hidden" id="customername" value=""/>
+							<input type="hidden" id="customerphonenumber" value=""/>
+						</div>
+					</div>
+					<div class="col-md-4">
+						<div class="form-group">
+							<span>이동전화번호</span>
+							<input type="text" class="form-control phone" id="searchcustomerphonenumber"/>
+						</div>
+					</div>
+					<div class="col-md-4">
+						<button id="searchbutton" type="button" class="btn btn-primary">조회</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>

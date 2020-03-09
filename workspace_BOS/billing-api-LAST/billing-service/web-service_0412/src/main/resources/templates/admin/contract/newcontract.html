@@ -1,0 +1,1049 @@
+<script type="text/javascript">
+// 통합주소 daum api 
+// 우편번호 찾기 찾기 화면을 넣을 element
+var element_wrap = document.getElementById('wrap');
+function foldDaumPostcode() {
+    // iframe을 넣은 element를 안보이게 한다.
+    element_wrap.style.display = 'none';
+}
+
+function sample3_execDaumPostcode(){
+ debugger;
+    // 현재 scroll 위치를 저장해놓는다.
+    var currentScroll = Math.max(document.body.scrollTop, document.documentElement.scrollTop);
+    new daum.Postcode({
+        oncomplete: function(data) {
+            // 검색결과 항목을 클릭했을때 실행할 코드를 작성하는 부분.
+            // 각 주소의 노출 규칙에 따라 주소를 조합한다.
+            // 내려오는 변수가 값이 없는 경우엔 공백('')값을 가지므로, 이를 참고하여 분기 한다.
+            var fullAddr = data.address; // 최종 주소 변수
+            var extraAddr = ''; // 조합형 주소 변수
+            // 기본 주소가 도로명 타입일때 조합한다.
+            if(data.addressType === 'R')
+            {
+                //법정동명이 있을 경우 추가한다.
+                if(data.bname !== ''){
+                    extraAddr += data.bname;
+                }
+                // 건물명이 있을 경우 추가한다.
+                if(data.buildingName !== ''){
+                    extraAddr += (extraAddr !== '' ? ', ' + data.buildingName : data.buildingName);
+                }
+                // 조합형주소의 유무에 따라 양쪽에 괄호를 추가하여 최종 주소를 만든다.
+                fullAddr += (extraAddr !== '' ? ' ('+ extraAddr +')' : '');
+            }
+            // 우편번호와 주소 정보를 해당 필드에 넣는다.
+            document.getElementById('sample3_postcode').value = data.zonecode; //5자리 새우편번호 사용
+            document.getElementById('sample3_address').value = fullAddr;
+            // iframe을 넣은 element를 안보이게 한다.
+            // (autoClose:false 기능을 이용한다면, 아래 코드를 제거해야 화면에서 사라지지 않는다.)
+            element_wrap.style.display = 'none';
+            // 우편번호 찾기 화면이 보이기 이전으로 scroll 위치를 되돌린다.
+            document.body.scrollTop = currentScroll;
+        },
+        // 우편번호 찾기 화면 크기가 조정되었을때 실행할 코드를 작성하는 부분. iframe을 넣은 element의 높이값을 조정한다.
+        onresize : function(size) {
+            element_wrap.style.height = size.height+'px';
+        },
+        width : '100%',
+        height : '100%'
+    }).embed(element_wrap);
+    // iframe을 넣은 element를 보이게 한다.
+	element_wrap.style.display = 'block';
+}
+ 
+//상품목록 테이블 데이터 변경시 함수 호출
+$('#productListTable').change(function() {
+  
+	productTotalsum();
+    
+});
+
+// 상품가격 구하는 함수
+function productTotalsum(){
+debugger;
+	var totalprice = 0 ;
+	var recurringInvoiceYn = $('#recurringInvoiceYn').val();
+	var duration = $('#duration').val();
+ 
+	//상품목록 팝업창에서 가져온 상품의 가격
+	$('#productListBody tr').each(function() {
+	debugger;
+		var price = parseInt($('td', this).eq(3).text().replace(/,/g, ''));
+		var quantity = $('input', this).eq(8).prevObject[7].value;
+  
+		console.log("기본가격==>" + price);
+		console.log("수량==>" + quantity);
+  
+		price = price * quantity;
+		console.log("기본가격 * 수량 ==>" + price);
+  
+		totalprice += price;
+	});
+  
+	console.log( totalprice);
+ 
+ 
+	if(recurringInvoiceYn == "N" )
+	{
+		totalprice = totalprice * duration;  
+	}
+ 
+	totalprice = numberComma(totalprice); 
+	$('input[name="productTotalPrice"]').val(totalprice);
+ 
+	discountTotalsum();
+   
+}
+//할인가격 구하는 함수
+function discountTotalsum(){
+debugger;
+	var discountAmt = 0 ;
+  
+	$('#discountListBody').each(function(){
+	debugger;
+		var discountAmt = 0; 
+		var totalprice  = parseInt($('input[name="productTotalPrice"]').val().replace(/,/g, '')); 
+		var count = $('#discountListBody')[0].childElementCount;
+		var i = 0 ;
+		var rateDiscountValue = 0;
+		var amountDiscountValue = 0;
+		var recurringInvoiceYn = $('#recurringInvoiceYn').val();
+		var duration = $('#duration').val();
+     
+     if( count >= 1 ){
+      /*<![CDATA[*/  
+	      for( i=1; i <= count; i++ ){
+      	  debugger;     
+     		var discountType  = $('#discountListBody')[0].childNodes[i].childNodes[2].childNodes[1].value;    
+     		var discountValue = $('#discountListBody')[0].childNodes[i].childNodes[3].outerText;
+     
+      		discountValue = parseInt(discountValue.replace(/,/g, '')); 
+    
+     		if(discountType == 'RATE'){
+     
+		      	rateDiscountValue += discountValue;   
+		     }
+		     if(discountType == 'AMOUNT' ){
+		    
+		      	amountDiscountValue += discountValue;
+		     
+		     }
+     
+		     	console.log("할인유형==>" + discountType);
+		     	console.log("할인 가==>" + discountValue);
+     
+		     }
+		      
+		     if(recurringInvoiceYn == "N")
+		     {
+		       	totalprice = totalprice / duration;     
+		     }
+      
+			//1순위 정율계산
+			discountAmt = Math.floor(totalprice * (rateDiscountValue / 100) * (-1));
+			//2순위 정액계산
+			discountAmt = discountAmt + amountDiscountValue * (-1);
+			console.log("최종 할인가격 ==>" + discountAmt);
+     
+         	//상품금액과 최종할인가격을 더해서 0보다 작은경우 합이 0이 되도록 최종할인가 변경
+         	totalprice = totalprice * (-1)
+			if(totalprice > discountAmt)
+			{
+				discountAmt = totalprice;
+			}
+		      
+			//선불인 경우 *배송횟수 추가
+			if(recurringInvoiceYn == "N")
+			{
+			 	discountAmt = discountAmt * duration;
+			}
+      /*]]>*/ 
+		}
+     
+		$('input[name="discountTotalPrice"]').val(numberComma(discountAmt));     
+	});
+	
+	additionalTotalsum();
+};
+//배송비 금액 입력 및 변경시 이벤트
+$('input[name="deliveryCost"]').change(function(){
+ 
+	additionalTotalsum();
+  
+});
+
+//배송비 라디오 버튼 클릭시 이벤트
+$('input:radio[name = "deliveryCostYn"]').click(function(){
+   
+	additionalTotalsum();
+ 
+});
+//설치비 금액 입력 및 변경시 이벤트
+// $('input[name = "installCost"]').change(function(){
+// debugger; 
+//  additionalTotalsum();
+  
+// });
+//설치비 라디오 버튼 클릭시 이벤트
+// $('input:radio[name = "installCostYn"]').click(function(){
+ 
+//  additionalTotalsum();
+  
+// });
+//부가서비스 금액 구하는 함수
+function additionalTotalsum(){
+debugger;
+	var additionalTotalPrice = 0;
+	var additionalDiscountPrice = 0;
+ 
+	var deliveryVal = $('input[name="deliveryCost"]').val();
+	$('input[name="deliveryCost"]').val(numberComma(deliveryVal));
+ 
+	var deliveryRadioVal = $('input[name="deliveryCostYn"]:checked').val();
+ 
+//  var installVal = $('input[name="installCost"]').val();
+//  $('input[name="installCost"]').val(numberComma(installVal));
+ 
+//  var installRadioVal = $('input[name="installCostYn"]:checked').val();
+ 
+	deliveryVal = parseInt(deliveryVal.replace(/,/g, ''));
+ //installVal = parseInt(installVal.replace(/,/g, ''));
+ 
+	additionalTotalPrice += deliveryVal;
+ //additionalTotalPrice += installVal;
+ 
+	if(deliveryRadioVal == 'Y'){
+		additionalDiscountPrice += deliveryVal * (-1); 
+	}
+ 
+//  if(installRadioVal == 'Y'){
+//   additionalDiscountPrice += installVal * (-1);
+//  }
+ 
+	console.log('additionalTotalPrice ===> ' + additionalTotalPrice); 
+	console.log('additionalDiscountPrice ===> ' + additionalDiscountPrice); 
+ 
+	$('input[name="additionalTotalPrice"]').val(numberComma(additionalTotalPrice));
+	$('input[name="additionalDiscountPrice"]').val(numberComma(additionalDiscountPrice));
+ 
+	totalPriceSum();
+ 
+};
+//최종결제금액 구하는 함수
+function totalPriceSum(){
+debugger; 
+	var productTotalPrice = parseInt($('input[name="productTotalPrice"]').val().replace(/,/g, ''));
+	var discountTotalPrice = parseInt($('input[name="discountTotalPrice"]').val().replace(/,/g, ''));
+	
+	var additionalTotalPrice = parseInt($('input[name="additionalTotalPrice"]').val().replace(/,/g, ''));
+	var additionalDiscountPrice = parseInt($('input[name="additionalDiscountPrice"]').val().replace(/,/g, ''));
+	
+	var totalPrice = productTotalPrice + discountTotalPrice + additionalTotalPrice + additionalDiscountPrice;
+ 
+	$('input[name="totalPrice"]').val(numberComma(totalPrice));
+ 
+}
+//결제/배송 정보 신규저장
+$('#paymentsavebt').click(function(){
+ debugger;
+   var queryString = $("form[name=paymentInfoInsert]").serialize();
+   //alert("queryString==>" + queryString);
+   
+   $.ajax({
+    url:'/contract/paymentInfoInsert',
+    type: 'post',
+    data: queryString,
+    dataType : 'json',
+    error: function(xhr, status, error){
+     alert(error);
+    },
+    success: function(json){
+     Common.Dialog.alert({
+ 		title:''
+         , content: '정상처리 되었습니다.'
+     });
+     $('#paymentsavebt').prop("disabled", true);
+      $("#paymentInfoNumber").val(json);
+   
+    }
+   });
+});
+//product table 선택 삭제 
+function deleteProductCheckRow(){
+ debugger;
+	var productListTable = document.getElementById('productListBody');
+	var productListLength = productListTable.rows.length;
+	var checkFlag = 0;
+	var productTableRows = "";
+ /*<![CDATA[*/
+ 
+	for(var i = 0; i < productListLength; i++)
+	{ 
+		productTableRows = productListTable.rows[i];
+  if(productTableRows.cells[0].firstChild.checked)
+  { 
+   productListTable.deleteRow(i); 
+   checkFlag += 1;
+  }
+ }
+ 
+ productTotalsum();
+ 
+ if(checkFlag < 1)
+ {
+  alert("선택된 데이터가 없습니다.");
+ }
+ /*]]>*/ 
+}
+//discount table 선택 삭제 
+function deleteDiscountCheckRow(){
+ debugger;
+ var discountListTable = document.getElementById('discountListBody');
+ var discountListLength = discountListTable.rows.length;
+ var checkFlag = 0;
+ var discountTableRows = "";
+ /*<![CDATA[*/
+ 
+ for(var i = 1; i <= discountListLength; i++)
+ { 
+  discountTableRows = discountListTable.rows[discountListLength - i];
+  if(discountTableRows.cells[0].firstChild.checked)
+  { 
+   discountListTable.deleteRow(discountListLength - i); 
+   checkFlag += 1;
+  }
+ }
+ 
+ discountTotalsum();
+ 
+ if(checkFlag < 1)
+ {
+  alert("선택된 데이터가 없습니다.");
+ }
+ /*]]>*/ 
+}
+//datepicker사용
+
+$(document).ready(function() {
+debugger;
+	 //배송시작일 현재날짜로 세팅
+	 $("#fromDate").datepicker({
+	     dateFormat: "yy-mm-dd"
+	 }).datepicker("setDate", new Date());
+	 
+	 //결제일(배송시작일)
+	 $('input[name="deliveryStartDatetime"]').val($('input[name="effectStartDateTime"]').val().replace(/-/g, ''));
+	 
+	 //배송시작일 초기세팅 함수 호출
+	 lastDeliveryDate()
+	 
+	 //전화번호 포맷팅
+	 inputFormatPhone();
+	 
+	 	 
+	 additionalTotalsum();
+	 
+	 $('#fromDate').datepicker().on('click', function(ev){                 
+	     $('#fromDate').datepicker('show');
+	 });
+	 $('#fromDate').datepicker().on('changeDate', function(ev){
+	     $('#fromDate').datepicker('hide');
+	 });
+	 $('#toDate').datepicker().on('click', function(ev){                 
+	     $('#toDate').datepicker('show');     
+	 });
+	 $('#toDate').datepicker().on('changeDate', function(ev){                 
+	     $('#toDate').datepicker('hide');
+	 });
+	 $('#toDate').change(function(){ 
+	  if($('#fromDate').val().replace(/-/g, '') > $('#toDate').val().replace(/-/g, '')){
+	      if($('#fromDate').val().replace(/-/g, '') != ""){
+	       $('#toDate').val("");
+	       
+	       Common.Dialog.alert({
+	        title:''
+	              , content: '시작일자 클 수 없습니다.'
+	          });
+	      }
+	     }
+	 });
+ 
+ 
+	 $('#fromDate').change(function(){ 
+	 debugger;
+	  var today = new Date();
+	  var dd = today.getDate();
+	  var mm = today.getMonth()+1; //January is 0!
+	  var yyyy = today.getFullYear();
+	  
+	  /*<![CDATA[*/
+	  if(dd < 10) {
+	      dd ='0'+dd;
+	  } 
+	  if(mm < 10) {
+	      mm ='0'+mm;
+	  } 
+	  today = yyyy+"-"+mm+"-"+dd;
+	     
+	  if( $('#fromDate').val().replace(/-/g, '') < today.replace(/-/g, '') ){
+	   
+	      if($('#fromDate').val().replace(/-/g, '') != ""){
+	             
+	       $("#fromDate").datepicker({
+	           dateFormat: "yy-mm-dd"
+	       }).datepicker("setDate", new Date());
+	       
+	       Common.Dialog.alert({
+	        	title:''
+	            , content: '가입 시작일이 오늘날짜보다 작을 수 없습니다.'
+	          });          
+	      }
+	     }
+	  // 유효종료일 자동 계산 로직
+	  var effectStartDateTime = $('input[name="effectStartDateTime"]').val();
+	  var duration = $('#duration').val();
+	  
+	  //결제일(최초배송일)
+	  $('input[name="deliveryStartDatetime"]').val(effectStartDateTime.replace(/-/g, ''));
+	  
+		$('input[name="effectEndDateTime"]').val(dateAddDel(effectStartDateTime, parseInt(duration),'m'));
+	  /*]]>*/ 
+	 });
+ 
+	  //가입기간 변경시 호출 함수
+	 $('#duration').change(function(){ 
+	  debugger;
+	  
+	  	  
+	  /*<![CDATA[*/
+	  var num = $(this).val() - 1;
+	  var recurringInvoiceYn = $('#recurringInvoiceYn').val();
+	  
+	  /*자연수 체크 필요*/
+	   
+	     if(typeof num !== "number" || num < 0) { 
+	         alert("양수만 입력 해 주세요"); 
+	         $(this).focus(); 
+	         return false; 
+	     } 
+	     /*]]>*/ 
+	  
+	    //가입기간 가져오기
+	    var duration = $('#duration').val();
+	   
+	    var effectStartDateTime = $('input[name="effectStartDateTime"]').val();
+	    
+	    // 유효종료일 자동 계산 로직
+	    $('input[name="effectEndDateTime"]').val(dateAddDel(effectStartDateTime, parseInt(duration),'m'));
+	    
+	    //선불인 경우 할인금액 재계산
+		if(recurringInvoiceYn=="N")
+		{
+		   productTotalsum();
+		}
+	    
+	    
+	    debugger;
+	    var queryString = $("form[name=effectDate]").serialize();
+	    var trHTML = '';
+	  //alert("queryString==>" + queryString);
+		$.ajax({
+				url:'/contract/findApplyDiscount',
+				type: 'post',
+				data: queryString,
+				dataType : 'json',
+				error: function(xhr, status, error){
+					alert(error);
+				},
+				success: function(json){
+										
+					if(json.length == 0)
+	           	    {
+// 	           		    Common.Dialog.alert({
+// 	  					 	title:''
+//        					 	, content: '자동 할인 적용되었습니다.'
+//    						 });
+	           	    }
+					$.each(json, function (i, item) {
+				     	  // alert(url);
+				            				                   
+				            trHTML += '<tr>' 
+					   	         + '<td><input  type="checkbox" value=""/></td>'
+					             + '<td style ="text-align:center;">' + item.discountName + '<input type="hidden" id="discountId" name="discountId" value="'+item.discountId+'" /></td>'
+					             + '<td style ="text-align:center;">' + item.discountTypeCodeName + '<input type="hidden" id="discountType" name="discountType" value="'+item.discountType+'" /></td>'
+					             + '<td style ="text-align:center;">' + numberComma(item.discountValue) + '<input type="hidden" id="discountValue" name="discountValue" value="'+item.discountValue+'" /></td>'
+					             + '</tr>';
+				                   
+			        });
+					
+					
+					
+					$('#discountListBody').append(trHTML); 
+					productTotalsum();
+				}
+		 });
+	       
+	 });
+	  
+	 durationSelectBox();
+	
+});
+/*end documentReady*/
+
+function durationSelectBox(){
+debugger;
+	/*<![CDATA[*/
+	for (var i = 1; i < 37; i++)
+	{
+		$('#duration').append("<option value='"+i+"'>"+i+"</option>");
+	}
+ 		
+	$('#duration').val(1).trigger('change');
+ 		
+	/*]]>*/
+			
+}
+//최초 로그인시 최종배송일 세팅
+function lastDeliveryDate(){
+ var recurringInvoiceYn = $('#recurringInvoiceYn').val();
+ 
+ //가입기간 가져오기
+   var duration = $('#duration').val();
+  
+   var effectStartDateTime = $('input[name="effectStartDateTime"]').val();
+   
+   // 유효종료일 자동 계산 로직
+   $('input[name="effectEndDateTime"]').val(dateAddDel(effectStartDateTime, parseInt(duration),'m'));
+   
+   //선불인 경우 할인금액 재계산
+   if(recurringInvoiceYn=="N")
+   {
+    productTotalsum();
+   }
+};
+
+ //결제방식 변경시 이벤트
+$('#recurringInvoiceYn').change(function(){
+debugger;
+ 	var recurringInvoiceYn =  $('#recurringInvoiceYn').val();
+ 	
+ 	if(recurringInvoiceYn == "N")
+ 	{
+ 		$('#savePaymentInfo')[0].disabled = true;
+ 	}else{
+ 		$('#savePaymentInfo')[0].disabled = false;
+ 	}
+	
+ 	productTotalsum();
+})
+  
+//// 일, 월, 연 단위에 맞게 날짜 계산 로직
+function dateAddDel(effectStartDateTime, nNum, type) { 
+debugger;
+	if( isNaN(nNum) || effectStartDateTime == ""  )
+	{
+		return;
+	}
+ 
+	var yy = parseInt(effectStartDateTime.substr(0,4));
+	var mm = parseInt(effectStartDateTime.substr(5,6));
+	var dd = parseInt(effectStartDateTime.substr(8,9));
+  
+    var d;
+   
+  	if (type == "d") {
+    	d = new Date(yy, mm - 1, dd + nNum);
+  	}
+  	else if (type == "m") {
+      	d = new Date(yy, mm - 2 + nNum, dd);
+  	}
+  	else if (tyoe == "y") {
+      	d = new Date(yy + nNum, mm - 1, dd);
+  	}
+  	
+    yy = d.getFullYear();
+    
+    mm = d.getMonth() + 1; 
+    mm = parseInt(mm);  
+    
+    if(10 > mm){
+    	mm = '0'+ mm;  
+    }
+    
+    dd = d.getDate();
+    dd = parseInt(dd);
+    
+    if(10 > dd){
+    	dd = '0' + dd;   
+    }
+    
+ return yy+'-'+mm+'-'+dd
+};  
+
+$('#dicountSearchBtn').click(function(){
+ debugger;
+ 
+//  $("form[name=effectDate]")[0].effectiveStartDate.value
+//  $("form[name=effectDate]")[0].effectiveEndDate.value
+ 
+	var queryString = $("form[name=effectDate]").serialize() ;
+	queryString = queryString.replace(/-/g, '');
+//    alert(queryString);
+   $.ajax({
+    method: 'get',
+      url : '/contract/discountListPopup',
+      data: queryString,
+      error: function(xhr, status, error){
+     alert(error);
+      },
+      success : function(json){
+     $('#discountListPopup .modal-content').html(json);
+        $("#discountListPopup").modal('show');
+      }
+      
+   });
+});
+
+$('#contractInsertBtn').click(function(){
+debugger;
+	var paymentInfoNumber = $("input[name=paymentInfoNumber]").val();
+	console.log('결제정보 key 값이 있나?:' + paymentInfoNumber);
+
+	if(paymentInfoNumber == '')
+	{
+		alert('결제/배송 정보가 입력되지 않았습니다. 신규등록 부탁드립니다.');
+	}
+	else
+	{
+	/*<![CDATA[*/
+		var option = '&';
+		var queryString = $("form[name=effectDate]").serialize();
+		queryString += option+$("form[name=additional]").serialize();
+		queryString += option+$("form[name=paymentInfoInsert]").serialize();
+		queryString += option+$("form[name=productChoiceList]").serialize();
+		queryString += option+$("form[name=discountChoiceList]").serialize();
+		queryString = queryString.replace(/-/g, '');
+	/*]]>*/  
+			$.ajax({
+	   				method:'post',
+	   				url: '/contract/contractInsert',
+	   				data: queryString,
+	   				error: function(xhr, status, error){
+						alert(error);
+					},
+					success : function(json){
+						debugger;
+						if(json.invoicenumber == 0)
+						{
+							alert('정상완료되었습니다.');
+							
+							window.location.reload();
+						}
+						else
+						{
+							console.log(json.invoicenumber+' '+json.nvoicedate+' '+ json.connumber);
+							loadpaymentPopup(json.invoicenumber, json.invoicedate, json.connumber);
+							
+						}
+		      
+		           }
+     		});
+		}
+ 
+});
+
+function loadpaymentPopup(invoicenumber,invoicedate,connumber){
+debugger;
+	var today = new Date();
+	
+	$.ajax({
+		url : '/billing/paymentDialog',
+		error : function(xhr,status, error) {
+			alert(error);
+		},
+		success : function(data) {
+			$('#customerpaymentDialog .modal-content').html(data);
+		    $("#customerpaymentDialog").modal('show');
+		    $("#paymentDate").text(yyyymmdd(today));
+		    $("#paymentTotalAmt").text(numberComma($('input[name="totalPrice"]').val().replace(/,/g, '')));
+		    $("#paymentCustomername").val($('input[name="customerName"]').val());
+		    $("#paymentPackagename").val($('input[name="productName"]').val());
+		    $(".pamentinvoicenumber").val(invoicenumber);
+		    $(".pamentconnumber").val(connumber);
+		    $(".paymentpaymentamt").val($('input[name="totalPrice"]').val().replace(/,/g, ''));
+		    $(".pamentinvoicedate").val(invoicedate); 
+			$("#channelgubun").val('P');   
+			 
+		}
+	});
+}
+	
+
+//결제정보등록 버튼 클릭시 이벤트(paypal 화면 연동)
+function linkpaypal(){
+	 window.open("", "popup_window", "width=600, height=720, scrollbars=no");
+	 $("#paypalform").submit();
+};
+    
+</script>
+<section class="page container">
+	<div class="row">
+		<div class="col-md-12">
+  			<div class="panel panel-default">
+   				<div class="panel-heading">
+    				<h2 class="panel-title">
+     					<strong>고객정보</strong>
+    				</h2>
+   				</div>
+   				<div class="panel-body" th:each="customerList :${customerList}">
+    				<form class= "form-inline">
+     					<div class="col-md-4">
+      						<label >고객명 : </label>
+      						<input class="form-control" type="text" name="customerName" th:value ="${customerList.customerName}" readonly="true" />
+     					</div>
+     					<div class="col-md-4">
+      						<label>전화번호 : </label>
+      						<input class="phone form-control" readonly="true" th:value ="${customerList.phoneNumber}" />
+     					</div>
+     					<input type="hidden" name="customerNumber" th:value = "${customerList.customerNumber}"/>
+    				</form>
+   				</div>
+  			</div>
+ 		</div>
+	</div>
+	<div class="row">
+ 		<div class="col-md-8">
+  			<div class="panel panel-default">
+    			<div class="panel-heading">
+      				<h2 class="panel-title">
+    					<strong>상품 정보</strong>
+      				</h2>
+    			</div>
+    			<div class="panel-body">
+      				<div class="col-md-12">
+          				<form  style="margin-bottom: 10px;" id="effectDate" name="effectDate" >  
+	        				<div class="col-md-4">
+	         					<div class="row">
+	          						<div class="col-md-4">
+	            						<span>배송시작일</span>
+	        						</div>
+	        						<div class="col-md-4">     
+	            						<input type="text"  style ="text-align:center;" id="fromDate" name="effectStartDateTime" data-date-format="yyyy-mm-dd"  />
+	         						</div>  
+	      						</div>     
+	        				</div>
+	        				<div class="col-md-4" style="padding-left: 50px;">
+	           					<div class="row">
+	            					<div class="col-md-6">
+	               						<span>배송기간(월)</span> 
+	            					</div>
+	            					<div class="col-md-4">
+										<select  id="duration" name="duration" style="height: 25px;"></select>
+	           						</div>
+	         					</div> 
+	        				</div>
+	        				<div class="col-md-4">
+	          					<div class="row">
+	            					<div class="col-md-4">
+	              						<span>배송종료일</span> 
+	            					</div>
+	            					<div class="col-md-6">  
+	              						<input type="text" style ="text-align:center;" id="toDate2" name="effectEndDateTime" data-date-format="yyyy-mm-dd" readonly = "true" />
+	            					</div>
+	          					</div>
+	        				</div>
+      					</form> 
+    				</div>  
+	    			<form name="productChoiceList">
+	      				<div class="table-responsive">
+	       					<table class="table" id="productListTable">
+	        					<thead class="table-header-bg">
+	         						<tr>
+	          							<th style="width: 1%;"></th>
+	          							<th style="width: 14%; text-align:center;">상품명</th>
+	          							<th style="width: 10%; text-align:center;">상품분류</th>
+	          							<th style="width: 10%; text-align:center;">상품가격</th>
+	          							<th style="width: 12%; text-align:center;">패키지참조여부</th>
+	          							<th style="width: 15%; text-align:center;">패키지가격범위</th>
+	          							<th style="width: 5%; text-align:center;">수량</th>
+	         						</tr>
+	        					</thead>
+	        					<tbody id="productListBody" class="table-body-row">
+	        					</tbody>
+	       					</table>
+	      				</div>
+	    			</form>
+    			</div>
+	    		<div class="panel-footer" style="padding-bottom: 40px;">
+	      			<a href="#" onclick="deleteProductCheckRow()">
+	       				<button class="btn btn-table-default pull-right">삭제</button>
+	      			</a>
+	      			<a href="/contract/productListPopup" data-toggle="modal" data-target="#productListPopup">
+	       				<button class="btn btn-primary pull-right">추가</button>
+	      			</a>
+	    		</div>
+  			</div>
+ 		</div>
+<!-- col-md-8 end -->
+	 	<div class="col-md-4">
+			<div class="panel panel-default">
+	    		<div class="panel-heading">
+	     			<h2 class="panel-title">
+	      				<strong>할인 정보</strong>
+	     			</h2>
+	    		</div>
+	    		<br></br>
+	    		<div class="panel-body" style="padding-top: 30px;">
+	     			<form name="discountChoiceList">
+						<div class="table-responsive">
+	      					<table class="table" id="discountListTable">
+	       						<thead class="table-header-bg">
+	        						<tr>
+	            						<th style="width: 1%; "></th>
+	         							<th style="width: 20%; text-align:center;">할인명</th>
+	         							<th style="width: 20%; text-align:center;">할인유형</th>
+	         							<th style="text-align:center;">할인율/금액</th>
+	        						</tr>
+	       						</thead>
+	       						<tbody id="discountListBody" class="table-body-row">
+								</tbody>
+							</table>
+	     				</div>
+	    			</form>
+	    		</div>
+	    		<div class="panel-footer" style="padding-bottom: 40px;">
+	     			<a href="#" onclick="deleteDiscountCheckRow()">
+	      				<button class="btn btn-table-default pull-right">삭제</button>
+	     			</a> 
+	     			<a href="#" data-toggle="modal" data-target="#discountListPopup" >
+	      				<button class="btn btn-primary pull-right" id ="dicountSearchBtn">추가</button>
+	     			</a> 
+	    		</div>
+	  		</div>
+	 	</div>
+<!-- col-md-4 end -->
+		<div class="modal" id="productListPopup" role="dialog">
+	  		<div class="modal-dialog modal-full-screen">
+	   			<div class="modal-content"></div>
+	  		</div>
+	 	</div>
+	  	<div class="modal" id="discountListPopup" role="dialog">
+	  		<div class="modal-dialog modal-lg">
+	   			<div class="modal-content"></div>
+	  		</div>
+	 	</div>
+	</div>
+<!-- div row end -->
+
+	<div class="row">
+		<div class="col-md-12">
+		</div>
+	</div>
+	
+	<div class="row">
+		<div class="col-md-12">
+	  	</div>
+	</div>
+
+	<div class="row">
+		<div class="col-md-6">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h2 class="panel-title">
+	     				<strong>결제/배송 정보 입력</strong>     
+	    			</h2>
+	   			</div>
+	   			<div class="panel-body" style="padding-bottom: 5px; padding-left: 30px;">
+	    			<div class="col-md-12">
+	     				<form name="paymentInfoInsert">
+	      					<input type="hidden" class="form-control" name = "paymentInfoNumber" id="paymentInfoNumber"  />
+	      					<div  th:each="customerList :${customerList}" >
+	       						<input type="hidden" name="customerNumber" th:value = "${customerList.customerNumber}"/>
+	      					</div>
+	      					<div class="row">
+	           					<div class="col-md-4">
+	         						<label>결제주기</label>
+	       							<select class="form-control" name="invoiceCycle" id="invoiceCycle">
+	       								<option value="MONTH">월</option>
+	       							</select>
+	       						</div>     
+	       						<div class="col-md-4">
+	         						<label>결제일(배송시작일)</label>
+	      							<input type="text" class="form-control" id="deliveryStartDatetime" name="deliveryStartDatetime" readonly= "true" />
+	       						</div>
+	       						<div class="col-md-4">
+	             					<label>결제방식</label>
+	             					<select class="form-control" id="recurringInvoiceYn" name="recurringInvoiceYn">
+	             						<option value = "N" selected="true" >일괄결제</option>
+	             						<option value = "Y" >정기결제</option>
+	            					</select>
+	          					</div>
+	      					</div>
+	      					<div class="row">
+	       						<div class="col-md-4">
+	        						<label>배송주기</label>
+	       							<select class="form-control" name="deliveryCycle" id="deliveryCycle">
+	         							<option value="MONTH">월</option>
+	           						</select>
+	       						</div>
+	       						<div class="col-md-4">
+	        						<label>요금내역서 발송유형</label>
+	       							<select class="form-control" name="invoiceDeliveryType">
+	           							<option value="EMAIL">E-mail</option>           
+	       							</select>
+	       						</div>
+	       						<div class="col-md-4">
+	        						<label>요금내역서 이메일 주소</label>
+	      							<input type="text" class="form-control" id="invoiceEmail" name="invoiceEmail" />
+	       						</div>
+	      					</div>
+			    
+	 <!--      <div class="col-md-4"> -->
+	<!--       		<label>배송횟수</label> -->
+	 <!--       	<input type="text" class="form-control" id="deliveryTimes" name="deliveryTimes" /> -->
+	 <!--      </div>      -->
+	 <!--      <div class="col-md-6">
+	       			<label>배송일 참고정보</label>
+	  				<input type="text" class="form-control" id="deliveryRemark" name="deliveryRemark" placeholder="ex)매월 21일, 27일, 30일 " />
+	      		</div>  -->
+	      
+	   						<div class="row">    
+	       						<div class="col-md-12">
+	        						<label>배송지 주소</label>
+	       							<input type="text" id="sample3_postcode" name="zipcode" class="form-control" placeholder="우편번호" />
+	       							<input type="button" class="btn btn-default" onclick="sample3_execDaumPostcode()" value="우편번호 찾기" /><br></br>
+	       							<div id="wrap" style="display:none;border:1px solid;width:500px;height:300px;margin:5px 0;position:relative" >
+	        								<img src="//t1.daumcdn.net/localimg/localimages/07/postcode/320/close.png" id="btnFoldWrap" style="cursor:pointer;position:absolute;right:0px;top:-1px;z-index:1" onclick="foldDaumPostcode()" alt="접기 버튼" />
+	       							</div>
+	       							<input type="text" id="sample3_address" style="width:60%;" name="baseAddress" class="form-control" placeholder="기본주소" />
+	   								<input type="text" id="detailAddress" class="form-control" name = "detailAddress" placeholder="상세주소" />
+	       						</div>
+	      					</div>
+	     				</form>
+	    			</div>
+	   			</div>
+	   			<div class="panel-footer" style="padding-bottom: 40px;">
+	      			<button class="btn btn-primary pull-right" id="savePaymentInfo" disabled="disabled" onclick="linkpaypal()">결제정보등록</button>
+	      			<button class="btn btn-primary pull-right" id = "paymentsavebt" >저장</button>
+	   			</div>
+	  		</div>
+	 	</div>
+	<!-- col-md-6 end -->
+	 	<div class="modal" id="selectedPaymentInfo" role="dialog">
+	  		<div class="modal-dialog modal-lg">
+	   			<div class="modal-content"></div>
+	  		</div>
+	 	</div>
+	 
+	 
+	 	<div class="col-md-6">
+	   		<div class="panel panel-default">
+	     		<div class="panel-heading">
+	      			<div class="row">
+	          			<div class="col-md-6">
+	            			<h2 class="panel-title" style="margin-left: 20px;">
+	                			<strong>총 결제금액</strong>
+	            			</h2>
+	           			</div>
+	           			<label class="col-md-6" style="padding-top: 5px;">   
+	              			<input type="text" id="totalPrice" name="totalPrice" style ="text-align:right; height:30px;  font-weight: bold; font-size: 20px;width: 194px;" readonly="true" value="0" />
+	           			</label>
+	     			</div>       
+	     		</div>
+	     		<div class="panel-body" style="padding-bottom: 18px; padding-bottom: 5px;">
+	      			<form class="form-inline">
+	       				<div class="col-md-12">
+	       					<div class="row">
+	         					<label class="col-md-6">상품금액 </label>
+	         					<label class="col-md-6">
+	            					<input class="form-control" type="text" id="productTotalPrice" name="productTotalPrice" style ="text-align:right;" disabled="disabled" value="0" /> 원
+	         					</label>
+	         					<br></br>
+	        				</div>
+	        				<div class="row">
+	         					<label class="col-md-6">할인금액 </label>
+	       						<label class="col-md-6">
+	            					<input class="form-control" type="text" id="discountTotalPrice" name="discountTotalPrice" style ="text-align:right;" disabled="disabled" value="0" /> 원
+	         					</label>
+	         					<br></br>
+	        				</div>
+	        				<div class="row">
+	         					<label class="col-md-6">부가금액 </label>
+	         					<label class="col-md-6">
+	            					<input class="form-control" type="text" id="additionalTotalPrice" name="additionalTotalPrice" style ="text-align:right;" disabled="disabled" value="0" /> 원
+	         					</label>
+	         					<br></br>
+	        				</div>
+	        				<div class="row">
+	         					<label class="col-md-6">부가할인금액 </label>
+	       						<label class="col-md-6">
+	            					<input class="form-control" type="text" id="additionalDiscountPrice" name="additionalDiscountPrice" style ="text-align:right;" disabled="disabled" value="0" /> 원
+	         					</label>
+	        				</div>
+	       				</div>      
+	      			</form>
+	     		</div>
+	     		<div class="col-md-12" style="border-bottom: 1px solid #8c8b8b;"></div>
+	   			<div class="panel-body" style="padding-bottom: 3px;padding-top: 30px;">
+	      			<form class="form-inline" name = "additional">
+	        			<div class="col-md-12">
+	      					<div class="row">
+	        					<label class="col-md-6">배송비 </label>
+	        					<label class="col-md-6">
+	           						<input type = "text" class = "form-control" name = "deliveryCost" id="deliveryCost" style ="text-align:right;" value="5000" readonly="true"  /> 원
+	        					</label>
+	       					</div> 
+	       					<div class="row">
+	         					<label class="col-md-6">배송비할인여부 </label>
+	         					<div class="col-md-6">
+	          						<label class="radio-inline">
+	              						<input type="radio" name="deliveryCostYn" id="deliveryCostY" value="Y" checked="checked"/> Y
+	          						</label>
+	          						<label class="radio-inline">
+	          	 						<input type="radio" name="deliveryCostYn" id="deliveryCostN" value="N" /> N
+	          						</label>
+	         					</div>
+	       					</div>
+	       					<div class="col-md-4">
+	  <!--       <label>설치비 :</label> -->
+	  <!--       <label> -->
+	  <!--        <input type="text" class = "form-control" name="installCost" id="installCost" style ="text-align:right;" value="10000" readonly="true" /> 원 -->
+	  <!--       </label> -->
+	  <!--       <br></br>  -->
+	  <!--       <label>전액할인여부 : </label> -->
+	  <!--       <label class="radio-inline"> -->
+	  <!--           <input type="radio" name="installCostYn" id="installCostY" value="Y" checked="checked" /> Y -->
+	  <!--       </label> -->
+	  <!--       <label class="radio-inline"> -->
+	  <!--        <input type="radio" name="installCostYn" id="installCostN" value="N" /> N -->
+	  <!--       </label> -->
+	       					</div>
+	     				</div>  
+	       			</form>
+	    		</div>  
+				<div class="panel-footer" style="padding-bottom: 40px;">
+	        		<button class="btn btn-primary pull-right" id="contractInsertBtn">가입</button>
+	    		</div>
+	  		</div>
+	 	</div>
+	<!-- col-md-6 end -->
+		<form id="paypalform" action="https://www.sandbox.paypal.com/cgi-bin/webscr" method="post" target="popup_window">
+			<input type="hidden" name="cmd" value="_xclick"/>
+			<input type="hidden" name="business" value="dosung21@naver.com"/>
+		 	<input type="hidden" name="item_name" value="바로티움"/>
+		 	<input type="hidden" name="item_numbere" value="PRD0001"/>
+		 	<input type="hidden" name="currency_code" value="USD"/>
+		 	<input type="hidden" name="amount" value="10"/>
+		 	<input type="hidden" name="quantity" value="1"/>
+		 	<input type="hidden" name="charset" value="UTF-8" />
+		</form>
+		<div class="modal" id="customerpaymentDialog" role="dialog">
+			<div class="modal-dialog modal-lg modal-dialog-center">
+				<div class="modal-content"></div>
+		   </div>
+	     </div> 
+	</div>
+<!-- div row end -->
+</section>
+

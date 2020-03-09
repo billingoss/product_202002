@@ -1,0 +1,91 @@
+<!-- Modal -->
+<script type="text/javascript">
+ $(document).ready(function() {
+  debugger; 
+  formatPhone();
+  });
+ 
+ $('button[name="couponuseselectedCustomer"]').click(function() {
+  debugger;
+  var customerNumber = $(this).val();
+  //alert(customerNumber);
+  
+  var customerName = $(this).parent().parent().children().next().html();
+  var phoneNumber = $(this).parent().parent().children().next().next().html();
+  
+  //$('#couponUseDataForm').find('input[name="customerName"]').val(customerName);
+  //$('#couponUseDataForm').find('input[name="phoneNumber"]').val(phoneNumber);
+  
+  $('#couponuseCustomerName').val(customerName);
+  $('#couponusePhoneNumber').val(phoneNumber);
+   
+  $('.modal').modal('hide');
+  $('#couponuse').load('/contract/findcouponuse' + '/' + customerNumber);
+ });
+ 
+ $('#customerlistpopupclose').click(function() {
+  $('#customerListlDialog').modal('hide');
+  $('#customercreatepopuplDialog').modal('hide');
+  $('#couponuselDialog').modal('hide');
+  //alert("reload");
+ });
+ $(document).on("dblclick", "#couponUselisttable tr", function() {
+  debugger;
+   var tr = $(this);
+   var td = tr.children();
+  var customerNumber = td.eq(0).text();
+  
+  var customerName = td.eq(1).text();
+  var phoneNumber = td.eq(2).text();
+  
+  //$('#couponUseDataForm').find('input[name="customerName"]').val(customerName);
+  //$('#couponUseDataForm').find('input[name="phoneNumber"]').val(phoneNumber);
+
+  $('#couponuseCustomerName').val(customerName);
+  $('#couponusePhoneNumber').val(phoneNumber);
+   
+  $('.modal').modal('hide');
+  $('#couponuse').load('/contract/findcouponuse' + '/' + customerNumber);
+ });
+</script>
+<div class="modal-header modal-popup-header">
+ <h5 class="modal-title">
+  ▶ 고객 목록
+  <button id="customerlistpopupclose" type="button" class="close" data-dismiss="modal">&times;</button>
+ </h5>
+</div>
+<div class="modal-body">
+ <div class="panel panel-default">
+  <div class="panel-heading">
+   <h4 class="panel-title">
+    <strong>고객 목록</strong>
+   </h4>
+  </div>
+ </div>
+ <div style="overflow:auto;height:520px;">
+  <table class="table table-hover table-bordered" id="couponUselisttable">
+   <thead class="table-header-bg">
+    <tr>
+     <th style="width: 8%;">고객명</th>
+     <th style="width: 8%;">전화번호</th>
+     <th style="width: 10%;">기본주소</th>
+     <th style="width: 10%;">상세주소</th>
+     <th style="width: 4%;"></th>
+    </tr>
+   </thead>
+   <tbody class="table-body-row">
+    <tr th:each="result : ${customerListResult}">
+     <td style="vertical-align: middle" th:text="${result.customerNumber}" hidden="true"></td>
+     <td style="vertical-align: middle" th:text="${result.customerName}"></td>
+     <td class="phone" style="vertical-align: middle" th:text="${result.phoneNumber}"></td>        
+     <td style="vertical-align: middle" th:text="${result.baseAddress}"></td>
+     <td style="vertical-align: middle" th:text="${result.detailAddress}"></td>
+     <td style="vertical-align: middle">
+      <button class="btn btn-small btn-table-default" name ="couponuseselectedCustomer" th:value="${result.customerNumber}">선택</button>
+     </td>
+    </tr>
+   </tbody>
+  </table>
+ </div>
+</div>
+<!-- modal list END -->

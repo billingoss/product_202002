@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+<mapper namespace="com.api.repository.CommonRepository">
+
+	<!-- 시스템 속성 조회 -->
+    <select id="selectSystemProperties" parameterType="String" resultType="java.lang.String">
+		SELECT
+			propertiesValue AS propertiesValue
+		  FROM systemproperties prop
+		 WHERE prop.propertiesKey = #{propertiesKey}
+     </select>
+</mapper>

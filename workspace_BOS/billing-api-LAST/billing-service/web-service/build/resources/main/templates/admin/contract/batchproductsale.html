@@ -1,0 +1,451 @@
+<script	src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.7.7/xlsx.core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xls/0.7.4-a/xls.core.min.js"></script>
+<script type="text/javascript" src="//unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+<style>
+.stepwizard-step p {
+    margin-top: 0px;
+    color:#666;
+}
+.stepwizard-row {
+    display: table-row;
+}
+.stepwizard {
+    display: table;
+    width: 100%;
+    position: relative;
+}
+.stepwizard-step button[disabled] {
+    /*opacity: 1 !important;
+    filter: alpha(opacity=100) !important;*/
+}
+.stepwizard .btn.disabled, .stepwizard .btn[disabled], .stepwizard fieldset[disabled] .btn {
+    opacity:1 !important;
+    color:white;
+}
+.stepwizard-row:before {
+    top: 14px;
+    bottom: 0;
+    position: absolute;
+    content:" ";
+    width: 100%;
+    height: 1px;
+    background-color: #ccc;
+    z-index: 0;
+}
+.stepwizard-step {
+    display: table-cell;
+    text-align: center;
+    position: relative;
+}
+.btn-circle {
+    width: 30px;
+    height: 30px;
+    text-align: center;
+    padding: 6px 0;
+    font-size: 12px;
+    line-height: 1.428571429;
+    border-radius: 15px;
+}
+</style>
+<script type="text/javascript">
+	$(document).ready(function() {
+		debugger;
+		$.ajax({
+			method : 'get',
+      url : '/contract/findAllProduct',
+      error: function(xhr, status, error) {
+      	//alert(error);
+      },
+      success : function(data){
+      	//alert("findAllProduct");
+      	$("#productListtbody").empty();
+     	  var trHTML = '';
+    		$.each(data, function (i, item) {
+    		  trHTML += '<tr>'
+    		         +     '<td style="vertical-align: middle">' + item.productId + '</td>'
+    		         +     '<td style="vertical-align: middle">' + item.productName + '</td>'
+    		         +  '</tr>';
+    		});
+        $('#productListtbody').append(trHTML);
+      }
+		});
+		
+		$.ajax({
+			method : 'get',
+      url : '/contract/findAllDiscount',
+      error: function(xhr, status, error) {
+      	//alert(error);
+      },
+      success : function(data){
+      	//alert("findAllDiscount");
+      	$("#discountListtbody").empty();
+     	  var trHTML = '';
+    		$.each(data, function (i, item) {
+    		  trHTML += '<tr>'
+				         +     '<td style="vertical-align: middle">' + item.discountId + '</td>'
+				         +     '<td style="vertical-align: middle">' + item.discountName + '</td>'
+				         +  '</tr>';
+    		});
+        $('#discountListtbody').append(trHTML);
+			}
+		});		
+		
+		// 상품 가입 일괄 등록
+		$('#dataupload').click(function() {
+			debugger;
+			//alert("dataupload click");
+			
+			//var tbody = $('#exceltable');
+			//alert(tbody.html());
+			var tr = $('#exceltable').children().children();
+			//alert(tr.html());
+			var noheadtr = tr.slice(1);
+			//alert(noheadtr.html());
+			
+			var addressid;
+			var zipcode;
+			var baseaddress;
+			var detailaddress;
+			
+			//$('#exceltable').children().children().each(function() {
+			noheadtr.each(function() {
+			//alert($(this).html());
+				
+				var td = $(this).children();
+				
+			  //address 0 ~ 1
+				zipcode = td.eq(0).text();
+				baseaddress = td.eq(1).text();
+				detailaddress = td.eq(2).text();
+				//customer 3 ~ 8
+				customername = td.eq(3).text();
+				sex = td.eq(4).text();
+				birthday = td.eq(5).text();
+				email = td.eq(6).text();
+				phonenumber = td.eq(7).text();
+				customertype = td.eq(8).text();
+				//paymentinformation 9 ~ 11
+				paymentmethod = td.eq(9).text();
+				invoicedeliverytype = td.eq(10).text();
+				invoiceemail = td.eq(11).text();
+				//contract 12 ~ 20
+		        effectstartdatetime = td.eq(12).text();
+		        effectenddatetime = td.eq(13).text();
+		        deliverycycle = td.eq(14).text();
+		        deliverytimes = td.eq(15).text();
+		        deliveryremark = td.eq(16).text();
+		        deliverystartdatetime = td.eq(17).text();
+		        deliverytotalcount = td.eq(18).text();
+		        deliveryremaincount = td.eq(19).text();
+		        invoicecycle = td.eq(20).text();
+		        //contractproduct 21 ~ 22
+		        productid = td.eq(21).text();
+		        quantity = td.eq(22).text();
+						//contractdiscount 23 ~ 25
+		        discountid = td.eq(23).text();
+				contractdiscounteffectstartdatetime = td.eq(24).text();
+				contractdiscounteffectenddatetime = td.eq(25).text();
+        
+			  //alert("zipcode = " + zipcode);
+				
+				var obj = {  zipcode : zipcode
+						       , baseAddress : baseaddress
+						       , detailAddress : detailaddress
+						       
+						       , customerName : customername
+						       , sex : sex
+						       , birthday : birthday
+						       , email : email
+						       , phoneNumber : phonenumber
+						       , customerType : customertype
+						       
+						       , paymentMethod : paymentmethod
+						       , invoiceDeliveryType : invoicedeliverytype
+						       , invoiceEmail : invoiceemail
+						       
+						       , effectStartDateTime : effectstartdatetime
+						       , effectEndDateTime : effectenddatetime
+						       , deliveryCycle : deliverycycle
+						       , deliveryTimes : deliverytimes
+						       , deliveryRemark : deliveryremark
+						       , deliveryStartDatetime : deliverystartdatetime
+						       , deliveryTotalCount : deliverytotalcount
+						       , deliveryRemainCount : deliveryremaincount
+						       , invoiceCycle : invoicecycle
+						       
+						       , productId : productid
+						       , productQuantity : quantity
+						       
+						       , discountId : discountid
+						       , contractDiscountEffectStartDateTime : contractdiscounteffectstartdatetime
+						       , contractDiscountEffectEndDateTime : contractdiscounteffectenddatetime
+						       };
+				
+				$.ajax({
+			    	  method : 'post',
+				      url : '/contract/batchcontract',
+				      data : obj,
+				      async : true,
+				      error: function(xhr, status, error) {
+				      	//alert(error);
+		             },
+		      success : function(json){
+					}
+				});
+				
+			});
+			$('#exceltable').empty();
+			alert("정상 등록 완료");
+		});
+			
+	});
+		
+	function templatedownload(type, fn, dl) {
+		var elt = document.getElementById('templatetable');
+		var wb = XLSX.utils.table_to_book(elt, {sheet:"Sheet JS"});
+		return dl ?
+			XLSX.write(wb, {bookType:type, bookSST:true, type: 'base64'}) :
+			XLSX.writeFile(wb, fn || ('template.' + (type || 'xlsx')));
+	}
+	
+	function productdownload(type, fn, dl) {
+		var elt = document.getElementById('producttable');
+		var wb = XLSX.utils.table_to_book(elt, {sheet:"Sheet JS"});
+		return dl ?
+			XLSX.write(wb, {bookType:type, bookSST:true, type: 'base64'}) :
+			XLSX.writeFile(wb, fn || ('product.' + (type || 'xlsx')));
+	}
+	
+	function discountdownload(type, fn, dl) {
+		var elt = document.getElementById('discounttable');
+		var wb = XLSX.utils.table_to_book(elt, {sheet:"Sheet JS"});
+		return dl ?
+			XLSX.write(wb, {bookType:type, bookSST:true, type: 'base64'}) :
+			XLSX.writeFile(wb, fn || ('discount.' + (type || 'xlsx')));
+	}
+</script>
+<section class="page container">
+	<div class="row">
+	  <div class="stepwizard">
+	        <div class="stepwizard-row setup-panel">
+	            <div class="stepwizard-step col-xs-4"> 
+	                <a id="step-1" href="#step-1" type="button" class="btn btn-success btn-circle" disabled="disabled">1</a>
+	                <p><small>템플릿 다운로드</small></p>
+	            </div>
+	            <div class="stepwizard-step col-xs-4"> 
+	                <a id="step-2" href="#step-2" type="button" class="btn btn-success btn-circle" disabled="disabled">2</a>
+	                <p><small>판매정보 작성</small></p>
+	            </div>
+	            <div class="stepwizard-step col-xs-4"> 
+	                <a id="step-3" href="#step-3" type="button" class="btn btn-success btn-circle" disabled="disabled">3</a>
+	                <p><small>자료업로드</small></p>
+	            </div>
+	        </div>
+	    </div>
+	</div>
+	<div class="row">
+		<div class="col-md-12">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h2 class="panel-title">
+						<strong>1. 템플릿 다운로드</strong>
+					</h2>
+				</div>
+				<div class="panel-body" >
+					<div>
+						<div hidden="true" id="dvData">
+							<table class="table table-striped " id="templatetable">
+								<thead  class="table-header-bg">
+		       				<tr>
+		           			<th style="width: 4%;">우편번호</th>
+		        				<th style="width: 4%;">기본주소</th>
+		        				<th style="width: 4%;">상세주소</th>
+		        				<th style="width: 4%;">고객명</th>
+						        <th style="width: 4%;">성별</th>
+						        <th style="width: 4%;">생년월일</th>
+						        <th style="width: 4%;">이메일</th>
+						        <th style="width: 4%;">전화번호</th>
+						        <th style="width: 4%;">고객유형</th>
+						        <th style="width: 4%;">납부방법</th>
+						        <th style="width: 4%;">청구서발송유형</th>
+						        <th style="width: 4%;">청구서이메일</th>
+						        <th style="width: 4%;">계약시작일자</th>
+						        <th style="width: 4%;">계약종료일자</th>
+						        <th style="width: 4%;">배송주기</th>
+						        <th style="width: 4%;">배송횟수</th>
+						        <th style="width: 4%;">배송참조정보</th>
+						        <th style="width: 4%;">배송시작일(결제시작일)</th>
+						        <th style="width: 4%;">총배송횟수</th>
+						        <th style="width: 4%;">잔여배송횟수</th>
+						        <th style="width: 4%;">청구주기</th>
+						        <th style="width: 4%;">상품ID</th>
+						        <th style="width: 4%;">상품수량</th>
+						        <th style="width: 4%;">할인ID</th>
+						        <th style="width: 4%;">할인적용시작일자</th>
+						        <th style="width: 4%;">할인적용종료일자</th>
+									</tr>
+								</thead>
+								<tbody>	
+									<tr>
+										<td style="vertical-align: middle">12345</td>
+										<td style="vertical-align: middle">경기도 성남시 분당구</td>
+										<td style="vertical-align: middle">판교캠퍼스</td>
+										<td style="vertical-align: middle">홍길동</td>
+										<td style="vertical-align: middle">MALE</td>
+										<td style="vertical-align: middle">20180907</td>
+										<td style="vertical-align: middle">abc@abc.com</td>
+										<td style="vertical-align: middle;mso-number-format:\@">01012345678</td>
+										<td style="vertical-align: middle">PERSON</td>
+										<td style="vertical-align: middle">NULL</td>
+										<td style="vertical-align: middle">EMAIL</td>
+										<td style="vertical-align: middle">abc@abc.com</td>
+										<td style="vertical-align: middle">20180701</td>
+										<td style="vertical-align: middle">20190630</td>
+										<td style="vertical-align: middle">MONTH</td>
+										<td style="vertical-align: middle">1</td>
+										<td style="vertical-align: middle">배송 전 전화하기</td>
+										<td style="vertical-align: middle">20180701</td>
+										<td style="vertical-align: middle">12</td>
+										<td style="vertical-align: middle">10</td>
+										<td style="vertical-align: middle">MONTH</td>
+										<td style="vertical-align: middle">PRD0000010</td>
+										<td style="vertical-align: middle">1</td>
+										<td style="vertical-align: middle">DIS0000001</td>
+										<td style="vertical-align: middle">20180701</td>
+										<td style="vertical-align: middle">20190630</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<div class="row">
+							<div class="col-md-4" style="text-align:center;" >
+		   					   <button id="templatedownload" class="btn-table-default" onclick="templatedownload('xlsx');">업로드 양식 다운로드</button>
+		   				    </div>
+		   				    <div class="col-md-4" style="text-align:center;">
+				   			    <button id="templatedownload" class="btn-table-default" onclick="productdownload('xlsx');">상품목록 다운로드</button>
+				   		    </div>
+				   		    <div class="col-md-4" style="text-align:center;">
+				   			   <button id="templatedownload" class="btn-table-default" onclick="discountdownload('xlsx');">할인목록 다운로드</button>
+				   		    </div>
+			   		    </div>
+	   				
+	   				<div class="table-responsive" hidden="true">
+							<table class="table" id="producttable">
+								<thead  class="table-header-bg">
+									<tr>												
+										<th style="width: 8%;">상품ID</th>
+										<th style="width: 8%;">상품명</th>
+									</tr>
+								</thead>
+								<tbody class="table-body-row" id="productListtbody">	
+									<tr th:each="result : ${productResult}">
+										<td style="vertical-align: middle" th:text="${result.productId}"></td>
+										<td style="vertical-align: middle" th:text="${result.productName}"></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						
+			   		
+			   		<div class="table-responsive" hidden="true">
+							<table class="table" id="discounttable">
+								<thead  class="table-header-bg">
+									<tr>												
+										<th style="width: 8%;">할인ID</th>
+										<th style="width: 8%;">할인명</th>
+									</tr>
+								</thead>
+								<tbody class="table-body-row" id="discountListtbody">	
+									<tr th:each="result : ${discountResult}">
+										<td style="vertical-align: middle" th:text="${result.discounttId}"></td>
+										<td style="vertical-align: middle" th:text="${result.discountName}"></td>
+									</tr>
+								</tbody>
+							</table>
+					 </div>
+	   			</div>
+				</div>				
+			</div>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="col-md-12">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h2 class="panel-title">
+						<strong>2. 판매정보 작성</strong>
+					</h2>
+				</div>
+				<div class="panel-body" >
+				<h4>템플릿 형식에 맞도록 자료를 작성해주세요.</h4>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	<div class="row">
+		<div class="col-md-12">
+			<div class="panel panel-default">
+				<div class="panel-heading">
+					<h2 class="panel-title">
+						<strong>3. 일괄 처리 목록</strong>
+					</h2>
+				</div>
+				<div class="panel-body">
+				   <form>
+						<div class="row">
+				   		    <div class="col-md-6" style="text-align:center;">
+								<input type="file" value="파일 선택" id="excelfile" style="padding-left: 100px;"></input>
+							</div>
+							<div class="col-md-6" style="text-align:center;">
+								<input type="button" class="btn-table-default" id="viewfile" value="파일 내용 보기" onclick="ExportToTable('excelfile','exceltable')"></input>	
+							</div>
+			   		    </div>
+					</form>
+					<div class="table-responsive">
+						<table class="table table-striped " id="exceltable">
+							<thead  class="table-header-bg">
+	       				<tr>
+	           			<th style="width: 4%;">우편번호</th>
+	        				<th style="width: 4%;">기본주소</th>
+	        				<th style="width: 4%;">상세주소</th>
+	        				<th style="width: 4%;">고객명</th>
+					        <th style="width: 4%;">성별</th>
+					        <th style="width: 4%;">생년월일</th>
+					        <th style="width: 4%;">이메일</th>
+					        <th style="width: 4%;">전화번호</th>
+					        <th style="width: 4%;">고객유형</th>
+					        <th style="width: 4%;">납부방법</th>
+					        <th style="width: 4%;">청구서발송유형</th>
+					        <th style="width: 4%;">청구서이메일</th>
+					        <th style="width: 4%;">계약시작일자</th>
+					        <th style="width: 4%;">계약종료일자</th>
+					        <th style="width: 4%;">배송주기</th>
+					        <th style="width: 4%;">배송횟수</th>
+					        <th style="width: 4%;">배송참조정보</th>
+					        <th style="width: 4%;">배송시작일(결제시작일)</th>
+					        <th style="width: 4%;">총배송횟수</th>
+					        <th style="width: 4%;">잔여배송횟수</th>
+					        <th style="width: 4%;">청구주기</th>
+					        <th style="width: 4%;">상품ID</th>
+					        <th style="width: 4%;">상품수량</th>
+					        <th style="width: 4%;">할인ID</th>
+					        <th style="width: 4%;">할인적용시작일자</th>
+					        <th style="width: 4%;">할인적용종료일자</th>
+								</tr>
+							</thead>
+						</table>
+					</div>
+				</div>
+				<div class="panel-footer" style="padding-bottom: 40px;">
+					<div>
+		   			<button class="btn btn-small btn-info pull-right" style="margin: 3px;" id="dataupload">일괄 저장</button>
+		   		</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+</section>
+

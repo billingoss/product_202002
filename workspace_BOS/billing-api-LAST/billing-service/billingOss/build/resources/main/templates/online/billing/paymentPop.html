@@ -1,0 +1,222 @@
+    <!--결제//-->
+    <div id="popup_payment" class="trp popupfixed-wrap" th:fragment="paymentPop">
+    	<form action="" name="paymentForm" onsubmit="return false;">
+    		<input type="hidden" id="paymentConNumber" name="conNumber"/>    		
+			<input type="hidden" id="paymentInvoiceNumber" name="invoiceNumber"/>
+			<input type="hidden" id="paymentProviderNumber" name="providerNumber" value="0"/>
+			<input type="hidden" id="paymentChannelgubun" name="channelgubun" value="C"/>
+			<input type="hidden" id="paymentBillKey" name="billKey"/>
+			    		    	
+	        <div class="popup-dim"></div>
+	        <div class="popup-align">
+	            <div class="popup-vertical">
+	                <div class="popup-layer option wm">
+	                    <a class="btn_close" href="#">X</a>
+	                    <div class="pop_tit">결제</div>
+	                    <!-- 알림 mode0 -->
+	                    <section class="section">
+	                        <div class="table-wrap">
+	                            <div class="con_title ">
+	                                <h3 class="h3">주문/결제정보</h3>
+	                            </div>
+	                            <table class="form_table">
+	                                <colgroup>
+	                                    <col width="130px" />
+	                                    <col width="*" />
+	                                </colgroup>
+	                                <tbody>
+	                                    <tr>
+	                                        <th>고객명</th>
+	                                        <td id="paymentCustomerName"></td>
+	                                    </tr>
+	                                    <tr>
+	                                        <th>상품명</th>
+	                                        <td id="paymentProductName"></td>
+	                                    </tr>
+	                                    <tr>
+	                                        <th>결제일</th>
+	                                        <td id="paymentDate"></td>
+	                                    </tr>
+	                                    <tr>
+	                                        <th>결제금액</th>
+	                                        <td id="paymentTotalAmt"></td>
+	                                    </tr>
+	                                </tbody>
+	                            </table>
+	                        </div>
+	
+	                        <div class="table-wrap mt40">
+	                            <div class="con_title ">
+	                                <h3 class="h3">결제수단선택</h3>
+	                            </div>
+	                            <table class="form_table">
+	                                <colgroup>
+	                                    <col width="130px" />
+	                                    <col width="*" />
+	                                </colgroup>
+	                                <tbody>
+	                                    <tr>
+	                                        <th>결제수단</th>
+	                                        <td>
+	                                            <!--
+	                                            결제 방법이 늘어날 경우 설정  -->
+	                                            <div id="paymentPaymentMethodCodeDiv"></div>
+	                                           <!--  <span class="trp radio-box">
+													<input type="radio" id="paymentMethodCode1" name="paymentMethodCode" checked="checked"/>
+													<i></i>
+													<label for="paymentMethodCode1">카드</label>
+												</span> -->
+ 			                                    <!-- <span class="trp radio-box">
+													<input id="paymentMethodCode2" type="radio" name="paymentMethodCode"/>
+													<i></i>
+													<label for="paymentMethodCode2">휴대전화</label>
+												</span>
+			                                    <span class="trp radio-box">
+													<input id="paymentMethodCode3" type="radio" name="paymentMethodCode"/>
+													<i></i>
+													<label for="paymentMethodCode3"><img src="/resources/images/common/icon_skpay.png" alt="sk pay" class="icon_pay"/></label>
+												</span> -->
+	                                        </td>
+	                                    </tr>
+	                                    <tr>
+	                                        <th>비고</th>
+	                                        <td>
+	                                            <input type="text" class="" value="" placeholder="" name="memo" id="paymentMemo"/>
+	                                        </td>
+	                                    </tr>
+	                                </tbody>
+	                            </table>
+	                        </div>
+	                        <div class="btn_set-center bottom_set mt30">	                 
+	                            <a class="btn btn_green btn_wm radius mr5" role="button" href="#none" id="popPaymentBtn">결제</a>
+	                            <a class="btn btn_default btn_wm radius btn_cancel" href="#none" role="button" id="popPayCancelBtn">취소</a>
+	                        </div>
+	                    </section>
+	                </div>
+	            </div>
+        </div>
+    </form>
+	<script type="text/javascript">
+	/*<![CDATA[*/
+		/***************************************************
+		결제 popup event
+		***************************************************/	
+		var paymentPopBtnEvent = function (){				
+			var bntId;
+			var popId ='popup_payment';
+			$('.paymentBtn').each(function(index, item){			
+				bntId = $(this).prop('id');
+				var popup_warp = $("#"+bntId).trpLayerFixedPopup("#"+popId);	
+				$("#"+bntId).on("click", function($e) {
+					//화면 초기화					
+				    $('#paymentMethodCode1').trigger('click');
+					$('#paymentMemo').val("");
+					
+					var stringArray  = $(this).prop('value').split('|');
+					
+					if (stringArray.length == 2){
+						$('#paymentConNumber').val(stringArray[0]);
+						$('#paymentInvoiceNumber').val(stringArray[1]);
+					}
+					
+					//결제 대상 조회 조건
+					var queryString = $("form[name=paymentForm]").serialize();			
+					queryString = queryString.replace(/-/g, '');		
+					//청구 결제 상세 내역 조회
+					$.ajax({
+							method : 'post',				
+							url : '/billing/getInvoicePaymentDetail',
+							data : queryString, 
+							dataType : 'json',
+							success : function(data){
+								if (data != null && data.invoDetail != null){			
+									var invoDetail = data.invoDetail;
+									if (!isEmpty(invoDetail.billKey)){										
+										$('#paymentProviderNumber').val(invoDetail.providerNumber);								
+										$('#paymentBillKey').val(invoDetail.billKey);								
+										$('#paymentCustomerName').text(invoDetail.customerName);
+										$('#paymentProductName').text(invoDetail.productName);
+										$('#paymentDate').text(getTodayType('.'));
+										$('#paymentTotalAmt').text(numberComma(invoDetail.collectionBalanceAmount)+"원");
+										
+										//결제된 목록으로 환불 수단 설정
+										/* 결제 방법이 늘어날 경우 설정*/
+										makeRadioCode('paymentmethodcode', 'paymentPaymentMethodCode','N',invoDetail.paymentMethod, true); 
+										
+										$e.preventDefault();
+										popup_warp.open(this);
+									}else {
+										//showAlert('결제정보가 없습니다.\n 판매관리 > 주문관리 > 주문 별 결제관리 에서 자동결제변경 신청을 해야 합니다.');
+										showAlert('결제정보가 없습니다.');
+				              			$('#popPayCancelBtn').trigger('click');
+									}
+								}else {										
+									showAlert('결제정보가 없습니다.');									
+			              			$('#popPayCancelBtn').trigger('click');
+								}
+							}
+						});					
+				});
+				$("body").on("click", "#"+popId+" .btn_close, #"+popId+" .btn_cancel", function($e) {
+					$e.preventDefault();
+					popup_warp.close();
+				});
+			})				
+		}	
+		
+		/***************************************************
+		결제 버튼 event
+		***************************************************/	
+	    $('#popPaymentBtn').click(function (){			    	
+
+    		//필수 입력값 체크
+			if (isEmpty($('#paymentConNumber').val()) || isEmpty($('#paymentProviderNumber').val()) || isEmpty($('#paymentInvoiceNumber').val())) {
+			       showAlert('결제내역을 선택해 주세요.', $('#paymentConNumber'));
+				return;
+			} 
+
+    		//길이 체크
+    		if(isOverByte($('#paymentMemo').val(), 2000)){
+    			showAlert('비교가 입력 범위를 초과 했습니다.',$('#paymentMemo'));
+ 				return;
+    		}
+
+	    	//HTML tag 포함
+	    	if (isHtmlTag($('#paymentMemo').val())){
+				showAlert('입력 불가한 내용을 삭제 했습니다.\n내용을 확인 하세요.',$('#paymentMemo'));
+				$('#paymentMemo').val(removeHtmlTag($('#paymentMemo').val()));
+				return false;
+			}
+	    	
+			var queryString = $("form[name=paymentForm]").serialize();			
+			queryString = queryString.replace(/-/g, '');
+			
+			var okFlag = confirm('결제처리 하시겠습니까?');
+			if(okFlag){				
+				$.ajax({
+					   method : 'post',
+					   url: '/payment/payProc',
+		               data : queryString,
+		               dataType : 'json',
+		               success : function(json){
+			       			
+		            	   var promise = Promise.resolve(true);              	 
+			              	 promise = new Promise(function (resolve, reject) {             		
+		              			showAlert(json.resultMsg);
+			              		 return resolve();
+			              	 });
+			              	 promise = promise.then(function(res) {
+			              		if (json.resultCode == "00"){				              			
+									//성공일 경우 창 닫기
+			              			$('#popPayCancelBtn').trigger('click');	
+			              		}
+			              		getPagingData(currPage);
+			              	 });       			              	 
+	
+		               }
+				});
+			}
+		})
+	/*]]>*/
+	</script>    	
+</div>

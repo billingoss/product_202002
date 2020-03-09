@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"  xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+<head>
+    <!-- header -->
+    <meta charset="UTF-8"/>
+    <meta http-equiv='Pragma' content="no-cache"/>
+	<meta http-equiv='Expires' content="0"/>
+	<meta http-equiv='Cache-Control' content="no-cache"/>
+    <title>정기배송</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>    
+    <meta name="viewport" id="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,initial-scale=1.0"/>
+    <link rel="stylesheet" href="/mobileResources/css/library/csslibrary.css"/>
+    <link rel="stylesheet" href="/mobileResources/css/screen.css"/>
+    <!--[if lt IE 9]>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js" type="text/javascript" charset="utf-8"></script>
+<![endif]-->
+	<link href="/mobileResources/doctornoah/css/default.css" rel="stylesheet" type="text/css"/>	
+	<link href="/mobileResources/doctornoah/css/jquery-ui.css" rel="stylesheet" type="text/css"/>
+	<script src="/mobileResources/doctornoah/js/jquery.min.js"></script>
+	<script src="/mobileResources/doctornoah/js/jquery-ui.js"></script>	
+	<script src="/js/commonlib.js" type="text/javascript"></script>
+    <!-- //header -->
+   <script type="text/javascript">
+
+	    $(document).ready(function(){	
+	    	/***********************************************************
+	    	처리 결과에 따른 화면 Setting
+	    	************************************************************/	    	
+	    	if ($('#resultCode').val()== '00'){
+	    		//처리 결과 성공
+	    		$('.sucessPay').show();
+	    		$('.errorPay').hide();	    		
+	    		//btn text 설정
+	    		
+	    		//$('#moveBtn').text('주문상세보기'); 임시로 막아 놓음
+	    		$('#moveBtn').text('확인');
+	    		
+	    		//$('#totalPrice').text(numberComma($('#priceAmount').val()*$('#productQuantity').val()));
+	    		var tempSaleMessage = "정기결제 "+$('#productName').val()+" 상품 구매해주셔서 감사합니다.";
+	    		tempSaleMessage += "\n최초 구매하신 일자 기준으로 2달에 1번 자동 결제되며,";
+	    		tempSaleMessage += "\n신청하신 배송일 기준으로 2달에 1번 배송됩니다."
+				//$('#saleMessage').text($('#productName').val() + ' 격월 ' + $('#totalPrice').text() + '원 정기결제 신청이 완료되었습니다.');
+				$('#saleMessage').text(tempSaleMessage);
+	    	} /* else if ($('#resultMsg').val()== '사용자에 의한 취소입니다.'){
+	    		//$('#moveBtn').click();
+	    		$('#retForm').attr('action','/billletter/productsale');
+				$('#retForm').attr('method','get');
+				$('#retForm')[0].submit();
+	    	}  */else {
+	    		//처리 결과 실패	    		
+	    		$('.sucessPay').hide();
+	    		$('.errorPay').show();
+	    		$('#moveBtn').text('확인');
+	    	}
+	    	
+	    	/***********************************************************
+	    	action buttn event 설정
+	    	************************************************************/	    	
+ 			$('#reqAutoPayBtn').click(function(){
+ 				setPaymentReqInfo($('#conNumber').val(), "CARD", 'MOBILE');
+ 			});
+	    	/***********************************************************
+	    	action buttn event 설정
+	    	************************************************************/	    	
+ 			$('#moveBtn').click(function(){
+				var moveUrl ="";
+				if ($('#resultCode').val()== '00'){
+					//성공		
+					//moveUrl = '/billletter/productsalelist'; 임시로 막아 놓음					
+					//moveUrl = '/billletter/doctornoah';
+					moveUrl = $('#saleMainPage').val();
+				}else {
+					//실패
+					//재결제 요청 버튼.. 필요 여부 확인 setPaymentReqInfo(json.conNumber, "CARD", 'MOBILE');					
+					moveUrl = '/billletter/productsale';
+				}								
+				$('#retForm').attr('action',moveUrl);
+				$('#retForm').attr('method','get');
+				$('#retForm').submit();			
+			}); 
+	    	
+ 			inputFormatPhone();
+	    });
+    </script>    
+    
+    
+</head>
+<body id="saleBody">
+	<div class="wrapper">
+		<!-- container -->
+		<div id="container">
+			<div id="contents" class="cont">		
+				<div class="title">
+					<h3>정기배송 신청결과</h3>
+					<!-- <button type="button" class="back_btn">뒤로가기</button> -->
+					<input type="hidden" id="resultCode" th:value="${resultCode}"/>
+					<input type="hidden" id="resultMsg" th:value="${resultMsg}"/>
+					<input type="hidden" id="saleMainPage" th:value="${saleMainPage}"/>
+				</div>	
+ 				<!-- 정기 결제 요청 오류//-->
+				<section class="section errorPay">
+					<div class="inner">
+						<div class="tit_box">
+							<h4 class="tit">오류정보</h4>
+						</div>
+						<div class="form_box">
+							<dl>
+								<dt>오류코드</dt>
+								<dd>
+									<input type="text" placeholder="오류코드" th:value="${resultCode}" style="border:0" readOnly="readOnly"/>									
+								</dd>
+								<dt>메시지</dt>
+								<dd>
+									<!-- <input type="text" placeholder="오류메시지" id="resultMsg" th:value="${resultMsg}" style="border:0" readOnly="readOnly"/> -->
+									<div class="textarea-box" th:text="${resultMsg}">
+                                        <!-- <textarea name="" id="" cols="30" rows="20" placeholder="배송 요청사항 입력 한글 50자" th:text="${resultMsg}"></textarea> -->                                        
+                                    </div>
+								</dd>
+							</dl>
+						</div>
+					</div>
+				</section>				
+				
+ 				<!-- 정기 결제 요청 완료 후 상품 주문 정보 조회//-->
+                <!-- 상품정보//-->
+                <section class="section sucessPay">
+                    <div class="inner" th:each="result : ${contractList}">                       
+						<div class="tit_box">
+                            <h4 class="tit">상품정보</h4>
+                        </div>
+                        <div class="product_box">
+                            <!---->
+                            <div class="img_info">
+                                <p class="img">
+                                    <img th:src="${result.productImageUrl}" />                                    
+                                </p>
+                                <p class="info">
+                                    <span th:text="${result.productName}">
+										오동나무 오일로 3번 정성껏 코팅한 대나무칫솔 + 천연 유래성분으로 만든 안전한 치약
+									</span>
+                                    <em th:utext="${result.productDescription}"><!-- 칫솔1개 + 치약 30g x 4개 --></em>                                    
+									
+									<input type="hidden" name="priceAmount" id="priceAmount"  th:value="${result.priceAmount}" />
+									<input type="hidden" name="productQuantity" id="productQuantity"  th:value="${result.productQuantity}" />
+									<input type="hidden" name="productName" id="productName"  th:value="${result.productName}" />                                   		
+                                </p>
+                            </div>
+
+                            <ul class="product_info">
+                                <li>
+                                    <dl>
+                                        <dt> 수량</dt>
+                                        <dd>
+                                            <span  th:text="${result.productQuantity}">0</span> <span>개</span>
+                                        </dd>
+                                    </dl>
+                                </li>
+                                <li>
+                                    <dl>
+                                        <dt>총액</dt>
+                                        <dd>
+                                            <span class="num_b" id="totalPrice" th:text="${#numbers.formatDecimal(result.invoiceAmount,0,'COMMA',0,'POINT')}">0</span> 원
+                                        </dd>
+                                    </dl>
+                                </li>
+                            </ul>                            
+                        </div>
+                    </div>
+                </section>
+                
+				<section class="section terms sucessPay">
+					<div class="inner">
+						<div class="tit_box">
+						    <h4 id="saleMessage"></h4>
+						</div>
+					</div>
+				</section>
+		
+				<section class="section sucessPay">
+					<div class="inner">
+						<div class="tit_box">
+							<h4 class="tit">주문정보</h4>
+						</div>
+						<div class="form_box" th:each="result : ${contractList}">
+							<dl>
+								<dt>주문자</dt>
+								<dd>
+									<input type="text" placeholder="주문자 이름" id=""  th:value="${result.customerName}" style="border:0" readOnly="readOnly"/>									
+								</dd>
+								<dt>연락처</dt>
+								<dd>
+									<input type="text" placeholder="휴대전화" id=""  class="phone" th:value="${result.phoneNumber}" style="border:0" readOnly="readOnly"/>									
+								</dd>
+							</dl>							
+						</div>
+					</div>
+				</section>              		
+				<section class="section sucessPay">
+					<div class="content_box">
+						<div class="tb_type1">
+							<div class="inner">
+								<div class="tit_box">
+									<h4 class="tit">결제일정</h4>
+								</div>
+								<div class="form_box">
+									<table>
+											<caption>항목별 결제일정 테이블 입니다. 차수, 결제일, 상태 내용을 확인하실 수 있습니다.</caption>
+											<colgroup>
+												<col style="width:20%"/>
+												<col style="width:40%"/>
+												<col style="width:40%"/>
+											</colgroup>
+											<thead>
+												<tr>
+													<th scope="col">차수</th>
+													<th scope="col">결제일</th>
+													<th scope="col">상태</th>
+												</tr>
+											</thead>
+											<tbody>
+												<tr th:each="invoiceResult,index : ${invoiceList}">
+													<td th:text="${index.index+1+'차'}"></td>
+													<td th:text="${#strings.substring(invoiceResult.invoiceDate,0,4)+'-'+#strings.substring(invoiceResult.invoiceDate,4,6)+'-'+#strings.substring(invoiceResult.invoiceDate,6,8)}"></td>
+													<td th:text="${invoiceResult.collectionCloseYn == 'Y'?'결제완료':'결제전'}"></td>
+												</tr>
+											</tbody>
+										</table>					
+								</div>
+							</div>
+						</div>
+					</div>
+				</section>
+ 
+				<section class="section sucessPay">
+					<div class="content_box">
+						<div class="tb_type1">
+							<div class="inner">
+								<div class="tit_box">
+									<h4 class="tit">배송일정</h4>
+								</div>
+								<div class="form_box">
+									<table>
+										<caption>항목별 배송일정 테이블 입니다. 차수, 배송일, 상태 내용을 확인하실 수 있습니다.</caption>
+										<colgroup>
+											<col style="width:20%"/>
+											<col style="width:40%"/>
+											<col style="width:40%"/>
+										</colgroup>
+										<thead>
+											<tr>
+												<th scope="col">차수</th>
+												<th scope="col">배송일</th>
+												<th scope="col">상태</th>
+											</tr>
+										</thead>
+										<tbody>
+											<tr th:each="deliveryResult,index : ${deliveryList}">
+												<td th:text="${index.index+1+'차'}"></td>
+												<td th:text="${#strings.substring(deliveryResult.deliveryDate,0,4)+'-'+#strings.substring(deliveryResult.deliveryDate,4,6)+'-'+#strings.substring(deliveryResult.deliveryDate,6,8)}"></td>
+												<td th:text="${deliveryResult.deliveryStateName}"></td>
+											</tr>
+										</tbody>
+									</table>					
+								</div>
+							</div>
+						</div>
+					</div>
+				</section>
+ 
+ 				<!-- 하단버튼//-->
+				<div class="btn-area">
+					<p>						
+						<a href="javascript:void(0)" id="moveBtn"></a>						
+					</p>					
+					<!-- <span class="btn_item"><button class="btn btn_red" role="button" id="reqAutoPayBtn" >정기결제 재요청</button></span> -->
+				</div>				
+				<!--// 하단버튼-->                
+			</div>								
+		</div>
+	</div>
+	
+	<form id="retForm" th:each="result : ${contractList}">
+		<input type="hidden" name="conNumber" id="conNumber" th:value="${result.conNumber}"/>
+<!-- 		<input type="hidden" name="customerName" id="customerName"  th:value="${result.customerName}" />
+		<input type="hidden" name="phoneNumber" id="phoneNumber"  th:value="${result.phoneNumber}" />
+		<input type="hidden" name="productId" id="productId" th:value="${result.productId}"/>		 -->
+	</form>
+</body>
+</html>				

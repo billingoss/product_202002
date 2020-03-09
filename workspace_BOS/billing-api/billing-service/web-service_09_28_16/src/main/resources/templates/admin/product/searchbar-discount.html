@@ -1,0 +1,51 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+		$('#searchbutton').click(function(){
+			var queryString = $("form[name=dataForm]").serialize() ;
+			  queryString = queryString.replace(/-/g, '');
+			$.ajax({
+				method : 'get',
+	      url : '/product/findsearchbar',
+	      data : queryString,
+	      //dataType : 'json',
+	      error: function(xhr, status, error) {
+	      	alert(error);
+	      },
+	      success : function(data){
+	      	$('#discountListResult').html(data);
+				}
+			});
+		});
+	});
+</script>
+<div class="col-md-12">
+	<div class="panel panel-heading" style="vertical-align: middle; text-align: center;
+		margin-left: auto; margin-right: auto; padding-bottom: 0px;">
+		<div class="form-section">
+			<div class="row" style="text-align: center">
+				<form id="dataForm" name="dataForm" class="form-inline" role="form" style="margin-bottom: 10px;">
+					<div class="col-md-3">
+						<div class="form-group">
+							<span>할인유형</span>
+								<select style="font-size:10pt" name="discountType" class="form-control">
+									<option value="">전체</option>
+									<option value="AMOUNT">정액할인</option>
+									<option value="RATE">정률할인</option>
+								</select>						
+							<!-- <input type="text" class=" form-control-sm" name ="discountType"/> -->
+						</div>
+					</div>
+					<div class="col-md-4">
+						<div class="form-group">
+							<span>할인명</span>
+							<input type="text" class=" form-control" name ="discountName"/>
+						</div>
+					</div>
+					<div class="col-md-4">
+						<button id="searchbutton" type="button" class="btn btn-primary">조회</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>

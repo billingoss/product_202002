@@ -1,0 +1,561 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.api.repository.ContractRepository">
+
+<resultMap id="productList" type="com.api.model.contract.ContractInsert"> 
+	<result property="productId" column="productid"/> 
+	<result property="productName" column="productName"/> 
+	<result property="productDescription" column="productdescription"/> 
+	<result property="productImageUrl" column="productimageurl"/> 
+</resultMap>
+<select id="getProductList" resultMap="productList"  parameterType = "ContractInsert" >
+select b.productid, b.productname, a.description as productdescription, a.value2 as productimageurl
+from   providerinformation a, product b
+where  a.providernumber = #{providerNumber}
+and    a.code = 'SALEPRODUCT'
+and    a.detailcode = 'BILLLETTER'
+and    date_format(curdate(),'%Y%m%d') between a.effectstartdate and a.effectenddate
+and    a.value1 = b.productid
+</select>
+
+<resultMap id="product" type="com.api.model.contract.ContractInsert"> 
+	<result property="productId" column="productid"/> 
+	<result property="productName" column="productName"/> 
+	<result property="priceAmount" column="priceamount"/> 
+	<result property="productDescription" column="productdescription"/> 
+	<result property="productImageUrl" column="productimageurl"/> 
+</resultMap>
+<select id="getProduct" resultMap="product"  parameterType = "ContractInsert" >
+select a.productid, a.productname, a.priceamount, a.productdescription, value2 as productimageurl
+from   product a, providerinformation b
+where  a.productid = #{productId}
+and    a.providernumber = b.providernumber
+and    b.code = 'SALEPRODUCT'
+and    b.detailcode = 'BILLLETTER'
+and    a.productid = b.value1
+</select>
+
+<resultMap id="addressid" type="com.api.model.contract.ContractInsert"> 
+	<result property="addressId" column="addressid"/> 
+</resultMap>
+<select id="getAddressid" resultType="ContractInsert">
+SELECT concat('ADD',nextval(addressid_seq)) as addressid
+</select>
+
+<insert id="createDeliveryAddress">
+INSERT 
+INTO   address
+       (
+          addressid
+		    , zipcode
+		    , baseaddress
+		    , detailaddress
+		    , auditid
+		    , auditdatetime
+		  )
+VALUES (
+          #{addressId}
+        , #{zipCode}
+        , #{baseAddress}
+        , #{detailAddress}
+        , #{auditId}
+        , NOW()
+        )
+</insert>
+
+<resultMap id="customerNumber" type="com.api.model.contract.ContractInsert"> 
+	<result property="customerNumber" column="customernumber"/> 
+	<result property="customerName" column="customername"/> 
+	<result property="phoneNumber" column="phonenumber"/> 
+</resultMap>
+<select id="getCustomerNumber" resultType="ContractInsert"  parameterType = "ContractInsert">
+select customernumber, customername, phonenumber
+from   customer a
+where  a.providernumber = #{providerNumber}
+and    a.channelid = #{channelId}
+and    a.channelcustomernumber = #{channelCustomerNumber}
+and    a.customername = #{customerName}
+and    a.phonenumber = #{phoneNumber}
+</select>
+
+<insert id="insertCustomer" useGeneratedKeys="true" keyProperty="customerNumber">
+insert into customer (customername,providernumber,sex,birthday,email,phonenumber,addressid,
+                      deliveryaddressid,customertype,createdate,currentdate,deletedate,cellphonenumber,channelid,channelcustomernumber,auditid,auditdatetime)
+values (#{customerName},#{providerNumber},'','','',#{phoneNumber},#{addressId},
+        #{addressId},'',date_format(curdate(),'%Y%m%d'),date_format(curdate(),'%Y%m%d'),'',#{phoneNumber},#{channelId},#{channelCustomerNumber},#{auditId},now())
+</insert>
+
+<insert id="insertDeliveryCustomer" useGeneratedKeys="true" keyProperty="customerNumber">
+insert into customer (customername,providernumber,sex,birthday,email,phonenumber,addressid,
+                      deliveryaddressid,customertype,createdate,currentdate,deletedate,cellphonenumber,channelid,channelcustomernumber,auditid,auditdatetime)
+values (#{deliveryCustomerName},#{providerNumber},'','','',#{deliveryPhoneNumber},#{addressId},
+        #{addressId},'',date_format(curdate(),'%Y%m%d'),date_format(curdate(),'%Y%m%d'),'',#{deliveryPhoneNumber},#{channelId},'',#{auditId},now())
+</insert>
+
+<resultMap id="contractDone" type="com.api.model.contract.ContractInsert"> 
+	<result property="conNumber" column="connumber"/> 
+	<result property="productId" column="productid"/> 
+	<result property="productName" column="productname"/> 
+	<result property="priceAmount" column="priceamount"/> 
+	<result property="productQuantity" column="quantity"/> 
+	<result property="customerNumber" column="customernumber"/> 
+	<result property="customerName" column="customername"/> 
+	<result property="phoneNumber" column="phonenumber"/> 
+	<result property="channelCustomerNumber" column="channelcustomernumber"/> 
+	<result property="productImageUrl" column="productimageurl"/> 
+</resultMap>
+<select id="getContractDone" resultMap="contractDone"  parameterType = "ContractInsert" >
+select a.connumber, b.productid, b.productname, c.priceamount, b.quantity, d.customernumber, d.customername, d.phonenumber, d.channelcustomernumber, 
+      (select value2 from providerinformation z where z.providernumber = a.providernumber and z.code = 'SALEPRODUCT' and z.detailcode = 'BILLLETTER' and z.value1 = b.productid) as productimageurl
+from   contract a, contractproduct b, product c, customer d 
+where  a.connumber = #{conNumber}
+and    a.connumber = b.connumber
+and    b.productid = c.productid
+and    a.customernumber = d.customernumber
+</select>
+
+<resultMap id="contractList" type="com.api.model.contract.ContractInsert"> 
+	<result property="customerNumber" column="customernumber"/> 
+	<result property="customerName" column="customername"/> 
+	<result property="conNumber" column="connumber"/> 
+	<result property="registrationDatetime" column="registrationdatetime"/> 
+	<result property="contractState" column="contractstate"/> 
+	<result property="duration" column="duration"/> 
+	<result property="contractStateName" column="contractstatename"/> 
+	<result property="productId" column="productid"/> 
+	<result property="productName" column="productname"/> 
+	<result property="productQuantity" column="quantity"/> 
+	<result property="priceAmount" column="priceamount"/> 
+	<result property="invoiceAmount" column="invoiceamount"/> 
+	<result property="zipCode" column="zipcode"/>
+	<result property="baseAddress" column="baseaddress"/>
+	<result property="detailAddress" column="detailaddress"/>
+	<result property="deliveryCustomerName" column="deliverycustomername"/> 
+	<result property="productImageUrl" column="productimageurl"/> 
+	<result property="productDescription" column="productdescription"/> 
+</resultMap>
+<select id="getContractList" resultMap="contractList"  parameterType = "ContractInsert" >
+select a.customernumber, a.customername, 
+       b.connumber, b.registrationdatetime, b.contractstate, b.duration, 
+      (select codename from codegroupdetail z where z.codegroupid = 'CONTRACTSTATE' and z.code = b.contractstate) as contractstatename,
+       c.productid, c.productname, c.quantity, 
+       d.priceamount, c.quantity * d.priceamount as invoiceamount, d.productdescription,
+       e.zipcode, e.baseaddress, e.detailaddress, f.customername as deliverycustomername,
+      (select g.value2 from providerinformation g where g.providernumber = a.providernumber and g.code = 'SALEPRODUCT' and g.detailcode = 'BILLLETTER' and g.value1 = c.productid) as productimageurl
+from   customer a, contract b, contractproduct c, product d, address e, customer f
+where  a.channelid = 'BILLLETTER'
+and    a.channelcustomernumber = #{channelCustomerNumber}
+and    a.customername = #{customerName}
+and    a.phonenumber = #{phoneNumber}
+and    a.customernumber = b.customernumber
+and    b.contractstate = 'ACTIVATION'
+and    b.connumber = c.connumber
+and    c.productid = d.productid
+and    b.deliveryaddressid = e.addressid
+and    b.deliverycustomernumber = f.customernumber
+order by b.registrationdatetime desc
+</select>
+
+<resultMap id="deliveryList" type="com.api.model.contract.ContractInsert"> 
+	<result property="deliveryDate" column="deliverydate"/> 
+	<result property="deliveryState" column="deliverystate"/> 
+	<result property="deliveryStateName" column="deliverystatename"/> 
+	<result property="zipCode" column="zipcode"/>
+	<result property="baseAddress" column="baseaddress"/>
+	<result property="detailAddress" column="detailaddress"/>
+	<result property="customerName" column="customername"/> 
+	<result property="phoneNumber" column="phonenumber"/> 
+</resultMap>
+<select id="getDeliveryList" resultMap="deliveryList"  parameterType = "ContractInsert" >
+select a.deliverydate, a.deliverystate, 
+      (select codename from codegroupdetail z where z.codegroupid = 'DELIVERYSTATE' and z.code = a.deliverystate) as deliverystatename,
+       b.zipcode, b.baseaddress, b.detailaddress, c.customername, c.phonenumber
+from   deliverydetail a, address b, customer c
+where  a.connumber = #{conNumber}
+and    a.deliveryaddressid = b.addressid
+and    a.deliverycustomernumber = c.customernumber
+</select>
+
+<resultMap id="invoiceList" type="com.api.model.contract.ContractInsert"> 
+	<result property="invoiceDate" column="invoicedate"/> 
+	<result property="invoiceAmount" column="invoiceamount"/> 
+	<result property="collectionCloseYn" column="collectioncloseyn"/> 
+</resultMap>
+<select id="getInvoiceList" resultMap="invoiceList"  parameterType = "ContractInsert" >
+select a.invoicedate, a.invoiceamount, a.collectioncloseyn
+from   invoice a
+where  a.connumber = #{conNumber}
+</select>
+
+<insert id="paymentInfoInsert" keyProperty="paymentInformationNumber">
+	INSERT 
+	INTO   paymentinformation
+	       (
+	            customernumber
+			    , paymentmethod
+			    , deliveryaddressid
+			    , invoicedeliverytype
+			    , invoiceemail
+			    , auditid
+			    , auditdatetime
+			    , paymentday
+			    , cardcorporationcode
+			    , cardexpirationdate
+			    , paymentamount
+			    , cardnumber
+			  )
+	VALUES (
+	          
+	          #{customerNumber}
+	        , #{paymentMethod}
+	        , #{deliveryAddressId}
+	        , #{invoiceDeliveryType}
+	        , #{invoiceEmail}
+	        , #{auditId}
+	        , NOW()
+	        , #{paymentDay}
+	        , ''
+	        , ''
+	        , ''
+	        , ''
+	       )
+	<selectKey resultType="int" keyProperty="paymentInformationNumber" order="AFTER">
+       SELECT LAST_INSERT_ID()
+       </selectKey>	       
+</insert>
+
+<select id="getDeliveryDate" resultType="ContractInsert"  parameterType = "ContractInsert" >
+select date_format(curdate(),'%Y%m%d') as effectStartDateTime, date_format(adddate(curdate() + interval #{duration} month, -1), '%Y%m%d') as effectEndDateTime
+</select>        
+	
+<select id="getDeliveryDate1" resultType="ContractInsert"  parameterType = "ContractInsert" >
+select deliveryDate
+from  (select if(date_format(curdate(),'%d')&gt;=cast(#{deliveryDay} as unsigned),concat(date_format(curdate()+interval 1 month,'%Y%m'),if(cast(#{deliveryDay} as unsigned)>9,#{deliveryDay},concat('0',#{deliveryDay}))),
+                                                                                 concat(date_format(curdate(),'%Y%m'),if(cast(#{deliveryDay} as unsigned)>9,#{deliveryDay},concat('0',#{deliveryDay})))) as deliverydate) a
+</select>        
+
+<select id="getDeliveryCount1" resultType="ContractInsert"  parameterType = "ContractInsert" >
+select count(*) as deliveryTotalCount, sum(if(substr(deliverydate,1,6)=date_format(curdate(),'%Y%m'),1,0)) as deliveryCount, min(deliverydate) as deliveryStartDatetime
+from  (select deliverydate 
+       from  (select date_format(str_to_date(#{deliveryDate},'%Y%m%d') + interval (rownum-1)*#{deliveryMonth} month,'%Y%m%d') as deliverydate
+              from  (select @rownum := @rownum + 1 as rownum
+		             from   codegroup a, (select @rownum := 0) b
+                     limit  #{deliveryCount}) a
+<if test='"Y".equals(todayDeliveryYn)'>
+              union
+              select date_format(curdate(),'%Y%m%d') as deliverydate
+</if>       
+              ) a
+       order by a.deliverydate
+       limit #{deliveryTotalCount}) a
+</select>        
+    
+	
+<insert id="insertDeliveryDetail1">
+insert into deliverydetail (connumber,customernumber,providernumber,invoicenumber,invoicedate,deliverydate,deliverystate,
+                            deliverydatetime,deliveryremark,deliverycustomernumber,deliverycompany,deliverychargeamount,deliverychargetype,deliveryaddressid,auditid,auditdatetime)
+select b.connumber, b.customernumber, b.providernumber, 0, '', a.deliverydate, 'ORDERDONE', 
+       null, b.deliveryremark, b.deliverycustomernumber, b.deliverycompany, b.deliverychargeamount, b.deliverychargetype, b.deliveryaddressid, b.auditid, now()
+from  (select date_format(str_to_date(#{deliveryDate},'%Y%m%d') + interval (rownum-1)*#{deliveryMonth} month, '%Y%m%d') as deliverydate
+       from  (select @rownum := @rownum + 1 as rownum
+		      from   codegroup a, (select @rownum := 0) b
+              limit  #{deliveryCount}) a
+<if test='"Y".equals(todayDeliveryYn)'>
+       union
+       select date_format(curdate(),'%Y%m%d') as deliverydate
+</if>       
+      ) a, contract b
+where  b.connumber = #{conNumber}
+order by a.deliverydate
+limit #{deliveryTotalCount}
+</insert>	    
+
+<select id="getDeliveryDate2" resultType="ContractInsert"  parameterType = "ContractInsert" >
+<![CDATA[
+select deliveryDate1, deliveryDate2
+from (select if(today<cast(#{deliveryDay1} as unsigned),date1,if(today<cast(#{deliveryDay2} as unsigned),date2,date3)) as deliverydate1,
+             if(today<cast(#{deliveryDay1} as unsigned),date2,if(today<cast(#{deliveryDay2} as unsigned),date3,date4)) as deliverydate2
+      from  (select date_format(curdate(),'%d') as today, 
+                    concat(date_format(curdate(),'%Y%m'),if(cast(#{deliveryDay1} as unsigned)>9,#{deliveryDay1},concat('0',#{deliveryDay1}))) as date1,
+                    concat(date_format(curdate(),'%Y%m'),if(cast(#{deliveryDay2} as unsigned)>9,#{deliveryDay2},concat('0',#{deliveryDay2}))) as date2,
+                    concat(date_format(curdate()+interval 1 month,'%Y%m'),if(cast(#{deliveryDay1} as unsigned)>9,#{deliveryDay1},concat('0',#{deliveryDay1}))) as date3,
+                    concat(date_format(curdate()+interval 1 month,'%Y%m'),if(cast(#{deliveryDay2} as unsigned)>9,#{deliveryDay2},concat('0',#{deliveryDay2}))) as date4) a) a
+]]>
+</select>        
+
+<select id="getDeliveryCount2" resultType="ContractInsert"  parameterType = "ContractInsert" >
+select count(*) as deliveryTotalCount, sum(if(substr(deliverydate,1,6)=date_format(curdate(),'%Y%m'),1,0)) as deliveryCount, min(deliverydate) as deliveryStartDatetime
+from  (select deliverydate
+       from  (select date_format(str_to_date(#{deliveryDate1},'%Y%m%d') + interval (rownum-1) month,'%Y%m%d') as deliverydate
+              from  (select @rownum := @rownum + 1 as rownum
+                     from   codegroup a, (select @rownum := 0) b
+                     limit  #{deliveryCount}) a
+              union 
+              select date_format(str_to_date(#{deliveryDate2},'%Y%m%d') + interval (rownum2-1) month,'%Y%m%d') as deliverydate
+              from  (select @rownum2 := @rownum2 + 1 as rownum2
+                     from   codegroup a, (select @rownum2 := 0) b
+                     limit  #{deliveryCount}) a
+<if test='"Y".equals(todayDeliveryYn)'>
+              union
+              select date_format(curdate(),'%Y%m%d') as deliverydate       
+</if>              
+              ) a
+       order by a.deliverydate
+       limit #{deliveryTotalCount}) a
+</select>
+
+<insert id="insertDeliveryDetail2">
+insert into deliverydetail (connumber,customernumber,providernumber,invoicenumber,invoicedate,deliverydate,deliverystate,
+                            deliverydatetime,deliveryremark,deliverycustomernumber,deliverycompany,deliverychargeamount,deliverychargetype,deliveryaddressid,auditid,auditdatetime)
+select b.connumber, b.customernumber, b.providernumber, 0, '', a.deliverydate, 'ORDERDONE', 
+       null, b.deliveryremark, b.deliverycustomernumber, b.deliverycompany, b.deliverychargeamount, b.deliverychargetype, b.deliveryaddressid, b.auditid, now()
+from  (select date_format(str_to_date(#{deliveryDate1},'%Y%m%d') + interval (rownum-1) month,'%Y%m%d') as deliverydate
+       from  (select @rownum := @rownum + 1 as rownum
+              from   codegroup a, (select @rownum := 0) b
+              limit  #{deliveryCount}) a
+       union 
+       select date_format(str_to_date(#{deliveryDate2},'%Y%m%d') + interval (rownum2-1) month,'%Y%m%d') as deliverydate
+       from  (select @rownum2 := @rownum2 + 1 as rownum2
+              from   codegroup a, (select @rownum2 := 0) b
+              limit  #{deliveryCount}) a
+<if test='"Y".equals(todayDeliveryYn)'>
+       union
+       select date_format(curdate(),'%Y%m%d') as deliverydate       
+</if>              
+       ) a, contract b
+where  b.connumber = #{conNumber}
+order by a.deliverydate
+limit #{deliveryTotalCount}
+</insert>
+   
+<select id="getDeliveryDateWeek1" resultType="ContractInsert"  parameterType = "ContractInsert" >
+select date_format(adddate(curdate(),if(#{deliveryDay}>weekday(curdate()),#{deliveryDay},#{deliveryDay}+7)-weekday(curdate())),'%Y%m%d') as deliveryDate
+</select>
+
+<select id="getDeliveryWeekCount1" resultType="ContractInsert"  parameterType = "ContractInsert" >
+select count(*) as deliveryTotalCount, sum(if(substr(deliverydate,1,6)=date_format(curdate(),'%Y%m'),1,0)) as deliveryCount, min(deliverydate) as deliveryStartDatetime
+from  (select deliverydate
+       from  (select date_format(adddate(#{deliveryDate},(rownum-1)*7),'%Y%m%d') as deliverydate
+              from  (select @rownum := @rownum + 1 as rownum
+                     from   codegroup a, (select @rownum := 0) b
+                     limit  #{deliveryCount}) a
+<if test='"Y".equals(todayDeliveryYn)'>
+              union 
+              select date_format(curdate(),'%Y%m%d') as deliverydate
+</if>              
+              ) a
+       order by a.deliverydate
+       limit #{deliveryTotalCount}) a
+</select>
+
+<insert id="insertDeliveryDetailWeek1">
+insert into deliverydetail (connumber,customernumber,providernumber,invoicenumber,invoicedate,deliverydate,deliverystate,
+                            deliverydatetime,deliveryremark,deliverycustomernumber,deliverycompany,deliverychargeamount,deliverychargetype,deliveryaddressid,auditid,auditdatetime)
+select b.connumber, b.customernumber, b.providernumber, 0, '', a.deliverydate, 'ORDERDONE', 
+       null, b.deliveryremark, b.deliverycustomernumber, b.deliverycompany, b.deliverychargeamount, b.deliverychargetype, b.deliveryaddressid, b.auditid, now()
+from  (select date_format(adddate(#{deliveryDate},(rownum-1)*7),'%Y%m%d') as deliverydate
+       from  (select @rownum := @rownum + 1 as rownum
+              from   codegroup a, (select @rownum := 0) b
+              limit  #{deliveryCount}) a
+<if test='"Y".equals(todayDeliveryYn)'>
+       union 
+       select date_format(curdate(),'%Y%m%d') as deliverydate
+</if>              
+       ) a, contract b
+where  b.connumber = #{conNumber}
+order by a.deliverydate
+limit #{deliveryTotalCount}
+</insert>
+
+<select id="getDeliveryDateWeek2" resultType="ContractInsert"  parameterType = "ContractInsert" >
+select date_format(adddate(curdate(),if(#{deliveryDay1}>weekday(curdate()),#{deliveryDay1},#{deliveryDay1}+7)-weekday(curdate())),'%Y%m%d') as deliveryDate1,
+       date_format(adddate(curdate(),if(#{deliveryDay2}>weekday(curdate()),#{deliveryDay2},#{deliveryDay2}+7)-weekday(curdate())),'%Y%m%d') as deliveryDate2
+</select>
+
+<select id="getDeliveryWeekCount2" resultType="ContractInsert"  parameterType = "ContractInsert" >
+select count(*) as deliveryTotalCount, sum(if(substr(deliverydate,1,6)=date_format(curdate(),'%Y%m'),1,0)) as deliveryCount, min(deliverydate) as deliveryStartDatetime
+from  (select deliverydate
+       from  (select date_format(adddate(#{deliveryDate1},(rownum-1)*7),'%Y%m%d') as deliverydate
+              from  (select @rownum := @rownum + 1 as rownum
+                     from   codegroup a, (select @rownum := 0) b
+                     limit  #{deliveryCount}) a
+              union 
+              select date_format(adddate(#{deliveryDate2},(rownum2-1)*7),'%Y%m%d') as deliverydate
+              from  (select @rownum2 := @rownum2 + 1 as rownum2
+                     from   codegroup a, (select @rownum2 := 0) b
+                     limit  #{deliveryCount}) a
+<if test='"Y".equals(todayDeliveryYn)'>
+              union 
+              select date_format(curdate(),'%Y%m%d') as deliverydate
+</if>              
+              ) a
+       order by a.deliverydate
+       limit #{deliveryTotalCount}) a
+</select>
+
+<insert id="insertDeliveryDetailWeek2">
+insert into deliverydetail (connumber,customernumber,providernumber,invoicenumber,invoicedate,deliverydate,deliverystate,
+                            deliverydatetime,deliveryremark,deliverycustomernumber,deliverycompany,deliverychargeamount,deliverychargetype,deliveryaddressid,auditid,auditdatetime)
+select b.connumber, b.customernumber, b.providernumber, 0, '', a.deliverydate, 'ORDERDONE', 
+       null, b.deliveryremark, b.deliverycustomernumber, b.deliverycompany, b.deliverychargeamount, b.deliverychargetype, b.deliveryaddressid, b.auditid, now()
+from  (select date_format(adddate(#{deliveryDate1},(rownum-1)*7),'%Y%m%d') as deliverydate
+       from  (select @rownum := @rownum + 1 as rownum
+              from   codegroup a, (select @rownum := 0) b
+              limit  #{deliveryCount}) a
+       union 
+       select date_format(adddate(#{deliveryDate2},(rownum2-1)*7),'%Y%m%d') as deliverydate
+       from  (select @rownum2 := @rownum2 + 1 as rownum2
+              from   codegroup a, (select @rownum2 := 0) b
+              limit  #{deliveryCount}) a
+<if test='"Y".equals(todayDeliveryYn)'>
+       union 
+       select date_format(curdate(),'%Y%m%d') as deliverydate
+</if>              
+       ) a, contract b
+where  b.connumber = #{conNumber}
+order by a.deliverydate
+limit #{deliveryTotalCount}
+</insert>
+
+<insert id="createContract" keyProperty="conNumber">
+	INSERT 
+	INTO   contract
+	       (
+	            customernumber
+			    , providernumber
+			    , paymentinformationnumber
+			    , contractstate
+			    , subscribedatetime
+			    , effectstartdatetime
+			    , effectenddatetime
+			    , recurringdeliveryyn
+			    , deliverycycle
+			    , deliverytimes
+			    , deliveryremark
+			    , deliverystartdatetime
+			    , recurringinvoiceyn
+			    , invoicecycle
+			    , nextinvoicedatetime
+			    , auditid
+			    , auditdatetime
+			    , deliverytotalcount
+			    , deliveryremaincount
+			    , duration
+			    , deliveryday
+			    , remark
+			    , channelid
+			    , channelordernumber
+			    , channelproductordernumber
+			    , channelcontractnumber
+			    , registrationdatetime
+			    , deliverycustomernumber
+				, deliverytype
+			    , deliverycompany
+			    , deliveryChargeAmount
+			    , deliverychargetype
+			    , deliveryaddressid
+				, customertype
+			    , channelkind
+			    , deliverycurrentcount
+			    , paymentDay
+			    , paymentagreementyn	
+			    , contractagreementyn		  
+			   )
+		VALUES (
+				 #{customerNumber}
+				, #{providerNumber}
+		        , #{paymentInformationNumber}
+		        , 'UNSETTLED'
+		        , DATE_FORMAT(NOW(),'%Y%m%d')
+		        , #{effectStartDateTime}
+		        , #{effectEndDateTime}
+		        , 'Y'
+		        , #{deliveryCycle}
+		        , #{deliveryTimes}
+		        , #{deliveryRemark}
+		        , #{deliveryStartDatetime}
+		        , #{recurringInvoiceYn}
+		        , #{invoiceCycle}
+		        , date_format(now(),'%Y%m%d')
+		        , #{auditId}
+		        , NOW()
+		        , #{deliveryTotalCount}
+		        , #{deliveryRemainCount}
+		        , #{duration}
+			    , #{deliveryDay}
+			    , #{deliveryRemark}
+			    , #{channelId}
+			    , ''
+			    , ''
+			    , null
+			    , date_format(now(),'%Y%m%d%H%i%s')
+			    , #{deliveryCustomerNumber}
+				, 'PARCEL'
+			    , #{deliveryCompany}
+			    , #{deliveryCost}
+			    , #{deliveryChargeType}
+			    , #{deliveryAddressId}
+				, ''
+			    , ''
+			    , 0
+			    , #{paymentDay}
+			    , #{paymentAgreementYn}
+			    , #{contractAgreementYn}			  
+		 )
+	<selectKey resultType="int" keyProperty="conNumber" order="AFTER">
+       SELECT LAST_INSERT_ID()
+       </selectKey>
+
+</insert>
+
+<insert id="createContractProduct">
+	INSERT 
+	INTO   contractproduct
+	       (
+	            connumber
+			    , productid
+			    , producttype
+			    , packageid
+			    , packagepricereferenceyn
+			    , packagevarietyyn
+			    , quantity
+			    , effectstartdatetime
+			    , effectenddatetime
+			    , auditid
+			    , auditdatetime
+			    , productname
+				, productoption
+				, addproductname
+				, productdescription1
+				, productdescription2
+				, productdescription3
+				, productdescription4
+				, productdescription5
+				, bigissuequantity
+	     )
+		VALUES (
+				 #{conNumber}
+				, #{productId}
+		        , #{productType}
+		        , #{packageId}
+		        , #{packagePriceReferenceYn}
+		        , #{packageVarietyYn}
+		        , #{productQuantity}
+		        , #{effectStartDateTime}
+		        , #{effectEndDateTime}
+		        , #{auditId}
+		        , NOW()
+		        , (select productname from product a where a.productid = #{productId})
+		        , ''
+		        , ''
+		        , ''
+		        , ''
+		        , ''
+		        , ''
+		        , ''
+		        , ''
+		 )
+
+</insert>
+</mapper>

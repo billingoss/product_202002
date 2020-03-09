@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.api.repository.ProductRepository">
+	
+	<!-- 상품 목록 조회 -->
+	<select id="selectProductList" resultType="com.api.model.product.Product"  parameterType = "com.api.model.product.Product" >
+		SELECT prod.productid, 
+				prod.producttype
+				, (SELECT codename FROM codegroupdetail z WHERE z.codegroupid = 'PRODUCTTYPE' AND z.code = prod.producttype) as producttypename
+				, prod.productname
+				, prod.packagepricereferenceyn
+				<!-- , prod.priceamount -->
+				, (CASE WHEN prod.producttype = 'PACKAGE' 
+							THEN (SELECT 
+								   	SUM(prodIn.priceamount)
+									  FROM productpackage pack	, product prodIn
+									 WHERE pack.compositionproductid = prodIn.productid
+								 		AND pack.providernumber = prodIn.providernumber
+								   	AND pack.providernumber = prod.providernumber
+								   	AND pack.mainproductid = prod.productId)
+							ELSE prod.priceamount END) AS priceamount				
+				, prod.productstate
+				, (SELECT codename FROM codegroupdetail z WHERE z.codegroupid = 'PRODUCTSTATE' AND z.code = prod.productstate) as productstatename
+				, prod.subscribestartdatetime
+				, prod.subscribeenddatetime
+				, prod.productdescription
+				, date_format(prod.lastchangedatetime,'%Y%m%d') as lastchangedatetime
+				, prod.providernumber		
+				, prod.recurringdeliveryyn				
+				, prod.taxobjectyn
+				, prod.packageyn				
+				, prod.packagevarietyyn
+				, prod.packagepricebandwidth				
+				, prod.beforeproductid
+				, prod.suspendpriceamount
+				, prod.exposureyn
+				, ifnull(prod.salestopyn,'N') AS saleStopYn				
+				, auditid
+				, date_format(prod.auditdatetime,'%Y%m%d') AS auditdatetime	
+		       , sum(1) over() as totalcount
+		       , (CASE WHEN (SELECT count(*) cnt1 FROM contractproduct contProd WHERE contProd.productid = prod.productid) <![CDATA[>]]> 0 
+				 		  THEN (SELECT count(*) cnt1 FROM contractproduct contProd WHERE contProd.productid = prod.productid)
+		       			  WHEN (SELECT count(*) cnt2 FROM productpackage pack WHERE pack.compositionproductid = prod.productid) <![CDATA[>]]> 0
+		       			  THEN (SELECT count(*) cnt2 FROM productpackage pack WHERE pack.compositionproductid = prod.productid)
+		       			  ELSE 0 END ) AS useContractCnt	<!-- 계약 또는 패키지 구성 상품사용 건수  -->
+				,(SELECT DISTINCT(pack.packageid) FROM productpackage pack
+				    WHERE pack.providernumber = prod.providerNumber
+					   AND pack.mainproductid = prod.productid
+				   LIMIT 1) AS packageId
+		FROM   product prod
+		WHERE  prod.providernumber = #{providerNumber}
+		AND		prod.deletedatetime IS NULL
+		<if test='productId != null and !"".equals(productId)'>
+		AND    prod.productid = #{productId}
+		</if>
+		<if test='productType != null and !"".equals(productType)'>
+		AND    prod.producttype = #{productType}
+		</if>
+		<if test='productState != null and !"".equals(productState)'>
+		AND    prod.productstate = #{productState}
+		</if>
+		<if test='productName != null and !"".equals(productName)'>
+		AND    prod.productname like concat('%',#{productName},'%')
+		</if>
+		<if test='packageYn != null and !"".equals(packageYn)'>
+		AND prod.packageYn = #{packageYn}
+		</if>
+		<if test='exposureYn != null and !"".equals(exposureYn)'>
+		AND prod.exposureyn = #{exposureYn}
+		</if>
+		<if test='saleStopYn != null and !"".equals(saleStopYn)'>
+		AND prod.saleStopYn = #{saleStopYn}
+		</if>
+		<if test='subscribeStartDateTime != null and !"".equals(subscribeStartDateTime) and subscribeEndDateTime != null and !"".equals(subscribeEndDateTime)'>
+			AND str_to_date(prod.subscribeenddatetime, "%Y%m%d") <![CDATA[>=]]> str_to_date(replace(#{subscribeStartDateTime},'-',''), "%Y%m%d")
+			AND str_to_date(prod.subscribestartdatetime, "%Y%m%d") <![CDATA[<=]]> str_to_date(replace(#{subscribeEndDateTime},'-',''), "%Y%m%d")
+		</if>
+		ORDER BY prod.auditdatetime DESC, prod.producttype, prod.productname
+		<if test='pagingYn != null and "Y".equals(pagingYn)'>
+		LIMIT #{pageStart}, #{perPageNum}
+		</if>
+	</select>
+	
+	<!-- 신규 상품 ID 조회 -->
+	<select id="selectNewProductId" resultType="java.lang.String" >
+ 		SELECT CONCAT('PRD',NEXTVAL(productid_seq)) as productid
+ 	</select> 	
+ 	
+ 	<!-- 상품 정보 저장 -->
+ 	<insert id="insertProduct" parameterType = "com.api.model.product.Product" >
+		INSERT 
+		INTO product
+			 (
+				productid
+				, productname
+				, providernumber
+				, producttype
+				, productstate
+				, subscribestartdatetime
+				, subscribeenddatetime
+				, recurringdeliveryyn
+				, priceamount
+				, taxobjectyn
+				, packageyn
+				, packagepricereferenceyn
+				, packagevarietyyn
+				, packagepricebandwidth
+				, productdescription
+				, beforeproductid
+				, suspendpriceamount
+				, exposureyn
+				, lastchangedatetime
+				, auditid
+				, auditdatetime			 
+			 )
+		VALUES(
+				#{productId}
+				,#{productName}
+				,#{providerNumber} 		<!-- #{providerNumber} -->
+				,#{productType}
+				,'OPERATION'				<!-- #{productstate} 기간을 기준으로 상태를 조회 함, 사용하지 않으나 기본 값 설정 -->
+				,replace(#{subscribeStartDateTime},'-','')
+				,replace(#{subscribeEndDateTime},'-','')
+				,'Y'							<!-- #{recurringDeleveryYn} -->
+				,#{priceAmount}
+				,'Y'							<!-- #{taxObjectYn} -->
+				,ifnull(#{packageYn},'N')
+				,ifnull(#{packagePriceReferenceYn},'N')	<!-- 패키지상품중 종량형 : Y, 정액형:N -->
+				,#{packageVarietyYn}
+				,#{packagePriceBandWidth}
+				,REPLACE(REPLACE(#{productDescription},'\r\n',<![CDATA['<br/>']]>),'\r','')
+				,#{beforeProductId}
+				,#{suspendPriceAmount}
+				,'N'							<!-- #{exposureYn} 노출여부 --> 
+				, 
+				NOW()						<!-- DATE_FORMAT(NOW(),'%Y%m%d') -->
+				,#{auditId}
+				, NOW()
+			)
+	</insert>
+	
+	<!-- 상품 정보 수정 -->
+ 	<update id="updateProduct" parameterType = "com.api.model.product.Product" >
+ 		UPDATE product SET 			
+				 productname	= #{productName}
+				<!-- , producttype -->			
+				, productstate = #{productState}
+				, subscribestartdatetime = replace(#{subscribeStartDateTime},'-','')
+				, subscribeenddatetime = replace(#{subscribeEndDateTime},'-','')
+				<!-- , recurringdeliveryyn -->
+				, priceamount = #{priceAmount}
+				<!-- , taxobjectyn -->
+				<!-- , packageyn -->
+				<!-- , packagepricereferenceyn -->
+				<!-- , packagevarietyyn -->
+				<!-- , packagepricebandwidth -->
+				, productdescription = REPLACE(REPLACE(#{productDescription},'\r\n',<![CDATA['<br/>']]>),'\r','')
+				<!-- , beforeproductid -->
+				<!-- , suspendpriceamount -->
+				, exposureyn =  #{exposureYn} <!-- 노출여부 -->
+				, salestopyn =  #{saleStopYn} <!-- 노출여부 -->
+				, lastchangedatetime =NOW() <!-- DATE_FORMAT(NOW(),'%Y%m%d') -->
+				, auditid	= #{auditId}
+				<!-- , auditdatetime = NOW() -->			 
+ 		WHERE productId = #{productId}
+ 		   AND providernumber = #{providerNumber}
+ 	</update>
+ 	
+	<!-- 상품 정보 삭제-->
+ 	<update id="deleteProduct" parameterType = "com.api.model.product.Product" >
+ 		UPDATE product SET 			
+				 <!-- productstate	= 'LEAVE' -->
+				 deletedatetime = NOW()
+ 		WHERE productId = #{productId}
+ 		   AND providernumber = #{providerNumber}
+ 	</update>
+	
+	<!-- 신규 패키지 ID 조회 -->
+  	<select id="selectNewProductPackageId" resultType="java.lang.String">
+ 		SELECT CONCAT('PKG',NEXTVAL(productid_seq)) as packageId
+ 	</select>
+ 	
+ 	<!-- 상품 패키지 정보 저장 -->
+   	<insert id="insertProductPackage" parameterType = "com.api.model.product.ProductPackage"  useGeneratedKeys="true" keyProperty="connumber" >
+		INSERT INTO productpackage
+			 (
+			 packageid
+			 ,providernumber
+			 ,mainproductid
+			 ,compositionproductid
+			 ,effectstartdatetime
+			 ,effectenddatetime
+			 ,lasthistoryyn
+			 ,auditid
+			 ,auditdatetime
+			 )
+		VALUES(
+				#{packageId}
+				,#{providerNumber}				<!-- #{providerNumber} -->				
+				,#{mainProductId}
+				,#{compositionProductId}
+				,replace(#{effectStartDateTime},'-','')
+				,replace(#{effectEndDateTime},'-','')
+				,'Y'									<!-- #{lastHistoryYn} --> 
+				,#{auditId}
+				,NOW()
+				)		
+	</insert>
+	
+ 	<!-- 상품 패키지 정보 수정 -->
+   	<update id="updateProductPackage" parameterType = "com.api.model.product.ProductPackage" >
+		UPDATE productpackage 
+		SET
+			 providernumber = #{providerNumber}
+			 ,mainproductid = #{mainProductId}
+			 ,compositionproductid = #{compositionProductId}
+			 ,effectstartdatetime = replace(#{effectStartDateTime},'-','')
+			 ,effectenddatetime = replace(#{effectEndDateTime},'-','')
+			 ,auditid = #{auditId}
+			 ,auditdatetime = CURRENT_TIMESTAMP
+		WHERE packageid = #{packageId}
+			AND providernumber = #{providerNumber}
+		    AND mainproductid = #{mainProductId}
+		    AND compositionproductid = #{compositionProductId}
+	</update>
+		
+    <!-- 패키지 상품 목록 조회  -->
+	<select id="selectProductPackageList" resultType="com.api.model.product.ProductPackage"  parameterType = "com.api.model.product.Product" >
+		SELECT
+			pack.packageid
+			, pack.providernumber
+			, pack.mainproductid
+			, pack.compositionproductid
+			, prod.productname	AS compositionProductName
+			, pack.effectstartdatetime
+			, pack.effectenddatetime
+			, pack.lasthistoryyn
+			, pack.auditid
+			, pack.auditdatetime
+			, prod.priceamount	AS compPriceAmount
+		  FROM productpackage pack
+		  		, product prod
+		 WHERE pack.compositionproductid = prod.productid
+		 	AND pack.providernumber = prod.providernumber
+		   AND pack.providernumber = #{providerNumber}
+		   AND pack.mainproductid = #{productId}	
+	</select>
+	
+	<!-- 상품 패키지 삭제 -->
+	<delete id="deleteProductPackage" parameterType = "com.api.model.product.ProductPackage" >
+		DELETE FROM productpackage 
+		 WHERE packageid = #{packageId}
+		   AND providernumber = #{providerNumber}
+		   AND mainproductid = #{mainProductId}
+		   AND compositionproductid = #{compositionProductId}
+	</delete>	
+	 
+	 <!-- 상품 할인 정보 저장 -->
+   	<insert id="insertProductDiscount" parameterType = "com.api.model.product.ProductDiscount"  useGeneratedKeys="true" keyProperty="connumber" >
+		INSERT INTO productdiscount
+			 (
+				providernumber
+				, productid
+				, discountid
+				, subscribestartdatetime
+				, subscribeenddatetime	
+				,auditid
+				,auditdatetime
+			 )
+		VALUES(
+				 #{providerNumber}
+				, #{productId}
+				, #{discountId}
+				, #{subscribeStartDateTime}
+				, #{subscribeEndDateTime}
+				,#{auditId}
+				,NOW()
+				)		
+	</insert>
+	
+	 <!-- 상품 할인 정보 수정 -->
+   	<update id="updateProductDiscount" parameterType = "com.api.model.product.ProductDiscount" >
+		UPDATE productdiscount
+			SET
+				providernumber = #{providerNumber}
+				, productid	= #{productId}
+				, discountid = #{discountId}
+				, subscribestartdatetime = #{subscribeStartDateTime}
+				, subscribeenddatetime	 = #{subscribeEndDateTime}
+				,auditid = #{auditId}
+				,auditdatetime = CURRENT_TIMESTAMP
+		 WHERE productdiscountid = #{productDiscountId}
+	</update>
+	
+    <!-- 상품 할인 목록 조회  -->
+	<select id="selectProductDiscountList" resultType="com.api.model.product.ProductDiscount"  parameterType = "com.api.model.product.Product" >
+		SELECT
+			pd.productdiscountid
+			, pd.providernumber
+			, pd.discountid
+			, pd.subscribestartdatetime
+			, pd.subscribeenddatetime
+			, pd.deletedatetime
+			, pd.auditid
+			, pd.auditdatetime
+			, disc.discountname
+			, disc.discounttype
+			, disc.discountstate
+			, disc.discountvalue
+			, disc.discounttype2
+			, disc.discounttype2value
+		  FROM productdiscount pd
+		  		, discount disc
+		 WHERE pd.discountid = disc.discountid
+		   AND pd.deletedatetime IS NULL
+		   AND pd.providernumber = #{providerNumber}
+		   AND pd.productid = #{productId}
+		 ORDER BY pd.subscribestartdatetime
+	</select>	
+	
+	<!-- 상품 할인 삭제 -->
+	<update id="deleteProductDiscount" parameterType = "com.api.model.product.ProductDiscount" >
+		UPDATE productdiscount
+			SET
+				deletedatetime =  CURRENT_TIMESTAMP
+		 WHERE productdiscountid = #{productDiscountId}
+		    AND providernumber = #{providerNumber} 
+		    AND productid = #{productId}
+		    AND discountid = #{discountId}
+	</update>	
+<!-- 	<delete id="deleteProductDiscount" parameterType = "com.api.model.product.Product" >
+		DELETE FROM productdiscount 
+		 WHERE providernumber = #{providerNumber} 
+		    AND productid = #{productId}
+	</delete> -->	
+	 
+</mapper> 

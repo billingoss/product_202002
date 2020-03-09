@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+                <section th:fragment="topMenuFragmemt">
+                    <!-- tab//-->
+                    <div class="tab-wrap mb25" id="lnb">
+                        <ul class="tab-list js-tabmenu1" id="sbn1" style="display:none">
+                            <li onClick ="alert('준비중입니다.');"><a href="#none" class="tab_btn" style="display:none"> 상품판매</a></li>
+                            <li onClick ="movePage('/contractlist/contractlist',1,1)"><a href="#none" class="tab_btn">주문관리</a></li>
+                            <li onClick ="movePage('/contractlist/deliverylist',1,2)"><a href="#none" class="tab_btn">배송관리</a></li>
+                            <li onClick ="movePage('/billing/payment',1,3)"><a href="#none" class="tab_btn">결제관리</a></li>                            
+                        </ul>                       
+                        <ul class="tab-list js-tabmenu1" id="sbn2" style="display:none">
+                            <li onClick ="movePage('/customer',1,0)"><a href="#none" class="tab_btn">고객관리</a></li>                            
+                        </ul>
+                        <ul class="tab-list js-tabmenu1" id="sbn3" style="display:none">
+                            <li onClick ="movePage('/product/product',3,0)"><a href="#none" class="tab_btn">상품관리</a></li>                            
+                            <!-- <li onClick ="alert('준비중입니다.');"><a href="#none" class="tab_btn">할인관리</a></li> -->                            
+                        </ul>
+                        <ul class="tab-list js-tabmenu1" id="sbn4" style="display:none">
+                            <li onClick ="movePage('/counselling',1,0)"><a href="#none" class="tab_btn">상담관리</a></li>                            
+                        </ul>
+                        <ul class="tab-list js-tabmenu1" id="sbn5" style="display:none">
+                            <li onClick ="movePage('/report',1,0)"><a href="#none" class="tab_btn">보고서</a></li>                            
+                        </ul>
+                    </div>
+                </section>
+</html>

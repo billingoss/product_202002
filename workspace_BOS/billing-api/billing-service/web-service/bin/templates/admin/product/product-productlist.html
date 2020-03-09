@@ -1,0 +1,253 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+		$('.Packageproductmaintable').empty();
+		$("#productsearchbar").load("searchbar-product");
+	});
+</script>
+
+<div class="row">
+	<div id="productsearchbar"></div>
+</div>
+<div class="row">
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h2 class="panel-title">
+					<strong>상품 정보</strong>
+				</h2>
+			</div>
+			<div class="panel-body">
+				<div class="table-responsive">
+					<table class="table">
+						<thead class="table-header-bg">
+							<tr>
+								<th style="width: 2%;"></th>
+								<th style="width: 6%;">상품유형</th>
+								<th style="width: 10%;">상품명</th>
+								<th style="width: 7%;">패키지유형</th>
+								<th style="width: 8%;">상품가격</th>
+								<th style="width: 8%;">상태</th>
+								<th style="width: 8%;">판매가능일</th>
+								<th style="width: 8%;">판매종료일</th>
+								<!-- <th style="width: 10%;">패키지금액범위</th> -->
+								<th style="width: 14%;">상품설명</th>								
+								
+							</tr>
+						</thead>
+						<tbody id="Productlistmaintablebody" class="table-body-row">
+						</tbody>
+						
+					</table>
+				</div>
+			</div>
+			<div align="center">
+						<!-- class="col-md-12" -->
+				<ul id="paginationproduct" class="pagination">
+							<!-- 페이징처리 자리 -->
+				</ul>
+						<!-- 페이지네이션 -->
+			</div>
+			<div class="panel-footer" style="padding-bottom: 40px;">
+					<button class="btn btn-primary pull-right" style="margin: 3px;" id="productupdate">상세정보</button>
+					<button class="btn btn-primary pull-right" style="margin: 3px;" id="productregist">신규등록</button>
+			</div>
+			
+		</div>
+	</div>
+	<div class="modal" id="productregistDialog" role="dialog">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content"></div>
+		</div>
+	</div>	
+	<div class="modal" id="productupdateDialog" role="dialog">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content"></div>
+		</div>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h2 class="panel-title">
+					<strong>패키지 구성정보</strong>
+				</h2>
+			</div>
+			<div class="panel-body">
+				<div class="table-responsive">
+					<table class="table" id="Packageproductmaintable">
+						<thead class="table-header-bg">
+							<tr>
+								<th style="width: 10%;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;시작일 &nbsp;&nbsp; ~ &nbsp;&nbsp; 종료일</th>
+								<!-- <th style="width: 0.5%; text-align:center">/</th>
+								<th style="width: 2.7%;">구성품종료일</th> -->							
+								<th style="width: 10%;">상품명</th>
+								<th style="width: 10%;">구성상품명</th>
+								<th style="width: 5%; text-align:center">구성상품가격</th>
+								<!-- <th style="width: 5%;">최종이력여부</th>	 -->							
+							</tr>
+						</thead>
+						<tbody id="Packageproductmaintablebody" class="table-body-row">		
+							
+						</tbody>
+					</table>
+				</div>
+			</div>
+			<div align="center">
+						<!-- class="col-md-12" -->
+				<ul id="paginationpackage" class="pagination">
+							<!-- 페이징처리 자리 -->
+				</ul>
+						<!-- 페이지네이션 -->
+			</div>
+			<div class="panel-footer" style="padding-bottom: 40px;">
+					<button class="btn btn-primary pull-right" style="margin: 3px;" id="packageproductupdate">등록/변경</button>
+			</div>
+		</div>
+	</div>
+	<div class="modal" id="packageproductupdateDialog" role="dialog">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content"></div>
+		</div>
+	</div>	
+</div>
+<script type="text/javascript">
+var check_productid = '';
+$(document).ready(function() 
+{
+    /* 등록버튼 클릭시  */
+	$('#productregist').click(function()
+	{
+		var today = new Date();
+		$.ajax({
+               url : '/product/productregistDialog' ,
+               error: function(xhr, status, error){
+                  alert(error);
+               },
+               success : function(data){
+            	 var date = new Date();
+            	 $('#productregistDialog .modal-content').html(data);
+            	 $("#productregistDialog").modal('show'); 
+               }
+		});
+	});
+    
+	/*상세정보 클릭시  */
+	$('#productupdate').click(function(){
+		var productType = '';
+		/*  체크된 상품ID 추출 */
+		$('#Productlistmaintablebody tr').each(function() {
+			if ($(this).find("input[type=checkbox]").is(":checked")) {
+				var mainproductid = $(this).data('id');
+				check_productid = mainproductid;
+			}
+		});
+		/* 상품ID로 상품테이블조회  */
+		$.ajax({
+				method : 'get',
+	    		url : '/product/productupdateDialog/'+check_productid,
+				error: function(xhr, status, error){ 	
+				  alert("변경하실 서비스를 선택하세요.");
+				},
+				success : function(data){
+					 $('#productupdateDialog .modal-content').html(data);
+	            	 $("#productupdateDialog").modal('show'); 
+				}
+		});
+	});
+	
+	// 체크박스 클릭시 다른 체크박스 해제
+	$('#Productlistmaintablebody').on('click', 'input[type=checkbox]', function () {
+		  $('#Productlistmaintablebody input[type=checkbox]').prop('checked', false);
+		  $(this).prop('checked', true);
+	});
+	
+    /* 각 상품리스트 row 가 클릭되었을 때 호출되는 서비스 정의 */
+	$('#Productlistmaintablebody').on('click', 'tr', function () 
+	{
+		// 상품 row 클릭시 체크박스 변경 
+		$('#Productlistmaintablebody input[type=checkbox]').prop('checked', false);
+		$('td input:checkbox', this).prop('checked', true);
+		$('#Productlistmaintablebody tr').removeClass('selectedbgcolor');
+		$(this).addClass('selectedbgcolor');
+		var prdtype = $('td', this).eq(1).text();
+        var prdtid = $(this).data('id');
+        check_productid = prdtid;
+        console.log("check_productid = "+check_productid);
+        
+        if(prdtype == "패키지"){
+			$('#packageproductupdate').prop("disabled", false);
+        }else {
+        	$('#packageproductupdate').prop("disabled", true);
+        }
+        $.ajax({
+			   		method : 'get',
+            		url : '/product/getpackageproduct/'+check_productid,
+            		dataType : 'json',
+            		error: function(xhr, status, error)
+            		{
+                		alert(error);
+            		},
+            		success : function(json)
+            		{
+            		
+            		$('#Packageproductmaintablebody').empty();
+               			if(json.length == 0)
+               			{
+               				return;
+            			}         	   		
+         	   		var trHTML = '';
+                	$.each(json, function (i, item) 
+                			{
+			                	 if(item.packageId == null)return null;
+			                	
+			             	     trHTML += '<tr>'
+			                           + '<td style="width: 10%;">' + item.effectStartDateTime+'&nbsp;&nbsp;&nbsp; ~ &nbsp;&nbsp;&nbsp;&nbsp;'+ item.effectEndDateTime + '</td>'
+			                           + '<td style="display:none;">' + item.packageId + '</td>'
+			                           + '<td style="display:none;">' + item.mainProductId + '</td>'
+			                           + '<td>' + item.packageName + '</td>'			                           
+			                           + '<td style="display:none;">' + item.compositionProductId + '</td>'
+			                           + '<td>' + item.compositionproductName + '</td>' 
+			                           + '<td style="width: 5%; text-align:center">' + item.priceamount + '</td>'
+			                           + '</tr>';
+                			}
+                		);
+                $('#Packageproductmaintablebody').append(trHTML);
+            }
+        });
+    });
+    
+	/*패키지상품변경버튼 클릭시  */
+	$('#packageproductupdate').click(function(){
+		/* 상품ID로 상품테이블조회  */
+		$.ajax({
+					method : 'get',
+		    		url : '/product/packageproductupdateDialog/'+check_productid,
+					error: function(xhr, status, error){ 	
+					  alert("변경하실 패키지상품을 선택하세요.");
+					},
+					success : function(data){
+						//alert("선택한상품ID2="+check_productid);
+						var $data = $(data);
+						$("#packageproductupdateDialog").attr('data-prdid', check_productid);
+						//$(".modal-body #data-prdid").val(check_productid);
+						$('#packageproductupdateDialog .modal-content').html($data);
+						$("#packageproductupdateDialog").modal('show')						
+					}
+			});
+	});
+	
+});
+
+ 
+function yyyymmdd(dateIn) {
+	   var yyyy = dateIn.getFullYear();
+	   var mm = dateIn.getMonth()+1; // getMonth() is zero-based
+	   var dd  = dateIn.getDate();
+	   return String(10000*yyyy + 100*mm + dd); // Leading zeros for mm and dd
+}
+
+
+
+</script>

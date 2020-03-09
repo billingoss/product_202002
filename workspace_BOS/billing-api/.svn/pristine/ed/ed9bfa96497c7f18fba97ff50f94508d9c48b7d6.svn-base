@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout" layout:decorator="layout/default">
+<!-- index.html 고유 CSS 추가 -->
+<th:block layout:fragment="css">
+</th:block>
+<!-- index.html 고유 스크립트 추가 -->
+<th:block layout:fragment="script">
+	<script>
+	var currPage = 1;
+	var billType = "CARD";
+	$(document).ready(function(){	
+		getData(1);
+		
+		/***************************************************
+		주문결제 탭 버튼
+		***************************************************/
+		$('#contractDeliv').click(function(){
+			movePage('/contractlist/contractdeliverylist/'+$('#conNumber').val(),1,1);
+		});
+		
+		/***************************************************
+		목록 버튼
+		***************************************************/
+		$('#goListBtn').click(function(){
+			movePage('/contractlist/contractlist',1,0);			
+		});
+		
+		/***************************************************
+		금액조정 버튼
+		***************************************************/
+		adjustPopBtnEvent();
+		
+		/***************************************************
+		자동결제 변경 버튼 Event
+		***************************************************/
+		$('#autoPayChangeBtn').click(function(){			
+			setPaymentReqInfo($('#conNumber').val(), billType, "", "makeBillKey");
+		});
+		
+		/***************************************************
+		엑셀다운로드 버튼 클릭
+		***************************************************/
+		$('#excelBtn').click(function(){
+			/* 
+			if(!validationForm()){
+				return false;
+			} */
+			var f = document.searchForm;
+			f.method = 'post';
+			f.action = '/billing/getInvoicePaymentListExcel';
+			f.submit();
+		});
+		
+		/***************************************************
+		정렬 버튼
+		***************************************************/
+		$('#pgErrorMsgSort, #invoiceDateSortBtn, #invoiceTurnSortBtn, #paymentStateSortBtn').click(function(){
+			var objName = ($(this).prop("id").replace('Btn',''));
+			if($(this).hasClass('on')){
+				$('#'+objName).val('N');
+			}else {			
+				$('#'+objName).val('Y');
+			}
+			
+			 getData(currPage);
+		});
+		
+		/******************************************************************************************************
+		목록버튼 클릭 [판매관리 > 주문정보 > 주문별 배송관리 와 동일하게 설정]
+		******************************************************************************************************/
+		$('#listButton').click(function(){
+			movePage('/contractlist/contractlist',1,1);
+		});
+		
+		/******************************************************************************************************		
+		수정버튼 클릭 [판매관리 > 주문정보 > 주문별 배송관리 와 동일하게 설정]
+		******************************************************************************************************/
+		$('#updateButton').click(function(){
+			alert("준비중입니다.");
+		});
+	});
+
+	/***************************************************
+	청구 결제 목록 조회 
+	***************************************************/		
+	var getData = function (page) {
+	/* 	alert(d)
+		if(!validationForm()){
+			return false;
+		} */
+		//현재 페이지
+		currPage = page;
+		//현재 페이지
+		$('#page').val(page);
+		var queryString = $("form[name=searchForm]").serialize();			
+		queryString = queryString.replace(/-/g, '');
+		
+		 $.ajax({
+			method : 'post',				
+			url : '/billing/getInvoicePaymentList',
+			data : queryString, 
+			dataType : 'json',
+			error : function(xhr, status, error) {
+				alert(error);
+				console.log(error)
+			},
+			success : handleData
+		});
+	}	
+
+	/***************************************************
+	청구 걸제 목록 결과 설정
+	***************************************************/			
+	var handleData = function (data) {
+		//debugger;
+		
+		//PageMaker정보를 Json으로부터 분리한다.
+		invoList = data.invoList; //hashmap의 list array데이타
+		pageMaker = data.pageMaker; //pageMaker 
+	
+		var trHTML = '';
+		if (invoList.length == 0) {
+			trHTML += '<tr class="no_empty">';
+            trHTML += '    <td colspan="9">';
+            trHTML += '        <div class="data-empty">';
+            trHTML += '            <img src="/resources/images/common/img_no_empty.png" alt="데이터 없음" />';
+            trHTML += '            <span class="txt_empty">검색 결과가 없습니다.</span>';
+            trHTML += '        </div>';
+            trHTML += '    </td>';
+            trHTML += '</tr>';
+            
+		}else{				
+			$.each(invoList, function(i, item) {
+				trHTML += '<tr>';
+				trHTML += '<td>';
+	            trHTML += '    <span class="trp radio-box">';
+				trHTML += '		<input type="radio" id="selectInvoRadio'+i+'" name="selectInvoRadio" value="'+i+'" onClick="setAdjustInfo('+item.conNumber+','+item.invoiceNumber+',\''+getNumber(item.invoiceDate)+'\',\''+item.collectionCloseYn+'\' )"/>';
+				trHTML += '		<i></i>';
+				trHTML += '		<label for="table1"></label>';
+				trHTML += '	   </span>';								
+	            trHTML += '</td>';
+				trHTML += '<td>' + ((pageMaker.cri.page-1)*10+i+1) + '</td>';
+				trHTML += '<td>' + item.invoiceDate + '</td>';
+				trHTML += '<td>' + item.invoiceTurn + '</td>';			
+				trHTML += '<td>' + item.invoiceCycle +'</td>';				
+				trHTML += '<td class="tar">' + numberComma(item.totalInvoiceAmount+item.adjustAmount) + '원</td>'	;					
+				
+				//실패일 경우 style 변경
+				if (item.paymentTypeCoe == 'ERROR'){
+					trHTML += '<td><span class="fail">' + item.paymentTypeCodeName + '</span></td>'	;					
+				}else if(item.adjustAmount == 0){
+					trHTML += '<td>' + item.paymentTypeCodeName + '</td>';
+				}else {										
+					trHTML += '<td>-</td>';
+				}
+				trHTML += '<td>' + item.pgErrorMsg + '</td>';
+				trHTML += '<td>';
+				
+				/*<![CDATA[*/
+				//취소 버튼
+				//조정 금액과 청구금액을 합상한여 0인 경우 취소 불가
+				//결제가 되지 않은 경우 취소 불가
+				if(item.collectionBalanceAmount == 0 && (item.totalInvoiceAmount + item.adjustAmount) != 0){
+					trHTML  += '<button class="btn btn_gray_w btn_sm mr5 refoundBtn" type="button" id="refoundBtn'+i+'" value="'+item.conNumber+'|'+item.invoiceNumber+'">취소</button>';					
+				}else {					
+					trHTML  += '<button class="btn btn_gray_w btn_sm mr5" type="button" disabled="">취소</button>';
+				}
+				
+				//결제 버튼
+				if (item.collectionBalanceAmount == 0 && item.collectionCloseYn =='Y'){
+					trHTML  += '<button class="btn btn_gray btn_sm" type="button" disabled="">결제</button>';		
+				}else {
+					trHTML  += '<button class="btn btn_gray btn_sm paymentBtn" type="button"  id="paymentBtn'+i+'" value="'+item.conNumber+'|'+item.invoiceNumber+'">결제</button>';
+				}
+				/*]]>*/
+				trHTML += '</td>'
+				trHTML += '</tr>';
+				
+				//결제 유형
+				billType = item.paymentMethod;
+			});
+		}		
+
+		$('#totalCount').html(pageMaker.totalCount);			
+		$('#paymentListBody').empty();
+		$('#paymentListBody').append(trHTML);
+	
+ 	 	//취소 버튼 event setting			
+		refundPopBtnEvent();
+		
+		//결제 버튼 event setting			
+		paymentPopBtnEvent(); 
+
+		formatPhone(); 
+		pagingProc(pageMaker);
+	}	
+		
+	/***************************************************
+	Page 이동
+	***************************************************/			
+	var getPagingData = function (page){
+		 getData(page);
+	}		
+	</script>
+</th:block>
+        <!-- container -->
+        <div id="container" layout:fragment="contentFragment">
+            <div id="contents" class="sale">
+                <h2 class="h2">판매관리</h2>
+
+                <section th:include="fragments/topMenu::topMenuFragmemt"></section>
+
+                <section>
+                    <div class="cont-box wfull">
+						<!-- 주문정보//-->
+						<div class="con_title mt0">
+						    <h3 class="h3">주문정보</h3>
+						</div>				
+		                <table class="form_table">
+		                    <colgroup>
+		                        <col width="170px" />
+		                        <col width="*" />
+		                        <col width="170px" />
+		                        <col width="*" />
+		                    </colgroup>
+		                    <tbody>
+		                        <tr>
+		                            <th>고객명</th>
+		                            <td th:text="${contract.customerName}"></td>
+		                            <th>전화번호</th>
+		                            <td class="phone" th:text="${contract.phoneNumber}"></td>
+		                        </tr>
+		                        <tr>
+		                            <th>판매채널</th>
+		                            <td th:text="${contract.channelName}"></td>
+		                            <th>주문번호</th>
+		                            <td th:text="${contract.conNumber}"></td>
+		                        </tr>
+		                        <tr>
+		                            <th>상품명 / 수량</th>		                            
+		                            <td th:text="${contract.productName+' / '+contract.quantity}+' 개'"></td>
+		                            <th>이용기간</th>
+		                            <td th:text="${contract.duration+'개월'}"></td>
+		                        </tr>
+		                        <tr>
+		                            <th>결제방식</th>
+		                            <td th:text="${contract.recurringInvoiceYn=='Y'?'자동정기결제':'일반결제'}"></td>
+		                            <th>결제일</th>
+		                            <td th:text="${'격월 '+contract.paymentDay+'일('+contract.registrationDateTime.substring(0,4)+'.'+contract.registrationDateTime.substring(4,6)+'.'+contract.registrationDateTime.substring(6,8)+' 첫 결제)'}"></td>
+		                        </tr>
+		                        <tr>
+		                            <th>배송주기</th>
+		                            <td th:text="${contract.deliveryCycleName+' '+contract.deliveryTimes+' 회'}"></td>
+		                            <th>배송일</th>
+		                            <td th:text="${'격월 '+contract.deliveryDay+'일('+contract.deliveryStartDateTime.substring(0,4)+'.'+contract.deliveryStartDateTime.substring(4,6)+'.'+contract.deliveryStartDateTime.substring(6,8)+' 첫 배송)'}"></td>
+		                        </tr>
+		                        <tr>
+		                            <th>주문상태</th>
+		                            <td th:text="${contract.contractStateName}"></td>
+		                            <th>주소</th>
+		                            <td th:text="${contract.baseAddress + contract.detailAddress}"></td>
+		                        </tr>
+		                        <tr>
+		                            <th>배송메모</th>
+		                            <td colspan="3" th:text="${contract.deliveryRemark}"></td>
+		                        </tr>
+		                    </tbody>
+		                </table>
+		                <div class="btn_set-center mt30">
+		                    <!-- <a class="btn btn_green btn_m radius mr5" role="button" href="#none" id="updateButton">수정</a> -->
+		                    <a class="btn btn_default btn_m radius" href="#none" role="button" id="listButton">목록</a>
+		                </div>
+
+						<form id="searchForm" name ="searchForm">
+							<input type="hidden" id="conNumber" name="conNumber" th:value="${contract.conNumber}"/>
+							<input type="hidden" id="page" name="page" />
+						    <input type="hidden" id="perPageNum" name="perPageNum" value="10"/>
+						    <input type="hidden" id="pagingYn" name="pagingYn" value="Y"/>
+						    <input type="hidden" id="searchType" name="searchType" value="contractPaymentList"/>
+							<input type="hidden" id="contractState" name="contractState" th:value="${contract.contractState}"/>
+						    
+						    
+						    <input type="hidden" id="invoiceDateSort" name="invoiceDateSort" value="N"/>
+						    <input type="hidden" id="invoiceTurnSort" name="invoiceTurnSort" value="N"/>
+						    <input type="hidden" id="paymentStateSort" name="paymentStateSort" value="N"/>
+						    <input type="hidden" id="pgErrorMsgSort" name="pgErrorMsgSort" value="N"/>
+						</form>
+						
+                        <!-- tab//-->
+                        <div class="tab-wrap mb25">
+                            <ul class="tab-list sub js-tabmenu2">
+                                <li><a href="#none" class="tab_btn">주문 별 결제관리</a></li>
+                                <li><a href="#none" class="tab_btn" id="contractDeliv">주문 별 배송관리</a></li>
+                            </ul>
+                            <script>
+                                $(".js-tabmenu2 li").eq(0).addClass("on");
+                            </script>
+                        </div>
+
+                        <div class="table-wrap mt55">
+                            <div class="table-header">
+                                <div class="con_title">총 <em id="totalCount">0</em>건</div>
+                                <div class="ab-r">
+                                    <div class="btn_set">                                    
+                                        <!-- <a class="btn btn_default"><i class="icon_change" id="autoPayChangeBtn">자동결제변경</i></a>
+                                        <div class="tooltip mr10">
+                                            <i class="icon_tooltip js-tooltip_sendstate" data-geo=".js_tooltip_change"></i>
+                                            <div class="js_tooltip_change" style="display: none;">
+                                                <p class="tip_inner">
+                                                    고객의 사정으로 자동결제수단을 변경할 때 사용합니다
+                                                </p>
+                                            </div>
+                                        </div> -->
+                                        <a class="btn btn_default"><i class="icon_down"  id="excelBtn">엑셀다운로드</i></a>
+                                    </div>
+                                </div>
+                            </div>
+                            <table class="table_list">
+                                <colgroup>
+                                    <col style="width:6%"/>
+                                    <col style="width:8%"/>
+                                    <col style="width:auto"/>
+                                    <col style="width:10%"/>
+                                    <col style="width:10%"/>
+                                    <col style="width:auto"/>
+                                    <col style="width:10%"/>
+                                    <col style="width:12%"/>
+                                    <col style="width:15%"/>
+                                </colgroup>
+                                <thead>
+                                    <tr>
+                                        <th>선택</th>
+                                        <th>번호</th>
+                                        <th><a href="javascript:void(0)" class="align_icon on" id="invoiceDateSortBtn">결제일</a></th>
+                                        <th><a href="javascript:void(0)" class="align_icon on" id="invoiceTurnSortBtn">회차</a></th>                                        
+                                        <th>결제주기</th>
+                                        <th>결제금액</th>
+                                        <th><a href="javascript:void(0)" class="align_icon on" id="paymentStateSortBtn">결제상태</a></th>
+                                        <th>실패사유</th>
+                                        <th>취소/결제</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="paymentListBody">                                    
+                                    <tr class="no_empty">
+                                        <td colspan="9">
+                                            <div class="data-empty">
+                                                <img src="/resources/images/common/img_no_empty.png" alt="데이터 없음" />
+                                                <span class="txt_empty">검색 결과가 없습니다.</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div class="paging-area">
+                                <div class="btn_set">
+                                    <div class="fl">
+                                        <button class="btn btn_gray btn_w mr5 adjustBtn" type="button" th:value="${contract.conNumber}" id="adjustBtn">금액조정</button>
+                                        <div class="tooltip mr10">
+                                            <i class="icon_tooltip js-tooltip_sendstate" data-geo=".js_tooltip_change2"></i>
+                                            <div class="js_tooltip_change2" style="display: none;">
+                                                <p class="tip_inner">
+                                                    고객불만, 상품단가 변경 등의 사유로 정기결제 금액을 조정해야 할 때 사용합니다.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="paging" id="pagination">                                    
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+            </div>
+        </div>
+        <!-- //container -->
+		<span id="popupTemp" layout:fragment="popupFragment" >      
+         	<div th:replace="online/billing/refundPop::refundPop"></div>
+         	<div th:replace="online/billing/paymentPop::paymentPop"></div>        
+         	<div th:replace="online/billing/adjustPop::adjustPop"></div>           	
+		</span>                
+</html>

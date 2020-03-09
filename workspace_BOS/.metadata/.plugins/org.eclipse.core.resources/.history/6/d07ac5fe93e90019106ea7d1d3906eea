@@ -1,0 +1,8 @@
+eclipse.preferences.version=1
+encoding//billing-service/billingOss/src/main/java/com/api/controller/CommonController.java=UTF-8
+encoding//billing-service/billingOss/src/main/java/com/api/repository/ReportRepository.java=UTF-8
+encoding//billing-service/billingOss/src/main/java/com/api/service/ReportService.java=UTF-8
+encoding//billing-service/billingOss/src/main/resources/templates/main.html=UTF-8
+encoding//billing-service/billingOss/src/main/resources/templates/online/report/report.html=UTF-8
+encoding//billing-service/web-service/src/main/java/com/api/controller/ReportController.java=UTF-8
+encoding//billing-service/web-service/src/main/resources/templates/admin/report/reportmenu.html=UTF-8

@@ -1,0 +1,200 @@
+<script type="text/javascript">
+$(document).ready(function() {
+	
+	inputFormatPhone();
+
+	if ($('#saveflag').val() == 'I'){
+		$("#deliverydatepopup").val(getToday());
+	}	
+	
+	$('#deliverydatepopup').datepicker().on('click', function(ev){                 
+	    $('#deliverydatepopup').datepicker('show');
+	});
+	$('#deliverydatepopup').datepicker().on('changeDate', function(ev){                 
+	    $('#deliverydatepopup').datepicker('hide');
+	});
+	
+ 	$("#savebutton").click(function(){
+ 		
+ 		if ($("#deliverydatepopup").val().replace(/-/g, '') == ''){
+ 			alert("배송일자를 입력하십시오.");
+ 			return;
+ 		}
+ 		
+ 		var item = new Object();
+ 		item.deliverynumber = $("#deliverynumberpopup").val();
+ 		item.connumber  = $("#connumberpopup").val();
+ 		item.customernumber  = $("#customernumberpopup").val();
+ 		item.deliverydate  = $("#deliverydatepopup").val().replace(/-/g, '');
+ 		item.deliverystate  = $("#deliverystatepopup").val();
+ 		item.deliveryremark  = $("#deliveryremarkpopup").val();
+ 		item.deliverycustomernumber  = $("#deliverycustomernumberpopup").val();
+ 		item.deliverycompany  = $("#deliverycompanypopup").val();
+ 		item.deliverychargeamount  = $("#deliverychargeamountpopup").val();
+ 		item.deliverychargetype  = $("#deliverychargetypepopup").val();
+ 		item.deliveryaddressid  = $("#deliveryaddressidpopup").val();
+ 		item.deliveryzipcode  = $("#deliveryzipcodepopup").val();
+ 		item.deliveryaddress  = $("#deliveryaddresspopup").val();
+ 		item.saveflag = $('#saveflagpopup').val();
+ 		
+ 		if ($("#deliveryzipcodepopup").val() != $("#deliveryzipcodehidden").val() || $("#deliveryaddresspopup").val() != $("#deliveryaddresshidden").val()){
+ 	 		item.saveflag = $('#saveflagpopup').val() + "I";
+ 		} else {
+ 	 		item.saveflag = $('#saveflagpopup').val() + "N";
+ 		}
+ 		
+ 		$.ajax({
+			url : '/order/savedelivery',
+			data : item,
+			type : 'post',
+			error : function(xhr, status, error) {
+				alert("error = " + error);
+			},
+			success : function(data) {
+				alert("저장되었습니다."); 
+				$('#savebutton').attr("disabled", "disabled");
+				$("#savedialog").modal('hide');
+				//$("#body-content").load("deliverylist");
+				
+				var returnobject = $('#returnobject').val();
+
+				if (returnobject == ''){
+					$('#searchbutton').click();
+				} else {
+					$('#'+returnobject).click();
+				}
+			}
+		});	
+ 	});
+
+ 	$("#cancelbutton").click(function(){
+		$('#cancelbutton').attr("disabled", "disabled");
+		$("#savedialog").modal('hide');
+ 	});
+}); 
+</script>
+<div th:each="result: ${lists}">
+<div class="modal-header modal-popup-header">
+	<h5 class="modal-title">
+		<strong th:text="${result.saveflag=='I'?'배송일정 등록':'배송일정 수정'}"></strong>
+		<button type="button" class="close" data-dismiss="modal">&times;</button>
+	</h5>
+</div>
+<div class="modal-body">
+<!--팝업메인-->
+<div class="panel panel-default">
+	<div class="panel-heading">
+		<h4 class="panel-title">
+			<strong th:text="${result.saveflag=='I'?'배송일정 등록':'배송일정 수정'}"></strong>
+		</h4>
+	</div>
+	<div class="panel-body">
+		<div class="modal-body" style="padding-bottom: 0px; padding-top: 0px;">
+			<form role="form" name="insertdeliveryform">
+				<div class="row">	
+					<label class="col-md-2">고객명 </label>
+					<label class="col-md-4">
+						<input type="text" class="form-control" id="customernamepopup"  readonly="true" th:value="${result.customername}" name="customernamepopup" />
+					</label>	
+					<label class="col-md-2">이용개월수 </label>
+					<label class="col-md-4">
+						<input type="text" class="form-control" id="durationpopup" readonly="true" th:value="${result.duration}" name="durationpopup" />
+					</label>
+		      	</div>
+				<div class="row">	
+					<label class="col-md-2">생년월일 </label>
+					<label class="col-md-4">
+						<input type="text" class="form-control" id="birthdaypopup" readonly="true" th:value="${result.birthday}" name="birthdaypopup" />	
+					</label>	
+					<label class="col-md-2">배송주기 </label>
+					<label class="col-md-4">
+						<input type="text" class="form-control" id="deliverycyclenamepopup" readonly="true" th:value="${result.deliverycyclename} " name="deliverycyclenamepopup" />									
+					</label>	
+				</div>
+				<div class="row">	
+					<label class="col-md-2">이동전화번호 </label>
+					<label class="col-md-4">
+						<input type="text" class="form-control phone" data-date-format="yyyy-mm-dd" id="customerphonenumberpopup" readonly="true" th:value="${result.customerphonenumber}" name="customerphonenumberpopup" />	
+					</label>	
+					<label class="col-md-2">배송횟수 </label>
+					<label class="col-md-4">
+						<input type="text" class="form-control" id="deliverytimespopup" readonly="true" th:value="${result.deliverytimes} " name="deliverytimespopup" />									
+					</label>	
+				</div>
+				<div class="row">	
+					<label class="col-md-2">상품명 </label>
+					<label class="col-md-4">
+						<input type="text" class="form-control" id="productnamepopup" readonly="true" th:value="${result.productname}" name="productnamepopup" />	
+					</label>	
+					<label class="col-md-2">배송일 </label>
+					<label class="col-md-4">
+						<input type="text" class="form-control" id="deliverydaypopup" readonly="true" th:value="${result.deliveryday} " name="deliverydaypopup" />									
+					</label>	
+				</div>
+				<div class="row">	
+					<label class="col-md-2"></label>
+					<label class="col-md-4">
+					</label>	
+					<label class="col-md-2">배송시작일 </label>
+					<label class="col-md-4">
+						<input type="text" class="form-control"  data-date-format="yyyy-mm-dd" id="deliverystartdatetimepopup" readonly="true" th:value="${result.saveflag=='I'?'':(#strings.length(result.deliverystartdatetime)==8?result.deliverystartdatetime.substring(0,4)+'-'+result.deliverystartdatetime.substring(4,6)+'-'+result.deliverystartdatetime.substring(6,8):'')}" />									
+					</label>	
+				</div>
+				<div class="row">	
+					<label class="col-md-2">배송일자 </label>
+					<label class="col-md-10">
+						<input type="text" class="form-control" data-date-format="yyyy-mm-dd" id="deliverydatepopup" th:value="${result.saveflag=='I'?'':result.deliverydate.substring(0,4)+'-'+result.deliverydate.substring(4,6)+'-'+result.deliverydate.substring(6,8)}" name="deliverydatepopup" />
+					</label>	
+				</div>
+				<div class="row">	
+					<label class="col-md-2">우편번호 </label>
+					<label class="col-md-10">
+						<input type="text" class="form-control" id="deliveryzipcodepopup" th:value="${result.deliveryzipcode}" name="deliveryzipcodepopup" />	
+						<input type="hidden" class="form-control" id="deliveryzipcodehidden" th:value="${result.deliveryzipcode}" name="deliveryzipcodehidden" />	
+					</label>	
+				</div>
+				<div class="row">	
+					<label class="col-md-2">배송주소 </label>
+					<label class="col-md-10">
+						<input type="text" class="form-control" id="deliveryaddresspopup" th:value="${result.deliveryaddress}" name="deliveryaddresspopup" />	
+						<input type="hidden" class="form-control" id="deliveryaddresshidden" th:value="${result.deliveryaddress}" name="deliveryaddresshidden" />	
+					</label>	
+				</div>
+				<div class="row">	
+					<label class="col-md-2">배송메모 </label>
+					<label class="col-md-10">
+						<input type="text" class="form-control" id="deliveryremarkpopup" th:value="${result.deliveryremark}" name="deliveryremarkpopup" />									
+					</label>	
+				</div>
+				<div class="row">	
+					<label class="col-md-2">배송여부 </label>
+					<label class="col-md-10">
+						<select name="deliverystatepopup" id="deliverystatepopup" class="form-control">
+							<option th:each="resultcode : ${codeList}" th:value="${resultcode.code}" th:text="${resultcode.codename}" th:selected="${result.saveflag=='I'?false:result.deliverystate==resultcode.code}"/>
+						</select>       
+					</label>	
+				</div>
+				<div class="col-6 col-md-6">
+					<div class="form-group">
+						<input type="hidden" id="deliverynumberpopup" th:value="${result.deliverynumber}"/>				
+						<input type="hidden" id="connumberpopup" th:value="${result.connumber}"/>				
+						<input type="hidden" id="customernumberpopup" th:value="${result.customernumber}"/>				
+						<input type="hidden" id="deliverycustomernumberpopup" th:value="${result.deliverycustomernumber}"/>				
+						<input type="hidden" id="deliverycompanypopup" th:value="${result.deliverycompany}"/>				
+						<input type="hidden" id="deliverychargeamountpopup" th:value="${result.deliverychargeamount}"/>				
+						<input type="hidden" id="deliverychargetypepopup" th:value="${result.deliverychargetype}"/>				
+						<input type="hidden" id="deliveryaddressidpopup" th:value="${result.deliveryaddressid}"/>				
+						<input type="hidden" id="saveflagpopup" th:value="${result.saveflag}"/>
+						<input type="hidden" id="returnobject" th:value="${returnobject}"/>				
+					</div>
+				</div>	
+			</form>
+			<div class="row">	
+				<button id="cancelbutton" class="btn btn-primary pull-right"  role="button">취소</button>
+				<button id="savebutton" class="btn btn-primary pull-right"  role="button">저장</button>
+			</div>
+		</div>
+	</div>
+</div>
+</div>
+</div>

@@ -1,0 +1,190 @@
+<script type="text/javascript">
+$(document).ready(function() 
+{
+ $('#searchbutton').click(function(){
+  debugger;
+   var queryString = $("form[name=discountForm]").serialize() ;
+      queryString = queryString.replace(/-/g, '');
+   
+     $.ajax({
+     method : 'get',
+       url : '/contract/getdiscountlist',
+       data : queryString,
+       dataType : 'json',
+     error: function(xhr, status, error) {
+        alert(error);
+       },
+       success : function(json){
+                  $('#discountPopupList').empty();
+                  var trHTML = '';
+                  if(json.length == 0)
+                  {
+                   Common.Dialog.alert({
+              title:''
+                  , content: '데이터가 없습니다.'
+              });
+                  }
+            $.each(json, function (i, item) {
+            // alert(url);
+                trHTML += '<tr>' 
+                     + '<td><input class="choiceCheck" name="user_checkedDiscount" type="checkbox" value=""/></td>'
+                       + '<td style="display:none;">' + item.discountId + '</td>'
+                       + '<td>' + item.discountName + '</td>'
+                       + '<td>' + item.discountTypeCodeName + '</td>'
+                       + '<td style="display:none;">' + numberComma(item.discountValue) + '</td>'
+                       + '<td style="display:none;">'+item.discountValueUnit+'</td>'
+                       + '<td>'+ numberComma(item.discountValue) + item.discountValueUnit + '</td>'
+                       + '<td>' + item.discountDescription + '</td>'
+                       + '<td style="display:none;">' + item.discountType+ '</td>'
+                       + '</tr>';
+            });
+            
+            $('#discountPopupList').append(trHTML);
+                     
+        }
+   });
+ });
+ 
+ 
+ $('#searchbutton').trigger('click');
+ 
+ //모달에서 선택버튼 클릭시 체크된 Row의 데이터 가져오기.
+ $("#selectedDiscountBtn").click(function(){
+ debugger;  
+  var rowData = new Array();
+  var tdArr = new Array();
+  
+  var trHTML = '';
+  
+  var checkbox = $("input[name=user_checkedDiscount]:checked");
+  
+  //체크된 체크박스 값을 가져온다.
+  checkbox.each(function(i){
+   
+   var tr = checkbox.parent().parent().eq(i);
+   var td = tr.children();
+   
+   rowData.push(tr.text());
+  
+   var discountId           = td.eq(1).text();
+   var discountName       = td.eq(2).text();
+   var discountTypeCodeName = td.eq(3).text();
+   var discountValue     = td.eq(4).text();
+   var discountValueUnit    = td.eq(5).text();
+   var discountType         = td.eq(8).text();
+   
+      
+   trHTML += '<tr>' 
+              + '<td><input  type="checkbox" value=""/></td>'
+              + '<td style ="text-align:center;">' + discountName + '<input type="hidden" id="discountId" name="discountId" value="'+discountId+'" /></td>'
+              + '<td style ="text-align:center;">' + discountTypeCodeName + '<input type="hidden" id="discountType" name="discountType" value="'+discountType+'" /></td>'
+              + '<td style ="text-align:center;">' + numberComma(discountValue)+discountValueUnit+ '<input type="hidden" id="discountValue" name="discountValue" value="'+discountValue+'" /></td>'
+              + '</tr>';
+     })
+  
+     
+     $('#discountListBody').empty();//181113 추가 현재 할인은 1회만 적용 가능. 
+     $('#discountListBody').append(trHTML);    
+     
+  discountTotalsum();
+  
+  $('.modal').modal('hide');
+ });
+ 
+ //체크박스 클릭시 다른 체크박스 해제
+ $('#discountPopupList').on('click', 'input[type=checkbox]', function () {
+    $('#discountPopupList input[type=checkbox]').prop('checked', false);
+    $(this).prop('checked', true); 
+ });
+ 
+ $('#discountPopupList').on("click", " tr", function(){
+  debugger;
+  // 할인 row 클릭시 체크박스 변경 
+  $('#discountPopupList input[type=checkbox]').prop('checked', false);
+  $('td input:checkbox', this).prop('checked', true);
+ });
+ 
+ $('#discountPopupList').on("dblclick", " tr", function(){
+  debugger;
+   var tr = $(this);
+   var td = tr.children();     
+   
+   $("#selectedDiscountBtn").trigger('click');
+ });
+ 
+});
+//input창 입력후 엔터시 modal창 꺼지는 현상 제외처리
+$('#discountName').keypress(function(e){
+ debugger;
+ if (e.which == 13 || e.keyCode  == 13) 
+ {                         
+   // 처리할 내용 
+   return false; 
+ } 
+});
+</script>
+<!-- modal list KKH추가 -->
+<!-- Modal -->
+<div class="modal-header modal-popup-header">
+ <h5 class="modal-title">
+  ▶ 할인정보
+  <button type="button" class="close" data-dismiss="modal">&times;</button>
+ </h5>
+</div>
+<div class="modal-body" style="padding-bottom: 30px;">
+ 
+ <div class="panel panel-heading" style="vertical-align: middle; text-align: center;
+  margin-left: auto; margin-right: auto; background-color: #f5f5f5; padding-bottom: 0px;">
+  <div class="form-section">
+   <div class="row" style="text-align: center">
+    <form id="discountForm" name="discountForm" class="form-inline" role="form" style="margin-bottom: 10px;">
+     <div class="col-md-3">
+      <div class="form-group">
+       <span>할인유형</span>
+        <select style="font-size:10pt" name="discountType">
+         <option value="">전체</option>
+         <option value="AMOUNT">정액할인</option>
+         <option value="RATE">정률할인</option>
+        </select>      
+      </div>
+     </div>
+     <div class="col-md-4">
+      <div class="form-group">
+       <span>할인명</span>
+       <input type="text" class="form-control-sm" name ="discountName" id="discountName" />
+      </div>
+     </div>
+     <div class="col-md-4">
+      <button id="searchbutton" type="button" class="btn btn-small btn-primary">조회</button>
+     </div>
+    </form>
+   </div>
+  </div>
+ </div>
+ <div class="panel panel-default">
+  <div class="panel-heading">
+   <h4 class="panel-title">
+    <strong>할인 목록</strong>
+   </h4>
+  </div>
+  <div class="panel-body">
+    <table class="table table-hover table-bordered" id="detailDialogTable">
+     <thead class="table-header-bg">
+      <tr>
+       <th></th>
+       <th style="display:none;">할인ID</th>
+       <th>할인명</th>
+       <th>할인유형</th>
+       <th>할인율/금액</th>
+       <th>할인설명</th>       
+      </tr>
+     </thead>
+     <tbody id="discountPopupList" class="table-body-row">
+      
+     </tbody>     
+    </table>
+  </div>
+  <a href="#" class="pull-right btn btn-primary" style="margin: 8px;" id="selectedDiscountBtn" >선택</a>
+ </div>
+</div>
+<!-- modal list END -->

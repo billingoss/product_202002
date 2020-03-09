@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+    <typeAliases>
+        <package name="com.api.model"/>
+        <package name="com.api.model.biz"/>
+        <package name="com.api.model.contract"/>
+        <package name="com.api.model.report"/>
+        <package name="com.api.model.customer"/>
+        <package name="com.api.model.product"/>
+        <package name="com.api.model.counselling"/>
+    </typeAliases>
+</configuration>

@@ -1,0 +1,94 @@
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></meta>
+<div layout:fragment="header">
+  <div class="navbar-header">
+       <div class="navbar navbar-fixed-top">
+            <div class="navbar-inner">
+                <div class="container">
+                    <button class="btn btn-navbar" data-toggle="collapse" data-target="#app-nav-top-bar">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a href="/order/information" class="brand"><i class="icon-leaf"> Billing Service</i></a>
+                    <div id="app-nav-top-bar" class="nav-collapse">
+                        <ul class="nav pull-right">
+<!--                              <li>
+	                            <span sec:authorize="isAuthenticated()">
+					                <b sec:authentication ="name"/> 님 반갑습니다.
+	                             </span>
+                            </li> -->
+                            <li>
+	                            <div class="row" style = "padding-top: 10px;margin-left: 0px;margin-right: 100px;" >
+	                               <b th:inline="text"> [[${session.loginname}]]-[[${session.businessname}]]</b>님 안녕하세요. 
+		                           <a href="/logout" style="color:white">Logout</a>
+	                            </div>
+                            </li>
+                            
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="body-nav body-nav-horizontal body-nav-fixed" style="border-bottom-width: 0px">
+          <div class="container" style="float: right;">
+              <ul style ="float:left">
+<!--                   <li id="headercustomer">
+                      <a href="/customer/customermain">
+                          <i class="icon-user icon-large"><span class="font-size16px">고객관리</span></i> 
+                      </a>
+                  </li> -->
+<!--                   
+                  <li id="headercontract">
+                      <a href="/contract/contractmain">
+                          <i class="icon-shopping-cart icon-large"><span class="font-size16px">상품판매</span></i>
+                      </a>
+                  </li>
+                  <li id="headerbilling">
+                      <a href="/billing/main">
+                          <i class="icon-money icon-large"><span class="font-size16px">결제관리</span></i>
+                      </a>
+                  </li>
+                  <li id="headerreport">
+                      <a href="/report/main">
+                          <i class="icon-bar-chart icon-large"><span class="font-size16px">보고서</span></i>
+                      </a>
+                  </li>
+                  <li id="headerproduct">
+                      <a href="/product/productmain">
+                          <i class="icon-pencil icon-large"><span class="font-size16px">상품등록</span></i>
+                      </a>
+                  </li>
+ -->                  
+                  <li id="headerorderinformation">
+                      <a href="/order/information">
+                          <i class="icon-bar-chart icon-large"><span class="font-size16px">주문정보관리</span></i>
+                      </a>
+                  </li>
+                  <li id="headerdelivery">
+                      <a href="/order/delivery">
+                          <i class="icon-bar-chart icon-large"><span class="font-size16px">배송일정관리</span></i>
+                      </a>
+                  </li>
+                  <li id="headerdeliverydetail">
+                      <a href="/order/deliverydetail">
+                          <i class="icon-bar-chart icon-large"><span class="font-size16px">배송내역관리</span></i>
+                      </a>
+                  </li>
+                  <li id="headercounsel">
+                      <a href="/order/counsel">
+                          <i class="icon-bar-chart icon-large"><span class="font-size16px">고객상담관리</span></i>
+                      </a>
+                  </li>
+                  <li id="headerreport">
+                      <!-- <a href="/report/main"> -->
+                      <a href="javascript:alert('준비중입니다.');">
+                          <i class="icon-bar-chart icon-large"><span class="font-size16px">보고서</span></i>
+                      </a>
+                  </li>
+              </ul>
+          </div>
+        </div>
+  </div>
+  <!-- /.navbar-header -->
+  
+</div>

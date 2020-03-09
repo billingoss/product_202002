@@ -1,0 +1,74 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+		debugger;
+		$('#couponusesearchbutton').click(function(){
+			//alert("searchbutton click");
+			if ($('form[name=couponuseDataForm] input[name=customerName]').val() ==  ''){
+				alert('조회하실 고객명을 입력하십시오.');
+				$('form[name=couponuseDataForm] input[name=customerName]').focus();
+				return false;
+			} 
+			var queryString = $("form[name=couponuseDataForm]").serialize() ;
+			  queryString = queryString.replace(/-/g, '');
+			  //alert("queryString = " + queryString);
+			$.ajax({
+				method : 'get',
+	      url : '/contract/findcouponusesearchbar',
+	      data : queryString,
+	      error: function(xhr, status, error) {
+	      	//alert(error);
+	      },
+	      success : function(json){	      	
+	      	$('#couponuseDialog .modal-content').html(json);
+	      	$("#couponuseDialog").modal('show');
+				}
+			});
+		});
+		
+		$('#couponuseCustomerName').keydown(function(){
+			if (event.keyCode == 13){
+				$("#couponusesearchbutton").click();
+			}
+		});
+
+		$('#couponusePhoneNumber').keydown(function(){
+			if (event.keyCode == 13){
+				$("#couponusesearchbutton").click();
+			}
+		});
+	});
+</script>
+<div class="col-md-12">
+	<div class="panel panel-heading" style="vertical-align: middle; text-align: center;
+		margin-left: auto; margin-right: auto; padding-bottom: 0px;">
+		<div class="form-section">
+			<div class="row" style="text-align: center">
+				<form id="couponuseDataForm" name="couponuseDataForm" class="form-inline" role="form" style="margin-bottom: 10px;">
+					<div class="col-md-3">
+						<div class="form-group">
+							<span>고객명</span>
+							<input type="text" class=" form-control" name ="customerName" id="couponuseCustomerName"/>
+						</div>
+					</div>
+					<div class="col-md-4">
+						<div class="form-group">
+							<span>전화번호</span>
+							<input type="text" class=" form-control" name ="phoneNumber" id="couponusePhoneNumber"/>
+						</div>
+					</div>
+					<div class="col-md-4">
+						<a data-toggle="modal" data-target="#customerListlDialog">
+							<button id="couponusesearchbutton" type="button" class="btn btn-primary">조회</button>
+						</a>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="modal" id="couponuseDialog" role="dialog">
+	<div class="modal-dialog modal-lg">
+		<div class="modal-content"></div>
+	</div>
+</div>

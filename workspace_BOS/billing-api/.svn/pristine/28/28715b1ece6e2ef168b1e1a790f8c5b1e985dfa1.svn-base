@@ -1,0 +1,155 @@
+<div id="popCustomerSearchDiv" class="trp popupfixed-wrap" th:fragment="customerSearchPopup">
+<script type="text/javascript">
+/*<![CDATA[*/
+function getDataCustomerSearch(page) {
+	
+	if ($('#popCustSrchCustomerName').val() == '' && $('#popCustSrchPhoneNumber').val() == ''){
+		showAlert('고객명 혹은 전화번호를 입력하십시오.');
+		return;
+	}
+
+	var queryString = $("form[name=popCustomerSearchForm]").serialize();
+	queryString = queryString + '&page='+page+'&perPageNum=10&pagingYn=Y';
+	queryString = queryString.replace(/-/g, '');
+	
+	$.ajax({
+		method : 'get',
+		url : '/customer/getcustomersearch',
+		data : queryString, 
+		dataType : 'json',
+		success : handleDataCustomerSearch
+	});
+}
+
+function handleDataCustomerSearch(data) {
+	debugger;
+	
+	//PageMaker정보를 Json으로부터 분리한다.
+	json = data.lists; //hashmap의 list array데이타
+	pageMaker = data.pageMaker; //pageMaker 
+
+	$('#popCustomerSearchTbody').empty();
+	var trHTML = '';
+
+	if (json.length == 0) {
+		trHTML = '<tr class="no_empty"><td colspan=3><div class="data-empty"><img src="/resources/images/common/img_no_empty.png" alt="데이터 없음" /><span class="txt_empty">검색 결과가 없습니다.</span></div></td></tr>';
+	} else {
+		$.each(json, function(i, item) {
+			trHTML += '<tr>'
+				   +  '<td><a href="#none">' + item.customerName + '</a><input type="hidden" name="customerInfo" value="' + item.customerNumber + '|' + item.customerName + '|' + item.phoneNumber + '"</td>'
+				   +  '<td class="phone"><a href="#none">' + item.phoneNumber + '</a></td>'
+				   +  '<td class="tal ellipsis"><a href="#none">' + item.baseAddress + ' ' + item.detailAddress + '</a></td>'
+				   +  '</tr>';
+		});
+	}
+
+	$('#popCustomerSearchTbody').append(trHTML);
+	pagingProcPopup(pageMaker, "paginationCustomerSearch", "getDataCustomerSearch");
+	formatPhone();
+}
+
+$(document).ready(function(){
+	
+	$('#popCustSrchSearchButton').click(function(){
+		getDataCustomerSearch(1);
+	});
+	
+	$('#popCustSrchResetButton').click(function(){
+		$('#popCustSrchCustomerName').val('');
+		$('#popCustSrchPhoneNumber').val('');
+		$('#popCustomerSearchTbody').empty();
+		$('#paginationCustomerSearch').empty();
+	});	
+	
+	$('#popCustomerSearchTbody').on('click','tr', function(){
+		if ($(this).find('input[name=customerInfo]').val()) {
+			var customer = $(this).find('input[name=customerInfo]').val().split('|');
+			$('#popCustSrchChoiceCustomerNumber').val(customer[0]);
+			$('#popCustSrchChoiceCustomerName').val(customer[1]);
+			$('#popCustSrchChoicePhoneNumber').val(customer[2]);
+			$('#popCustomerSearchDiv .btn_close').click();
+		}
+	});
+	
+	$('#popCustSrchCustomerName').keydown(function(){
+		if (event.keyCode == 13){
+			$("#popCustSrchSearchButton").click();
+		}
+	});
+
+	$('#popCustSrchPhoneNumber').keydown(function(){
+		if (event.keyCode == 13){
+			$("#popCustSrchSearchButton").click();
+		}
+	});
+});
+/*]]>*/
+</script>
+<form name="popCustomerSearchForm" onsubmit="return false;">
+<input type="hidden" id="popCustSrchChoiceCustomerNumber" name="popCustSrchChoiceCustomerNumber"/>
+<input type="hidden" id="popCustSrchChoiceCustomerName" name="popCustSrchChoiceCustomerName"/>
+<input type="hidden" id="popCustSrchChoicePhoneNumber" name="popCustSrchChoicePhoneNumber"/>
+<div class="popup-dim"></div>
+<div class="popup-align">
+	<div class="popup-vertical">
+		<div class="popup-layer option wl">
+			<a class="btn_close" href="#">X</a>
+			<div class="pop_tit">고객검색</div>
+			<!-- 알림 mode0 -->
+			<section class="section">
+				<table class="form_table">
+					<colgroup>
+						<col width="130px" />
+						<col width="*" />
+						<col width="130px" />
+						<col width="*" />
+					</colgroup>
+					<tbody>
+						<tr>
+							<th>고객명</th>
+							<td>
+								<input type="text" class="" value="" placeholder="" id="popCustSrchCustomerName" name="customerName"/>
+							</td>
+							<th>전화번호</th>
+							<td>
+								<input type="text" class="" value="" placeholder="-없이 입력" id="popCustSrchPhoneNumber" name="phoneNumber"/>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				<div class="btn_set-center mt30">
+					<a class="btn btn_green btn_wm radius mr5" role="button" href="#none" id="popCustSrchSearchButton">검색</a>
+					<a class="btn btn_default btn_wm radius" href="#none" role="button" id="popCustSrchResetButton">초기화</a>
+				</div>
+
+				<div class="table-wrap mt40">
+					<div class="con_title ">
+						<h3 class="h3">고객 목록</h3>
+					</div>
+					<table class="table_list">
+						<colgroup>
+							<col style="width:15%"/>
+							<col style="width:20%"/>
+							<col style="width:auto"/>
+						</colgroup>
+						<thead>
+							<tr>
+								<th>고객명</th>
+								<th>전화번호</th>
+								<th>주소</th>
+							</tr>
+						</thead>
+						<tbody id="popCustomerSearchTbody">
+						</tbody>
+					</table>
+                    <div class="paging-area">
+	                    <div class="paging" id="paginationCustomerSearch">
+	                    </div>
+                    </div>
+				</div>
+			</section>
+		</div>
+	</div>
+</div>
+</form>
+</div>

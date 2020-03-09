@@ -1,0 +1,138 @@
+<script type="text/javascript">
+
+$(document).ready(function(){
+    /*<![CDATA[*/
+    	
+    if ($('section[name=contractListSection]').length == 0){
+    	old_alert('정기배송 신청내역이 없습니다.');
+    } 
+    
+	$('.trems-link').click(function(){
+		
+		var param = new Object();
+		param.conNumber = this.id.replace('btn','');
+
+		$('div[name=divDetail]').each(function(){
+			$(this).attr('style','display:none;');
+		});
+
+		$('.trems-link').each(function(){
+			if (this.id.replace('btn','') != param.conNumber) {
+				$(this).html('상세보기');
+			}
+		});
+
+		if ($(this).html() == '상세보기'){
+			$(this).html('상세닫기');
+		} else {
+			$(this).html('상세보기');
+			return false;
+		}
+		
+		$.ajax({
+			method:'get',
+			url: '/billletter/getproductsaledetail',
+			data: param,
+			dataType : 'json',
+			error: function(xhr, status, error){
+				old_alert(error);
+			},
+			success : function(data){
+				var html = '';
+
+				json = data.deliveryList;
+				if (json.length > 0) {
+					html = "";
+					$.each(json, function(i, item) {
+						html += '<tr>';
+						html += '<td>' + (i+1) + '차</td>';
+						html += '<td>' + formatDate(item.deliveryDate) + '</td>';
+						html += '<td>' + item.deliveryStateName + '</td>';
+						html += '</tr>'
+					});	     
+					$('#tbodyDelivery'+param.conNumber).html(html);
+				}
+				
+				json = data.invoiceList;
+				if (json.length > 0) {
+					html = "";
+					$.each(json, function(i, item) {
+						 html += '<tr>';
+						 html += '<td>' + (i+1) + '차</td>';
+						 html += '<td>' + formatDate(item.invoiceDate) + '</td>';
+						 html += '<td>' + numberComma(item.invoiceAmount) + '원 </td>';
+						 html += '<td>' + (item.collectionCloseYn=='Y'?'결제완료':'결제전') + '</td>';
+						 html += '</tr>';
+					});	        
+					$('#tbodyInvoice'+param.conNumber).html(html);
+				}
+				
+				$('#div'+param.conNumber).attr('style','display:block;');
+			}
+		});
+	});
+	/*]]>*/
+});	
+</script>
+                <!-- 상품정보//-->
+                <section class="section" th:each="result : ${contractList}" name="contractListSection">
+                    <div class="inner">
+                        <div class="tit_box">
+                            <h4 class="tit" th:text="${#strings.substring(result.registrationDatetime,0,4)+'-'+#strings.substring(result.registrationDatetime,4,6)+'-'+#strings.substring(result.registrationDatetime,6,8)}"></h4>
+                            <p class="sub_txt"><a href="#none" th:id="${'btn'+result.conNumber}" class="trems-link" style="font-size: 12px;color: #3b98e6;border-bottom: 1px solid #3b98e6;">상세보기</a></p>
+                        </div>
+                        <div class="product_box">
+                            <div class="img_info">
+                                <p class="img">
+                                    <img th:src="${result.productImageUrl}" />
+                                </p>
+                                <p class="info">
+                                    <span th:text="${result.productName}"></span>
+                                    <em th:utext="${result.productDescription}"></em>
+                                    <span style="font-size:12px;margin-top:10px;" th:text="${#numbers.formatDecimal(result.invoiceAmount,0,'COMMA',0,'POINT')+'원 / '+result.productQuantity+'개 / '+result.contractStateName}"></span>
+                                </p>
+                            </div>
+                            <ul class="product_info">
+                            </ul>
+                        </div>
+						<div th:id="${'div'+result.conNumber}" name="divDetail" class="table-form" style="display:none;">
+			                <h5>배송일정</h5>
+			                <table class="table_list">
+			                    <colgroup>
+			                        <col width="30%"/>
+			                        <col width="*"/>
+			                        <col width="30%"/>
+			                    </colgroup>
+			                    <thead>
+			                        <tr>
+			                            <th>차수</th>
+			                            <th>배송일</th>
+			                            <th>상태</th>
+			                        </tr>
+			                    </thead>
+			                    <tbody th:id="${'tbodyDelivery'+result.conNumber}" name="tbodyDelivery">
+			                    </tbody>
+							</table>
+				
+			                <h5>결제일정</h5>
+			                <table class="table_list">
+			                    <colgroup>
+			                        <col width="20%"/>
+			                        <col width="*"/>
+			                        <col width="30%"/>
+			                        <col width="22%"/>
+			                    </colgroup>
+			                    <thead>
+			                        <tr>
+			                            <th>차수</th>
+			                            <th>결제일</th>
+			                            <th>가격</th>
+			                            <th>상태</th>
+			                        </tr>
+			                    </thead>
+			                    <tbody th:id="${'tbodyInvoice'+result.conNumber}" name="tbodyInvoice">
+			                    </tbody>
+			                </table>
+						</div>
+                    </div>
+                </section>

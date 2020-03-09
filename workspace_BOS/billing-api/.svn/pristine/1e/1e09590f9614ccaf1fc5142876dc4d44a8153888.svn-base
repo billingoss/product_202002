@@ -1,0 +1,369 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+		$("#searchbar-datepicker").load("searchbardatepicker");
+		$("#p1maintable").colResizable({liveDrag:true});
+	});
+</script>
+<div class="row">
+	<div id="searchbar-datepicker"></div>
+</div>
+<div class="row">
+	<div class="col-md-8">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h2 class="panel-title">
+					<strong>결제대상목록</strong>
+				</h2>
+			</div>
+			<div class="panel-body height-315px">
+				<div class="table-responsive">
+					<table class="table" id="p1maintable" style="table-layout:fixed">
+						<thead class="table-header-bg" >
+							<tr>
+								<th style="display: none;">청구번호</th>
+								<th style="display: none;"></th>
+								<th style="width: 10%;">결제요청일</th>
+								<th style="width: 10%;">고객명</th>
+								<th style="width: 15%;">상품명</th>
+								<th style="width: 8%;">금액</th>
+								<th style="width: 10%;">결제여부</th>
+								<th style="width: 20%;">E-mail</th>
+								<th style="width: 17%;">전화번호</th>
+								<th></th>
+							</tr>
+						</thead>
+						<tbody id="p1maintablebody"  class="table-body-row" style="text-overflow:ellipsis; overflow:hidden">
+						</tbody>
+						<tfoot>
+							<tr>
+								<td colspan="3" style="text-align: center"><strong>합계</strong></td>
+								<td id="p1invtotalsum" style="text-align: right;padding-left: 16px;padding-right: 0px;"></td>
+								<td></td>
+								<td></td>
+								<td></td>
+								<td></td>
+							</tr>
+						</tfoot>
+					</table>
+				</div>
+			</div>
+			<div align="center">
+				<!-- class="col-md-12" -->
+				<ul id="pagination" class="pagination">
+					<!-- 페이징처리 자리 -->
+				</ul>
+				<!-- 페이지네이션 -->
+			</div>
+			<!--
+			<div class="panel-footer" style="padding-bottom: 40px;">
+				<button class="btn btn-small btn-info pull-right"
+					style="margin: 3px;" id="excelsave"
+					onclick="fnExcelReport('p1maintable')">엑셀저장</button>
+			</div>
+			-->
+		</div>
+	</div>
+	<div class="modal" id="invoiceSendDialog" role="dialog">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content"></div>
+		</div>
+	</div>
+	<div class="modal" id="paymentProcDialog" role="dialog">
+		<div class="modal-dialog modal-lg modal-dialog-center">
+			<div class="modal-content"></div>
+		</div>
+	</div>
+	<div class="col-md-4">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h2 class="panel-title">
+					<strong>상담등록</strong>
+				</h2>
+			</div>
+			<div class="panel-body">
+				<form id="consultdataForm" name="consultdataForm" role="form">
+					<input type="hidden" class="form-control" name="invoicenumber" />
+					<input type="hidden" class="form-control" name="invoicedate" /> <input
+						type="hidden" class="form-control" name="connumber" /> <input
+						type="hidden" class="form-control" name="customernumber" />
+					<div class="col-md-4">
+						<label for="inputType" class="control-label">고객명</label>
+					</div>
+					<div class="col-md-8">
+						<input type="text" class="form-control" id="consultcustomername"
+							readonly="true" />
+					</div>
+					<div class="col-md-12">
+						<label for="inputType" class="control-label">상담내용</label>
+					</div>
+					<div class="col-md-12">
+						<textarea id="consultmsg" class="form-control" style="height: 250px;" name="articlecontent"></textarea>
+					</div>
+				</form>
+				<button id="sendconsultmessagebt" class="pull-right btn btn-primary" style="margin: 8px;">저장</button>
+			</div>
+
+		</div>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				<h2 class="panel-title">
+					<strong>결제상담이력</strong>
+				</h2>
+			</div>
+			<div class="panel-body height-250px" id="counsellingListResult" >
+				<div class="table-responsive">
+					<table class="table" style="table-layout:fixed;">
+						<thead class="table-header-bg">
+							<tr>
+								<th style="width: 15%;">상담일시</th>
+								<th style="width: 10%;">상담유형</th>
+								<th style="width: 15%;">상품명</th>
+								<th style="width: 10%;">결제요청일</th>
+								<th style="width: 50%;">상담내용</th>
+							</tr>
+						</thead>
+						<tbody id="counsellingListResultBody"  class="table-body-row" >
+						</tbody>
+					</table>
+				</div>
+			</div>
+			<div  align="center"> <!-- class="col-md-12" -->
+			     <ul id="paginationcounselling" class="pagination"><!-- 페이징처리 자리 --></ul>
+					          <!-- 페이지네이션 -->
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+$(document).ready(function() {
+	$(p1TableSum);
+	
+	$('#sendconsultmessagebt').click(function(){
+		var param = new Object();
+		debugger;
+		if($('#consultdataForm').find('input[name=invoicenumber]').val() == ""){
+			Common.Dialog.alert({
+	    		title:''
+	            , content: '고객을 선택하세요.'	          
+	        });
+			return false;
+		}
+		
+		if($('#consultdataForm').find('textarea[name=articlecontent]').val() == ""){
+			Common.Dialog.alert({
+	    		title:''
+	            , content: '상담 내용을 입력 하세요.'	    
+	            , focusObj : $('#consultdataForm').find('textarea[name=articlecontent]')
+	        });
+			return false;
+		}
+		
+		if(calByte.getByteLength($('#consultdataForm').find('textarea[name=articlecontent]').val()) > 2000){
+			Common.Dialog.alert({
+	    		title:''
+	            , content: '상담 내용은 최대 2000Byte를 초과 할 수 없습니다.'	    
+	            , focusObj : $('#consultdataForm').find('textarea[name=articlecontent]')
+	        });
+			return false;
+		}
+		
+		param.invoicenumber = $('#consultdataForm').find('input[name=invoicenumber]').val();
+		param.customernumber = $('#consultdataForm').find('input[name=customernumber]').val();
+		param.invoicedate = $('#consultdataForm').find('input[name=invoicedate]').val();
+		param.connumber = $('#consultdataForm').find('input[name=connumber]').val();
+		param.memo = $('#consultmsg').val();
+		
+		$.ajax({
+			method : 'get',
+			url : '/billing/insertCounsellingHistory',
+			data : param,
+			dataType : 'json',
+			error : function(xhr, status, error) {
+				alert(error);
+			},
+			success : function(json) {
+				//alert(json.length);
+				Common.Dialog.alert({
+		    		title:''
+		            , content: '처리완료했습니다.'
+		        });
+				getCounsellingData(1);
+			}
+		});
+	});
+	
+	$(document).on("dblclick", "#p1maintablebody tr", function() {
+		debugger;
+		var customername = $('td', this).eq(3).find('span').text();
+		//$('#billingmaintab').tabs('select', 1); 
+		// $("#billingmaintab").tabs("option", "active", 1);
+		$('#billingmaintab a[href="#billing-customer-paymentlist"]').tab('show');
+		$('#dataForm input[name=customerName]').val(customername);
+		$('#searchbt').click();
+		
+	});
+	
+	$(document).on("click", "#p1maintablebody tr", function() {
+		debugger;
+		var invoicenumber  = $('td', this).eq(0).text();
+		var invoicedate    = $('td', this).eq(2).text();
+		var customernumber = $('td', this).eq(11).text();
+		var connumber      = $('td', this).eq(10).text();
+		$('#consultdataForm').find('input[name=connumber]').val(connumber);
+		$('#consultdataForm').find('input[name=invoicenumber]').val(invoicenumber);
+		$('#consultdataForm').find('input[name=invoicedate]').val(invoicedate);
+		$('#consultdataForm').find('input[name=customernumber]').val(customernumber);
+		$('#consultmsg').val("");
+		$('#p1maintablebody tr').not(this).removeClass('selectedbgcolor');
+		$(this).addClass('selectedbgcolor');
+		getCounsellingData(1,invoicenumber,customernumber,invoicedate,connumber);
+	});
+});
+
+	function getCounsellingData(page, invoicenumber,customernumber,invoicedate,connumber) {
+		debugger;
+		var param = new Object();
+		param.page = page;
+		param.perPageNum = 5; /*만약값을셋팅하지 않으면 기본 페이지당 row수 10*/
+		param.invoicenumber = $('#consultdataForm').find('input[name=invoicenumber]').val();
+		param.customernumber = $('#consultdataForm').find('input[name=customernumber]').val();;
+		param.invoicedate = $('#consultdataForm').find('input[name=invoicedate]').val();
+		param.connumber = $('#consultdataForm').find('input[name=connumber]').val();;
+		$('#consultmsg').val("");
+		$.ajax({
+			method : 'get',
+			url : '/billing/getCounsellingData',
+			data : param,
+			dataType : 'json',
+			error : function(xhr, status, error) {
+				alert(error);
+			},
+			success : function(json) {
+				//alert(json.length);
+				handlegetCounsellingData(json);
+			}
+		});
+	}
+	function handlegetCounsellingData(data) {
+		json = data.lists; //hashmap의 list array데이타
+		pageMaker = data.pageMaker; //pageMaker
+		$("#paginationcounselling").empty();	
+		
+		if (json.length == 0) {
+			return;
+		}
+		$('#counsellingListResultBody').empty();
+		var trHTML = '';
+		$.each(json, function(i, item) {
+
+			trHTML += '<tr>' 
+			       + '<td>' + item.counsellingdate + ' ' + item.counsellingtime + '</td>' 
+			       + '<td>' + item.category + '</td>' 
+			       + '<td>' + item.productname + '</td>' 
+			       + '<td>' + item.invoicedate + '</td>' 
+				   + '<td title="'+item.memo+'">' + item.memo+ '</td>' 
+				   + '</tr>';
+		});
+		$('#counsellingListResultBody').append(trHTML);
+		pagingCounsellingDataProc(pageMaker);
+	}
+	function pagingCounsellingDataProc(pageMaker) {
+		//=============pagination 시작=====================			
+		if (pageMaker.totalCount != 0) {
+			$("#paginationcounselling").empty();
+			if (pageMaker.prev == true) {
+
+				/*<![CDATA[*///타임리프에서 부등호상용시 조심해야함 반드시 CDATA로 감싸야함
+				$("#paginationcounselling").append(
+						'<li class="goBackPage"><a><<</a></li>'); //다음페이지로 가기 버튼 활성화
+				/*]]>*/
+			}
+
+			//아래는 타임리프사용시 조시매야한다. for하기와 같이 쓰지않음 에러발생함
+			/*<![CDATA[*/
+			for (var i = pageMaker.startPage; i <= pageMaker.endPage; i++) {
+				/*]]>*/
+				//alert(i);
+				if (pageMaker.cri.page == i) {
+					$("#paginationcounselling").append(
+							'<li class="disabled active" style="color: red;"><a>'
+									+ i + "</a></li>"); //버튼 비활성화
+				} else {
+					$("#paginationcounselling").append(
+							'<li class="goPage" data-page="' + i + '"><a>' + i
+									+ "</a></li>"); //버튼 활성화
+				}
+			}
+			if (pageMaker.next == true) {
+				$("#paginationcounselling").append(
+						'<li class="goNextPage"><a>>></a></li>'); //다음페이지로 가기 버튼 활성화
+			}
+		}
+
+		//=============pagination 끝=====================
+	}
+
+	//===================페이지이벤트처리시작==========================
+	/* $(".goBackPage").click(function() { */
+	$(document).on("click", "#paginationcounselling .goBackPage", function() {
+		debugger;
+		page = Number(pageMaker.startPage) - 1;
+		//pageFlag = 1;
+		//$("상단 ajax를 함수로 만들어 재귀호출");
+		getCounsellingData(page);
+		//pageFlag = 0;
+
+	});
+
+	$(document).on("click", "#paginationcounselling .goPage", function() {
+		debugger;
+		page = $(this).attr("data-page");
+		//alert(page);
+		//pageFlag = 1;
+		getCounsellingData(page);
+		//pageFlag = 0;
+	});
+
+	$(document).on("click", "#paginationcounselling .goNextPage", function() {
+		debugger;
+		page = Number(pageMaker.endPage) + 1;
+		//$("상단 ajax를 함수로 만들어 재귀호출");
+		getCounsellingData(page);
+		//pageFlag = 0;
+	});
+
+	$(document).on("click", "#p1maintablebody tr", function() {
+		//some think
+		debugger;
+		var customername = $('td', this).eq(3).find('span').text();
+		$("#counsellingListResultBody").empty();
+		$('#consultcustomername').val('');
+		$('#consultcustomername').val(customername);
+
+	});
+
+	function p1TableSum() {
+		//var coltotal = 0;
+		//var paytotal = 0;
+		var invtotal = 0;
+		$('#p1maintable tbody tr').each(
+				function() {
+					//var colvalue = parseInt($('td', this).eq(10).text().replace(/,/g, ''));
+					//var payvalue = parseInt($('td', this).eq(9).text().replace(/,/g, ''));
+					var invvalue = parseInt($('td', this).eq(5).text().replace(
+							/,/g, ''));
+					//coltotal += colvalue;
+					//paytotal += payvalue;
+					invtotal += invvalue;
+				});
+
+		//$('#p1coltotalsum').text(numberComma(coltotal));
+		//$('#p1paytotalsum').text(numberComma(paytotal));
+		$('#p1invtotalsum').text(numberComma(invtotal));
+	}
+</script>

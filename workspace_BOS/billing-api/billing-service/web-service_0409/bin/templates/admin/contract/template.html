@@ -1,0 +1,133 @@
+<script type="text/javascript">
+	$(document).ready(function() {
+  	$("#customersearchbar").load("searchbar");
+	});
+</script>
+<div class="row">
+	<div id="customersearchbar"></div>
+</div>
+
+<div class="row">
+	<div class="col-md-12">
+  	<div class="panel panel-default">
+   		<div class="panel-heading">
+    		<h2 class="panel-title">
+     			<strong>고객정보</strong>
+    		</h2>
+   		</div>
+   		<div class="panel-body">
+    		<div class="col-md-4">
+     			<label>고객명 : </label>
+    		</div>
+    		<div class="col-md-4">
+     			<label>이동전화번호 : </label>
+    		</div>
+    		<div class="col-md-4">
+     			<label>주요정보 : </label>
+    		</div>
+   		</div>
+  	</div>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-12">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+    		<h2 class="panel-title">
+     			<strong>상품 이용 내역(상세한 정보 모두 표기)</strong>
+    		</h2>
+   		</div>
+   		<div class="panel-body">
+    		<div class="table-responsive">
+     			<table class="table" id="p1maintable">
+      			<thead>
+       				<tr>
+           			<th style="width: 4%;"></th>
+        				<th style="width: 4%;">번호</th>
+        				<th style="width: 8%;">상품분류</th>
+				        <th style="width: 8%;">상품명</th>
+				        <th style="width: 10%;">상품가격</th>
+				        <th style="width: 10%;">가입일</th>
+				        <th style="width: 8%;">배송주기</th>
+				        <th style="width: 8%;">결제주기</th>
+				        <th style="width: 10%;">상태</th>
+				        <th style="width: 8%;">해지일</th>
+				        <th style="width: 8%;">해지사유</th>
+				        <th style="width: 8%;">미수금</th>
+							</tr>
+						</thead>
+						<tbody id="p1maintablebody" class="table-body-row">
+       				<tr>
+           			<td><input class="tot_amount" type="checkbox" value=""/></td>
+        				<td></td>
+        				<td></td>
+        				<td></td>
+				        <td></td>
+				        <td></td>
+				        <td></td>
+				        <td></td>
+				        <td></td>        
+				        <td></td>
+				        <td></td>
+				        <td></td>
+							</tr>
+						</tbody>
+     			</table>
+    		</div>
+			</div>
+   		<div class="panel-footer" style="padding-bottom: 40px;">
+    		<button class="btn btn-primary pull-right"
+     			style="margin: 3px;" id="excelsave"
+     			onclick="fnExcelReport('p1maintable')">엑셀저장</button>
+   		</div>
+  	</div>
+ 	</div>
+	<div class="modal" id="invoiceDetailDialog" role="dialog">
+  		<div class="modal-dialog modal-lg">
+   			<div class="modal-content"></div>
+  		</div>
+	</div>
+ 	<div class="modal" id="mainadjustDialog" role="dialog">
+  	<div class="modal-dialog modal-lg">
+   		<div class="modal-content"></div>
+		</div>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-12">
+  	<div class="panel panel-default">
+   		<div class="panel-heading">
+    		<h2 class="panel-title">
+     			<strong>결제정보</strong>
+    		</h2>
+   		</div>
+   		<div class="panel-body">
+    		<div class="col-md-4">
+     			<label>결제 방식 : </label>
+    		</div>
+    		<div class="col-md-4">
+     			<label>은행/카드명 : </label>
+    		</div>
+    		<div class="col-md-4">
+     			<label>카드/은행계좌번호 : </label>
+    		</div>
+   		</div>
+   		<div class="panel-footer" style="padding-bottom: 40px;">
+    		<div class="col-md-3">
+     			<button class="btn btn-small btn-info pull-left" style="margin: 3px;" id="stopanddelete" onclick="fnExcelReport('p1maintable')">정지/해지</button>
+    		</div>
+    		<div class="col-md-3">
+     			<button class="btn btn-small btn-info pull-left" style="margin: 3px;" id="productdelete" onclick="fnExcelReport('p1maintable')">상품해지</button>
+    		</div>
+    		<div class="col-md-3">
+     			<button  class="btn btn-small btn-info pull-right" style="margin: 3px;" id="newcontract" onclick="button_newcontract()">신규상품가입</button>
+    		</div>
+    		<div class="col-md-3">
+     			<button class="btn btn-small btn-info pull-right" style="margin: 3px;" id="contractmodify" onclick="fnExcelReport('p1maintable')">상품정보변경</button>
+    		</div>
+   		</div>
+  	</div>
+ 	</div>
+</div>

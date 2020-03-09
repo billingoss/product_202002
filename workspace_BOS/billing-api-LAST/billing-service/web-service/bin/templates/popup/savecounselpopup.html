@@ -1,0 +1,127 @@
+<script type="text/javascript">
+$(document).ready(function() {
+	inputFormatPhone();
+	
+ 	$("#savebutton").click(function(){
+ 		
+ 		if ($("#memopopup").val() == ''){
+ 			alert("요청내용을 입력하십시오.");
+ 			return;
+ 		}
+ 		
+ 		var item = new Object();
+ 		item.customernumber = $("#customernumberpopup").val();
+ 		item.counsellingdate = $('#counsellingdatepopup').val();
+ 		item.counsellingtime = $('#counsellingtimepopup').val();
+ 		item.category  = $("#categorypopup").val();
+ 		item.inboundpath  = $("#inboundpathpopup").val();
+ 		item.memo  = $("#memopopup").val().replace(/-/g, '');
+ 		item.answer  = $("#answerpopup").val();
+ 		item.state  = $("#statepopup").val();
+ 		item.saveflag = $("#saveflag").val();
+
+ 		$.ajax({
+			url : '/order/savecounsel',
+			data : item,
+			type : 'post',
+			error : function(xhr, status, error) {
+				alert("error = " + error);
+			},
+			success : function(data) {
+				alert("저장되었습니다."); 
+				$('#savebutton').attr("disabled", "disabled");
+				$("#savedialog").modal('hide');
+				//$("#body-content").load("deliverylist");
+				getDataCounsel(1);
+			}
+		});	
+ 	});
+
+ 	$("#cancelbutton").click(function(){
+		$('#cancelbutton').attr("disabled", "disabled");
+		$("#savedialog").modal('hide');
+ 	});
+}); 
+</script>
+<div class="modal-header modal-popup-header">
+	<h5 class="modal-title">
+		<strong>고객상담등록</strong>
+		<button type="button" class="close" data-dismiss="modal">&times;</button>
+	</h5>
+</div>
+<div class="modal-body">
+<!--팝업메인-->
+<div class="panel panel-default">
+	<div class="panel-heading">
+		<h4 class="panel-title">
+		<strong>고객상담등록</strong>
+		</h4>
+	</div>
+	<div class="panel-body">
+		<div class="modal-body" style="padding-bottom: 0px; padding-top: 0px;">
+			<form role="form" name="insertdeliveryform">
+				<div class="row">	
+					<label class="col-md-2">고객명 </label>
+					<label class="col-md-4">
+						<input type="text" class="form-control" id="customernamepopup"  readonly="true" th:value="${counsel.customername}" name="customernamepopup" />
+					</label>	
+		      	</div>
+				<div class="row">	
+					<label class="col-md-2">연락처 </label>
+					<label class="col-md-4">
+						<input type="text" class="form-control phone" id="customerphonenumberpopup" readonly="true" th:value="${counsel.customerphonenumber}" name="customerphonenumberpopup" />	
+					</label>	
+		      	</div>
+				<div class="row">	
+					<label class="col-md-2">요청구분 </label>
+					<label class="col-md-10">
+						<select name="categorypopup" id="categorypopup" class="form-control">
+							<option th:each="resultcode : ${categoryList}" th:value="${resultcode.code}" th:text="${resultcode.codename}" th:selected="${counsel.category==resultcode.code}"/>
+						</select>       
+					</label>	
+				</div>
+				<div class="row">	
+					<label class="col-md-2">상담경로 </label>
+					<label class="col-md-10">
+						<select name="inboundpathpopup" id="inboundpathpopup" class="form-control">
+							<option th:each="resultcode : ${inboundpathList}" th:value="${resultcode.code}" th:text="${resultcode.codename}" th:selected="${counsel.inboundpath==resultcode.code}"/>
+						</select>       
+					</label>	
+				</div>
+				<div class="row">	
+					<label class="col-md-2">상태 </label>
+					<label class="col-md-10">
+						<select name="statepopup" id="statepopup" class="form-control">
+							<option th:each="resultcode : ${counselstateList}" th:value="${resultcode.code}" th:text="${resultcode.codename}" th:selected="${counsel.state==resultcode.code}"/>
+						</select>       
+					</label>	
+				</div>
+				<div class="row">	
+					<label class="col-md-2">요청내용 </label>
+					<label class="col-md-10">
+						<textarea id="memopopup" class="form-control" style="height: 50px; width:700px;" name="memopopup" th:text="${counsel.memo}"></textarea>
+					</label>	
+				</div>
+				<div class="row">	
+					<label class="col-md-2">답변내용 </label>
+					<label class="col-md-10">
+						<textarea id="answerpopup" class="form-control" style="height: 50px; width:700px;" name="answerpopup"  th:text="${counsel.answer}"></textarea>
+					</label>	
+				</div>
+				<div class="col-6 col-md-6">
+					<div class="form-group">
+						<input type="hidden" id="customernumberpopup" th:value="${counsel.customernumber}"/>				
+						<input type="hidden" id="counsellingdatepopup" th:value="${counsel.counsellingdate}"/>				
+						<input type="hidden" id="counsellingtimepopup" th:value="${counsel.counsellingtime}"/>				
+						<input type="hidden" id="saveflag" th:value="${counsel.saveflag}"/>				
+					</div>
+				</div>	
+			</form>
+			<div class="row">	
+				<button id="cancelbutton" class="btn btn-primary pull-right"  role="button">취소</button>
+				<button id="savebutton" class="btn btn-primary pull-right"  role="button">저장</button>
+			</div>
+		</div>
+	</div>
+</div>
+</div>

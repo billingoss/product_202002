@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout" layout:decorator="layout/default">
+<!-- index.html 고유 CSS 추가 -->
+<th:block layout:fragment="css">
+</th:block>
+<!-- index.html 고유 스크립트 추가 -->
+<th:block layout:fragment="script">
+<!-- <script src="http://dmaps.daum.net/map_js_init/postcode.v2.js"></script> -->
+<script src="https://ssl.daumcdn.net/dmaps/map_js_init/postcode.v2.js"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+function getData(page) {
+	
+	var queryString = $("form[name=searchForm]").serialize();
+	queryString = queryString + '&page='+page+'&perPageNum=10&pagingYn=Y';
+	queryString = queryString.replace(/-/g, '');
+	
+	$.ajax({
+		method : 'get',
+		url : '/counselling/getcustomercounsellinglist',
+		data : queryString, 
+		dataType : 'json',
+		success : handleData
+	});
+}
+
+function handleData(data) {
+	debugger;
+	
+	json = data.lists;
+	pageMaker = data.pageMaker; 
+
+	$('#totalCount').html(pageMaker.totalCount);
+	$('#counsellingTbody').empty();
+	var trHTML = '';
+
+	if (json.length == 0) {
+		trHTML = '<tr class="no_empty"><td colspan=9><div class="data-empty"><img src="/resources/images/common/img_no_empty.png" alt="데이터 없음" /><span class="txt_empty">검색 결과가 없습니다.</span></div></td></tr>';
+	} else {
+		$.each(json, function(i, item) {
+			trHTML += '<tr>'
+				   +  '<td><span class="trp checkbox-box"><input type="checkbox" id="checkbox_all'+(i+1)+'" class="js_item" name="check" value="'+item.customerNumber+'|'+item.counsellingDate+'|'+item.counsellingTime+'"/><i></i><label for="checkbox_all'+(i+1)+'"></label></span></td>'
+				   +  '<td>' + ((pageMaker.cri.page-1)*10+i+1) + '</td>'
+				   +  '<td>' + item.categoryName + '</td>'
+				   +  '<td>' + (item.conNumber==0?'':item.conNumber) + '</td>'
+				   +  '<td class="tal ellipsis">' + item.title + '</td>'
+				   +  '<td>' + (item.state=='PROGRESS'?'<span class="fail">':'') + item.stateName + (item.state=='PROGRESS'?'</span>':'') + '</td>'
+				   +  '<td>' + formatDate(item.counsellingDate) + ' ' + formatTime(item.counsellingTime.substring(0,4)) + '</td>'
+				   +  '<td>' + (item.state=='DONE'?formatDateTime(item.auditDateTime):'') + '</td>'
+				   +  '<td>' + item.employeeName + '</td>'
+				   +  '</tr>';
+		});
+	}
+	
+	$('#counsellingTbody').append(trHTML);
+	pagingProc(pageMaker);
+}
+
+function getPagingData(page){
+	getData(page);
+}
+
+function getCustomerInformation() {
+	//고객정보 조회
+	$.ajax({
+		method : 'get',
+		url : '/customer/customerinformation/'+$('#customerNumber').val(),
+		success : function(data) {
+			$('#customerInformation').html(data);
+			$('#customerName').val($('#informationCustomerName').text());
+			$('#phoneNumber').val($('#informationPhoneNumber').text());
+		}
+	});
+}
+
+$(document).ready(function(){
+	
+	getCustomerInformation();
+
+	getData(1);	
+	
+	//목록버튼 클릭
+	$('#listButton').click(function(){
+		movePage('/customer/customerlist/'+$('#searchCondition').val(),3,1);
+	});
+	
+	//고객수정 팝업
+    var popCustomer = $("#updateButton").trpLayerFixedPopup("#popCustomerDiv");
+
+	//수정버튼 클릭
+	$('#updateButton').click(function($e){
+        $e.preventDefault();
+        popCustomer.open(this);
+		updateCustomer($('#customerNumber').val());
+	});
+	
+    //고객수정 팝업 종료
+	$("body").on("click", "#popCustomerDiv .btn_close, #popCustomerDiv .btn_cancel", function($e) {
+	    $e.preventDefault();
+	    popCustomer.close();
+	});
+	
+	//쿠톤탭
+	$('#couponButton').click(function(){
+		
+	});
+
+	var popCounselling = $("#insertButton").trpLayerFixedPopup("#popCounsellingDiv");
+
+    //상담등록
+	$('#insertButton').click(function($e){
+	    $e.preventDefault();
+	    popCounselling.open(this);
+	    insertCounselling($('#customerNumber').val(), $('#customerName').val(), $('#phoneNumber').val());
+	});
+    
+    //상담수정
+	$('#counsellingTbody').on('click','td',function($e){
+		if (!$(this).find('input[type=checkbox]').val()){
+	        $e.preventDefault();
+	        popCounselling.open(this);
+			var counselling = $(this).parents('tr').find('input[name=check]').val().split('|');
+			updateCounselling(counselling[0], counselling[1], counselling[2]);
+		}
+	});
+	
+    //상담팝업 종료
+	$("body").on("click", "#popCounsellingDiv .btn_close, #popCounsellingDiv .btn_cancel", function($e) {
+	    $e.preventDefault();
+	    popCounselling.close();
+	});
+
+	//삭제버튼
+	$('#deleteButton').click(function(){
+		var param = new Array();
+		$('input[name=check]:checked').each(function(){
+			param.push($(this).val());
+		});
+		if (param.length > 0){
+			jQuery.ajaxSettings.traditional = true;
+			$.ajax({
+				method : 'post',
+				url : '/counselling/deletecounselling',
+				data : {counselling : param},
+				success : function(data) {
+					showAlert('저장되었습니다.');
+					getData(1);
+				}
+			});
+		} else {
+			showAlert("삭제할 상담내역을 선택하십시오.");
+		}
+	});
+	
+	$(".check-all").click(function() {
+		$(".js_item").prop("checked", $(this).is(":checked"));
+		if ($(this).is(":checked")) {
+			$(".js_item:not(.check-all)").parents("tr").addClass("selected");
+		} else {
+			$(".js_item:not(.check-all)").parents("tr").removeClass("selected");
+		}
+	});
+
+	$(".js_item").click(function() {
+		if ($(this).is(":checked")) {
+			$(this).parents("tr").addClass("selected");
+		} else {
+			$(this).parents("tr").removeClass("selected");
+		}
+		if ($(".js_item:not(.check-all)").length == $(".js_item:not(.check-all):checked").length) {
+			$(".check-all").prop("checked", true);
+		} else {
+			$(".check-all").prop("checked", false);
+		}
+	});
+});
+/*]]>*/
+</script>
+</th:block>
+<!-- container -->
+<div id="container" layout:fragment="contentFragment">
+<form name="searchForm" onsubmit="return false;">
+<input type="hidden" id="customerNumber" name="customerNumber" th:value="${customerNumber}"/>
+<input type="hidden" id="customerName" name="customerName"/>
+<input type="hidden" id="phoneNumber" name="phoneNumber"/>
+<input type="hidden" id="searchCondition" name="searchCondition" th:value="${searchCondition}"/>
+</form>
+	<div id="contents" class="customer">
+		<h2 class="h2">고객관리</h2>
+		<section>
+			<div class="cont-box wfull">
+				<div class="con_title mt0">
+					<h3 class="h3">고객정보</h3>
+				</div>
+				<!--고객정보//-->
+				<div id="customerInformation"></div>
+				<div class="btn_set-center mt30">
+					<a class="btn btn_green btn_m radius mr5" role="button" href="#none" id="updateButton">수정</a>
+					<a class="btn btn_default btn_m radius" href="#none" role="button" id="listButton">목록</a>
+				</div>
+
+				<!--리스트//-->
+				<div class="table-wrap mt60">
+					<div class="table-header ">
+						<div class="con_title">총 <em id="totalCount">0</em>건</div>
+					</div>
+					<table class="table_list" id="check_table">
+						<colgroup>
+							<col style="width:5%"/>
+							<col style="width:5%"/>
+							<col style="width:11%"/>
+							<col style="width:10%"/>
+							<col style="width:auto"/>
+							<col style="width:8%"/>
+							<col style="width:10%"/>
+							<col style="width:10%"/>
+							<col style="width:8%"/>
+						</colgroup>
+						<thead>
+							<tr>
+								<th>
+									<span class="trp checkbox-box">
+										<input id="checkbox_all1" class="js_item check-all" type="checkbox" name=""/>
+										<i></i>
+										<label for="checkbox_all1"></label>
+									</span>
+								</th>
+								<th>번호</th>
+								<th>상담유형</th>
+								<th>주문번호</th>
+								<th>제목</th>
+								<th>상태</th>
+								<th>등록일시</th>
+								<th>처리일시</th>
+								<th>처리자</th>
+							</tr>
+						</thead>
+						<tbody id="counsellingTbody">
+						</tbody>
+					</table>
+					<div class="paging-area">
+						<div class="btn_set">
+							<div class="fl">
+								<button class="btn btn_gray btn_w" type="button" id="deleteButton">삭제</button>
+							</div>
+							<div class="fr">
+								<button class="btn btn_default btn_w" type="button" id="insertButton"><i class="icon_add">등록</i></button>
+							</div>
+						</div>
+						<div class="paging" id="pagination">
+						</div>
+					</div>
+				</div>
+
+			</div>
+		</section>
+	</div>
+</div>
+<span id="popSpan" layout:fragment="popupFragment" >      
+  	<div id="customerDiv" th:replace="online/customer/customer::customerPopup"></div>
+  	<div id="counsellingDiv" th:replace="online/counselling/counselling::counsellingPopup"></div>
+  	<div id="customerSearchDiv" th:replace="online/customer/customersearch::customerSearchPopup"></div>
+  	<div id="contractSearchDiv" th:replace="online/contract/contractsearch::contractSearchPopup"></div>
+</span>        
+<!-- //container -->
+</html>

@@ -1,0 +1,213 @@
+<script type="text/javascript">
+$(document).ready(function() 
+{
+debugger;
+	$('#searchbt').click(function(){
+		debugger;
+		
+		var queryString = $("form[name=productForm]").serialize() ;
+		  	queryString = queryString.replace(/-/g, '');
+			$.ajax({
+				   method : 'get',
+		              url : '/contract/getProductListPopup',
+		              data : queryString,
+		              dataType : 'json',
+		              error: function(xhr, status, error){
+		                  alert(error);
+		              },
+		              success : function(json){
+		            	  debugger;
+		           	   	$('#productPopupList').empty();
+			           	   var trHTML = '';
+			           	   //debugger;
+			           	   if(json.length == 0)
+			           	   {
+			           		   Common.Dialog.alert({
+	   		  						title:''
+	           						, content: '데이터가 없습니다.'
+	       						});
+			           	   }
+				        $.each(json, function (i, item) {
+				     	  
+				            trHTML += '<tr>' 
+				         	       + '<td><input class="choiceCheck" name="user_checkedProduct" type="checkbox" value=""/></td>'
+				                   + '<td style="display:none;">' + item.productId + '</td>'
+				                   + '<td>' + item.productTypeCodeName + '</td>'
+				                   + '<td>' + item.productName + '</td>'
+				                   + '<td style="display:none;">' + item.productType + '</td>'
+				                   + '<td style="display:none;">' + item.packagePriceReferenceYn + '</td>'
+				                   + '<td>' + item.packagePriceReferenceYnCodeName + '</td>'
+				                   + '<td style="display:none;">' + item.priceAmount + '</td>'
+				                   + '<td style="display:none;">'+item.priceAmountUnit+'</td>'
+				                   + '<td style="text-align:right;">'+item.priceAmount+item.priceAmountUnit+'</td>'
+				                   + '<td style="display:none;">' + item.taxObjectYn + '</td>'
+				                   + '<td style="display:none;">' + item.packageVarietyYn + '</td>'
+				                   + '<td style="display:none;">' + item.packageYn + '</td>'
+				                   + '<td style="display:none;">' + item.packagePriceBandwidth + '</td>'
+				                   + '<td>' + item.productDescription + '</td>'	                             
+				                   + '</tr>';
+				        });
+				        
+				        $('#productPopupList').append(trHTML);
+				        
+				        
+				    }
+	  		});
+	
+	});
+
+
+	$('#searchbt').trigger('click');
+	
+	
+	//모달에서 선택버튼 클릭시 체크된 Row의 데이터 모화면에 가져오고 모달 종료.
+	$("#selectedProductBtn").click(function(){
+	debugger;
+		var rowData = new Array();
+		var tdArr = new Array();
+		
+		var trHTML = '';
+			
+		var checkbox = $("input[name=user_checkedProduct]:checked");
+		//체크된 체크박스 값을 가져온다.
+		checkbox.each(function(i){
+			
+			var tr = checkbox.parent().parent().eq(i);
+			var td = tr.children();
+			
+			rowData.push(tr.text());
+			
+			var productId            = td.eq(1).text();
+			var productTypeCodeName  = td.eq(2).text();
+			var productName     	 = td.eq(3).text();
+			var productType          = td.eq(4).text();
+			var packagePriceReferenceYn = td.eq(5).text();
+			var packagePriceReferenceYnCodeName = td.eq(6).text();
+			var priceAmount          = td.eq(7).text();
+			var priceAmountUnit      = td.eq(8).text();
+			var taxObjectYn          = td.eq(10).text();
+			var packageVarietyYn     = td.eq(11).text();
+			var packageYn               = td.eq(12).text();
+			var packagePriceBandWidth   = td.eq(13).text();
+			
+			trHTML += '<tr>' 
+	   	         + '<td ><input  type="checkbox" name="user_checkedProduct" value=""/><input type="hidden" id="productName" name="productName" value="'+productName+'" /></td>'
+	             + '<td style ="text-align:center;">' + productTypeCodeName + '<input type="hidden" id="productType" name="productType" value="'+productType+'"/></td>'
+	             + '<td style ="text-align:center;">' + productName + '<input type="hidden" id="productId" name="productId" value="'+productId+'" /></td>'
+	             + '<td style ="text-align:center;">' + packagePriceReferenceYnCodeName + '<input type="hidden" id="packagePriceReferenceYn" name="packagePriceReferenceYn" value="'+packagePriceReferenceYn+'"/></td>'
+	             + '<td style ="text-align:right;">' + priceAmount+priceAmountUnit + '<input type="hidden" id="productPrice" name="priceAmount" value="'+parseInt(priceAmount.replace(/,/g, ''))+'"/><input type="hidden" id="packageVarietyYn" name="packageVarietyYn" value="'+packageVarietyYn+'"/></td>'
+	             + '<td style ="text-align:center; display:none;">' + packagePriceBandWidth + '<input type="hidden" id="packageYn" name="packageYn" value="'+packageYn+'"/></td>'
+	             + '<td style ="text-align:center;"><input type="text" style ="text-align:center; width:150px;" id="productQuantity" name="productQuantity" value="1" /></td>'
+	             + '</tr>';
+	             
+	             
+	   	})
+		
+	    $('#productListBody').empty();
+	   	$('#productListBody').append(trHTML);   	
+	   	
+	   	//20181130
+	   	productChoice();
+	   	
+		$('.modal').modal('hide');
+	});
+	
+	//체크박스 클릭시 다른 체크박스 해제
+	$('#productPopupList').on('click', 'input[type=checkbox]', function () {
+		  $('#productPopupList input[type=checkbox]').prop('checked', false);
+		  $(this).prop('checked', true);	
+	});
+	
+	$('#productPopupList').on("click", " tr", function(){
+		debugger;
+		// 상품 row 클릭시 체크박스 변경 
+		$('#productPopupList input[type=checkbox]').prop('checked', false);
+		$('td input:checkbox', this).prop('checked', true);
+	});
+	
+	$('#productPopupList').on("dblclick", " tr", function(){
+		debugger;
+			var tr = $(this);
+			var td = tr.children();     
+			
+			$("#selectedProductBtn").trigger('click');
+	});
+});
+/*document.ready end*/
+
+</script>
+
+<!-- modal list KKH추가 -->
+<!-- Modal -->
+<div class="modal-header modal-popup-header">
+	<h5 class="modal-title">
+		▶ 상품정보
+		<button type="button" class="close" data-dismiss="modal">&times;</button>
+	</h5>
+</div>
+<div class="modal-body" style="padding-bottom: 30px;">
+	<div class="panel panel-heading"
+		style="vertical-align: middle; text-align: center; margin-left: auto; margin-right: auto; background-color: #f5f5f5; padding-bottom: 0px;">
+		<div class="form-section">
+			<div class="row" style="text-align: center">
+				<form id="productForm" name="productForm" class="form-inline" role="form" onsubmit="return false;" style="margin-bottom: 10px;">
+					<div class="col-md-3">
+						<div class="form-group">
+					       <span>상품유형</span>          
+					         <select name="productType">
+					           <option value="">전체</option>
+					           <option value="NORMAL">일반</option>
+					           <option value="PACKAGE">패키지</option>
+					           <option value="COUPONPRICE">쿠폰금액형</option>
+					           <option value="COUPONCOUNT">쿠폰횟수형</option>
+					         </select>       
+					      </div> 
+					</div>
+					<div class="col-md-4">
+						<div class="form-group">
+							<span>상품명</span> <input type="text" class=" form-control-sm" name ="productName"/>
+						</div>
+					</div>
+					<div class="col-md-4">
+						<button id="searchbt" type="button" class="btn btn-primary">조회</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="panel-title">
+				<strong>상품 목록</strong>
+			</h4>
+		</div>
+		<div class="panel-body" style="height:650px; overflow:auto;">
+				<table class="table table-hover table-bordered" id="detailDialogTable">
+					<thead class="table-header-bg">
+						<tr>
+							<th></th>
+							<th style="display:none;">상품ID</th>
+							<th>상품유형</th>
+							<th>상품명</th>
+							<th>패키지유형</th>
+							<th style="display:none;">상품타입</th>
+							<th>상품가격</th>
+							<th style="display:none;">과세여부</th>
+							<th style="display:none;">패키지실제사용여부</th>
+							<th style="display:none;">패키지여부</th>
+							<th style="display:none;">패키지가격범위</th>
+							<th>상품설명</th>
+						</tr>
+					</thead>
+					<tbody id="productPopupList" class="table-body-row">
+						
+					</tbody>					
+				</table>
+			</div>
+			<button class="pull-right btn btn-primary" style="margin: 8px;" id ="selectedProductBtn" onchange="productTotalsum()" >선택</button>
+		</div>
+</div>
+
+<!-- modal list END -->

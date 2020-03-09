@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.api.repository.CustomerRepository">
+
+<resultMap id="customerSearch" type="com.api.model.customer.Customer"> 
+	<result property="customerNumber" column="customernumber"/> 
+	<result property="customerName" column="customername"/>
+	<result property="phoneNumber" column="phonenumber"/>
+	<result property="baseAddress" column="baseaddress"/> 
+	<result property="detailAddress" column="detailaddress"/> 
+	<result property="totalCount" column="totalcount"/>
+</resultMap>
+<select id="getCustomerSearch" resultMap="customerSearch"  parameterType = "Customer" >
+select a.customernumber, a.customername, a.phonenumber, b.baseaddress, b.detailaddress, sum(1) over() as totalcount
+from   customer a, address b
+where  a.providernumber = #{providerNumber}
+<if test='!"".equals(customerName)'>
+and    a.customername like concat(#{customerName},'%')
+</if>
+<if test='!"".equals(phoneNumber)'>
+and    a.phonenumber like concat(#{phoneNumber},'%')
+</if>
+and    a.addressid = b.addressid
+order by a.customername, a.phonenumber
+limit #{pageStart}, #{perPageNum}
+</select>
+
+<resultMap id="customerList" type="com.api.model.customer.Customer"> 
+	<result property="customerNumber" column="customernumber"/> 
+	<result property="customerName" column="customername"/>
+	<result property="phoneNumber" column="phonenumber"/>
+	<result property="baseAddress" column="baseaddress"/> 
+	<result property="detailAddress" column="detailaddress"/> 
+	<result property="totalCount" column="totalcount"/>
+	<result property="cousellingCount" column="cousellingcount"/>
+	<result property="createDate" column="createdate"/>
+	<result property="auditDateTime" column="auditdatetime"/>
+	<result property="employeeName" column="employeename"/>
+</resultMap>
+<select id="getCustomerList" resultMap="customerList"  parameterType = "Customer" >
+select a.customernumber, a.customername, a.phonenumber, a.baseaddress, a.detailaddress, a.totalcount, substr(a.createdate,1,8) as createdate,
+      (select count(*) from counsellinghistory b where b.customernumber = a.customernumber and b.state = 'PROGRESS') as counsellingcount,
+       date_format(a.auditdatetime,'%Y%m%d%H%i') as auditdatetime,
+       nvl((select f.employeename from login e, employee f where e.loginid = a.auditid and e.employeenumber = f.employeenumber),a.auditid) as employeename
+from  (select a.customernumber, a.customername, a.phonenumber, a.createdate, b.baseaddress, b.detailaddress, sum(1) over() as totalcount, a.auditdatetime, a.auditid
+       from   customer a, address b
+       where  a.providernumber = #{providerNumber}
+<if test='!"".equals(startDate) and !"".equals(endDate)'>
+       and    a.createdate between #{startDate} and #{endDate}
+</if>
+<if test='!"".equals(customerName)'>
+       and    a.customername like concat(#{customerName},'%')
+</if>
+<if test='!"".equals(phoneNumber)'>
+       and    a.phonenumber like concat(#{phoneNumber},'%')
+</if>
+       and    a.addressid = b.addressid
+<if test='"customerNameA".equals(sortingFlag)'>
+       order by a.customername, a.phonenumber, a.createdate desc
+</if>
+<if test='"customerNameD".equals(sortingFlag)'>
+       order by a.customername desc, a.phonenumber, a.createdate desc 
+</if>
+<if test='"createDateA".equals(sortingFlag)'>
+       order by a.createdate, a.customername, a.phonenumber
+</if>
+<if test='"createDateD".equals(sortingFlag)'>
+       order by a.createdate desc, a.customername, a.phonenumber
+</if>
+<if test='"Y".equals(pagingYn)'>
+       limit #{pageStart}, #{perPageNum}
+</if>
+       ) a
+</select>
+
+<resultMap id="customer" type="com.api.model.customer.Customer"> 
+	<result property="customerNumber" column="customernumber"/> 
+	<result property="customerName" column="customername"/>
+	<result property="phoneNumber" column="phonenumber"/>
+	<result property="email" column="email"/>
+	<result property="birthDay" column="birthday"/>
+	<result property="addressId" column="addressid"/>
+	<result property="remark" column="remark"/>
+	<result property="sex" column="sex"/>
+	<result property="zipCode" column="zipcode"/> 
+	<result property="baseAddress" column="baseaddress"/> 
+	<result property="detailAddress" column="detailaddress"/> 
+</resultMap>
+<select id="getCustomer" resultMap="customer"  parameterType = "Customer" >
+select a.customernumber, a.customername, a.phonenumber, a.email, a.birthday, a.addressid, a.remark, a.sex,
+       b.zipcode, b.baseaddress, b.detailaddress
+from   customer a, address b
+where  a.customernumber = #{customerNumber}
+and    a.addressid = b.addressid
+</select>
+
+<insert id="insertCustomer" useGeneratedKeys="true" keyProperty="customerNumber">
+insert into customer (customername, providernumber, sex, birthday, email, phonenumber, 
+                      addressid, deliveryaddressid, customertype, createdate, currentdate, deletedate, 
+                      cellphonenumber, channelid, channelcustomernumber, remark, auditid, auditdatetime)
+values (#{customerName}, #{providerNumber}, #{sex}, #{birthDay}, #{email}, #{phoneNumber}, 
+        #{addressId}, #{addressId}, '', date_format(now(),'%Y%m%d'), date_format(now(),'%Y%m%d'), '', 
+        #{phoneNumber}, '', '', #{remark}, #{auditId}, now())
+</insert>
+
+<update id="updateCustomer">
+update customer set customername = #{customerName}, phonenumber = #{phoneNumber}, birthday = #{birthDay}, sex = #{sex}, email = #{email},
+                    addressid = #{addressId}, remark = #{remark}, currentdate = date_format(now(),'%Y%m%d'), auditid = #{auditId}, auditdatetime =  now()
+where  customernumber = #{customerNumber}
+</update>
+
+<select id="getCustomerNumber" resultMap="customer"  parameterType = "Customer" >
+select customernumber 
+from   customer a
+where  a.providernumber = #{providerNumber}
+and    a.customername = #{customerName}
+and    a.phonenumber = #{phoneNumber}
+</select>
+
+</mapper> 

@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.api.repository.CounsellingRepository">
+
+<resultMap id="counsellingList" type="com.api.model.counselling.Counselling"> 
+	<result property="customerNumber" column="customernumber"/> 
+	<result property="counsellingDate" column="counsellingdate"/> 
+	<result property="counsellingTime" column="counsellingtime"/> 
+	<result property="category" column="category"/>
+	<result property="categoryName" column="categoryname"/>
+	<result property="conNumber" column="connumber"/>
+	<result property="title" column="title"/>
+	<result property="state" column="state"/>
+	<result property="stateName" column="statename"/>
+	<result property="auditDateTime" column="auditdatetime"/>
+	<result property="customerName" column="customername"/>
+	<result property="phoneNumber" column="phonenumber"/>
+	<result property="employeeName" column="employeename"/>
+	<result property="totalCount" column="totalcount"/>
+</resultMap>
+<select id="getCounsellingList" resultMap="counsellingList"  parameterType = "Counselling" >
+select a.customernumber, a.counsellingdate, a.counsellingtime, 
+       a.category, (select codename from codegroupdetail z where z.codegroupid = 'CATEGORY' and z.code = a.category) as categoryname,
+       a.connumber, a.title, 
+       a.state, (select codename from codegroupdetail z where z.codegroupid = 'COUNSELSTATE' and z.code = a.state) as statename,
+       date_format(a.auditdatetime,'%Y%m%d%H%i') as auditdatetime,
+       b.customername, b.phonenumber,
+       nvl((select f.employeename from login e, employee f where e.loginid = a.auditid and e.employeenumber = f.employeenumber),a.auditid) as employeename,
+       sum(1) over() as totalcount
+from   counsellinghistory a, customer b
+where  a.counsellingdate between #{startDate} and #{endDate}
+<if test='!"".equals(state)'>
+and    a.state = #{state}
+</if>
+<if test='"".equals(state)'>
+and    a.state != 'DELETE'
+</if>
+<if test='conNumber != 0'>
+and    a.connumber = #{conNumber}
+</if>
+<if test='!"".equals(category)'>
+and    a.category = #{category}
+</if>
+<if test='!"".equals(title)'>
+and    a.title like concat('%',#{title},'%')
+</if>
+and    a.customernumber = b.customernumber
+and    b.providernumber = #{providerNumber}
+<if test='!"".equals(customerName)'>
+and    b.customername like concat(#{customerName},'%')
+</if>
+<if test='!"".equals(phoneNumber)'>
+and    b.phonenumber like concat(#{phoneNumber},'%')
+</if>
+order by a.counsellingdate desc, a.counsellingtime desc, b.customername
+<if test='"Y".equals(pagingYn)'>
+limit #{pageStart}, #{perPageNum}
+</if>
+</select>
+
+<resultMap id="counselling" type="com.api.model.counselling.Counselling"> 
+	<result property="customerNumber" column="customernumber"/> 
+	<result property="counsellingDate" column="counsellingdate"/> 
+	<result property="counsellingTime" column="counsellingtime"/> 
+	<result property="category" column="category"/>
+	<result property="inboundPath" column="inboundpath"/>
+	<result property="state" column="state"/>
+	<result property="title" column="title"/>
+	<result property="memo" column="memo"/>
+	<result property="answer" column="answer"/>
+	<result property="conNumber" column="connumber"/>
+	<result property="customerName" column="customername"/>
+	<result property="phoneNumber" column="phonenumber"/>
+	<result property="productName" column="productname"/>
+	<result property="registrationDateTime" column="registrationdatetime"/>
+	<result property="productCount" column="productcount"/>
+</resultMap>
+<select id="getCounselling" resultMap="counselling"  parameterType = "Counselling" >
+select a.customernumber, a.counsellingdate, a.counsellingtime, a.category, a.title, a.memo, a.inboundpath, a.answer, a.state, a.connumber, 
+       a.customername, a.phonenumber,
+       concat(a.productname,if(a.productcount>1,concat(' 외 ',(a.productcount-1),'건'),'')) as productname,
+       a.registrationdatetime
+from  (select a.customernumber, a.counsellingdate, a.counsellingtime, a.category, a.title, a.memo, a.inboundpath, a.answer, a.state, a.connumber, 
+              b.customername, b.phonenumber,
+              nvl((select productname from contractproduct c where c.connumber = a.connumber limit 1),'') as productname,
+             (select substr(registrationdatetime,1,8) from contract d where d.connumber = a.connumber) as registrationdatetime,
+             (select count(*) from contractproduct e where e.connumber = a.connumber) as productcount
+       from   counsellinghistory a, customer b
+       where  a.customernumber = #{customerNumber}
+       and    a.counsellingdate = #{counsellingDate}
+       and    a.counsellingtime = #{counsellingTime}
+       and    a.customernumber = b.customernumber) a
+</select>
+
+<insert id="insertCounselling">
+insert into counsellinghistory (customernumber, counsellingdate, counsellingtime, category, inboundpath, state, title, memo, answer, 
+                                connumber, invoicenumber, invoicedate, createuser, auditid, auditdatetime)
+values (#{customerNumber},date_format(now(),'%Y%m%d'),date_format(now(),'%H%i%s'),#{category},#{inboundPath},#{state},#{title},#{memo},#{answer},
+        #{conNumber},null,'',#{auditId},#{auditId},now())
+</insert>
+
+<update id="updateCounselling">
+update counsellinghistory a set a.category = #{category}, a.inboundpath = #{inboundPath}, a.state = #{state}, a.connumber = #{conNumber},
+                          a.title = #{title}, a.memo = #{memo}, a.answer = #{answer}, a.auditid = #{auditId}, a.auditdatetime = now()
+where  a.customernumber = #{customerNumber}
+and    a.counsellingdate = #{counsellingDate}
+and    a.counsellingtime = #{counsellingTime}
+</update>
+
+<delete id="deleteCounselling">
+update counsellinghistory set state = 'DELETE', auditId = #{auditId}, auditdatetime = now()
+where  customernumber = #{customerNumber}
+and    counsellingdate = #{counsellingDate}
+and    counsellingtime = #{counsellingTime}
+</delete>
+
+<resultMap id="counsellingListByCustomerNumber" type="com.api.model.counselling.Counselling"> 
+	<result property="customerNumber" column="customernumber"/> 
+	<result property="counsellingDate" column="counsellingdate"/> 
+	<result property="counsellingTime" column="counsellingtime"/> 
+	<result property="category" column="category"/>
+	<result property="categoryName" column="categoryname"/>
+	<result property="inboundPathName" column="inboundpathname"/>
+	<result property="inboundPath" column="inboundpath"/>
+	<result property="state" column="state"/>
+	<result property="stateName" column="statename"/>
+	<result property="title" column="title"/>
+	<result property="memo" column="memo"/>
+	<result property="answer" column="answer"/>
+	<result property="conNumber" column="connumber"/>
+	<result property="auditDateTime" column="auditdatetime"/>
+	<result property="employeeName" column="employeename"/>
+	<result property="totalCount" column="totalcount"/>
+</resultMap>
+<select id="getCounsellingListByCustomerNumber" resultMap="counsellingListByCustomerNumber"  parameterType = "Counselling" >
+select a.customernumber, a.counsellingdate, a.counsellingtime, 
+       a.category, (select codename from codegroupdetail z where z.codegroupid = 'CATEGORY' and z.code = a.category) as categoryname, 
+       a.inboundpath, (select codename from codegroupdetail z where z.codegroupid = 'INBOUNDPATH' and z.code = a.inboundpath) as inboundpathname,
+       a.state, (select codename from codegroupdetail z where z.codegroupid = 'COUNSELSTATE' and z.code = a.state) as statename,
+       a.title, a.memo, a.answer, a.connumber as connumber,
+       date_format(a.auditdatetime,'%Y%m%d%H%i') as auditdatetime,
+       nvl((select f.employeename from login e, employee f where e.loginid = a.auditid and e.employeenumber = f.employeenumber),a.auditid) as employeename,
+       sum(1) over() as totalcount
+from   counsellinghistory a
+where  a.customernumber = #{customerNumber}
+and    a.state != 'DELETE'
+order by a.counsellingdate desc, a.counsellingtime desc
+<if test='"Y".equals(pagingYn)'>
+limit #{pageStart}, #{perPageNum}
+</if>
+
+</select>
+
+</mapper> 

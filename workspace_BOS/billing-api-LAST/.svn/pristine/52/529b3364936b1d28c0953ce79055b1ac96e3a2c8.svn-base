@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/web/thymeleaf/layout" xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity4">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, width=device-width, user-scalable=no"/>
+<meta name="format-detection" content="telephone=no"/>
+<title>닥터노아</title>
+<link href="/mobileResources/doctornoah/css/default.css" rel="stylesheet" type="text/css"/>
+<link href="/mobileResources/doctornoah/css/swiper.css" rel="stylesheet" type="text/css"/>
+<link href="/mobileResources/doctornoah/css/jquery-ui.css" rel="stylesheet" type="text/css"/>
+<script src="/mobileResources/js/library/jquery.min.js"></script>
+<script src="/mobileResources/doctornoah/js/jquery-ui.js"></script>
+<script src="/mobileResources/doctornoah/js/swiper.min.js"></script>
+<script src="/js/commonlib.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+/*<![CDATA[*/
+$(document).ready(function(){
+	$('#saleButton').click(function(){
+		if ($('input[name=chk]').length == 0) {
+			alert('판매중인 상품이 없습니다.');
+			return;
+		} else {
+			if (!$('input[name=chk]:checked').val()){
+				alert('상품을 선택하십시오.');
+				return;
+			} else {
+				$('#productGroupId').val($('input[name=chk]:checked').val().split('|')[0]);
+			}
+		}
+		
+		if ($('#optionYn').val() == 'OPTIONY' || $('#optionYn').val() == 'OPTIONFREE') {
+			if ($('#customerRemark').val().length > 10) {
+				alert('각인문구는 10자까지만 가능합니다.');
+				$('#customerRemark').focus();
+				return;
+			}
+		}
+		
+		var f = document.saleForm;
+		f.action = '/billletter/productsale';
+		f.submit();
+	});
+
+	$('input[name=chk]').click(function(){
+		$('input[name=chk]').prop('checked',false);
+		$(this).prop('checked',true);
+		
+		if ($('input[name=chk]:checked').val().split('|')[1] == 'Y' || $('input[name=chk]:checked').val().split('|')[1] == 'F') {
+			$('#customerRemark').prop('disabled',false);
+		} else {
+			$('#customerRemark').val('');
+			$('#customerRemark').prop('disabled',true);
+		}
+	});
+	
+	$('#customerRemark').keyup(function(event){
+		if ($('#customerRemark').val().indexOf('<') > -1 || $('#customerRemark').val().indexOf('>') > -1) {
+			$('#customerRemark').val($('#customerRemark').val().replace('<',''));
+			$('#customerRemark').val($('#customerRemark').val().replace('>',''));
+		}
+	});
+});	
+/*]]>*/
+</script>
+</head>
+<body id="saleBody">
+<div id="wrap">
+<form name="saleForm" onsubmit="return false;">
+<input type="hidden" id="channelCustomerNumber" name="channelCustomerNumber" th:value="${contractInsert.channelCustomerNumber}"/>
+<input type="hidden" id="productGroupId" name="productId" />
+<input type="hidden" id="providerNumber" name="providerNumber" th:value="${contractInsert.providerNumber}"/>
+<input type="hidden" id="optionYn" name="optionYn" th:value="${productGroupInfo.optionValue1}"/>
+ 	<div class="fix_wrap">
+		<!-- 블랙에디션 -->
+		<img th:src="${productGroup.optionValue2}" th:alt="${productGroup.description}" />
+		<!--// 블랙에디션 -->
+		<!-- 제품선택 -->
+		<div class="box tit_img"><!-- 20191118 수정 -->
+			<img src="/mobileResources/doctornoah/img/selectionof_product.png" alt="제품선택"/><!-- 20191118 수정 -->
+		</div>
+        <div class="list_form apply list_allChk">
+            <ul id="checkList" class="list">
+                <li th:each="result:${productList}">
+                    <div class="rad_wrap">
+                        <input type="radio" name="chk" th:id="${'chk'+result.productId}" th:value="${result.productId+'|'+result.optionYn}"/>
+                        <label th:for="${'chk'+result.productId}">
+							<span class="label_group">
+								<span class="title"><th:block th:text="${result.productName}"/>
+									<span class="sell_price">6500원</span>
+								</span>
+								<span class="content"><img th:src="${result.productImageUrl}" th:alt="${result.productDescription}"/></span>
+							</span>
+                        </label>
+                    </div>
+                </li>
+            </ul>
+        </div>
+        
+		<!-- 각인입력 -->
+		<div class="box input">
+			<!-- 20191118 수정 -->
+	        <th:block th:if="${productGroupInfo.optionValue1 == 'OPTIONY' || productGroupInfo.optionValue1 == 'OPTIONFREE'}">
+			<div class="filed_set">
+				<fieldset>
+					<legend class="hide">각인 문구 입력</legend>
+					<label for="de_name" class="hide">문구는 10자 이내로 입력해 주세요. </label>
+					<span class="iText">
+						<input type="text" id="customerRemark" name="customerRemark" th:disabled="disabled" th:placeholder="${productGroupInfo.optionValue1 == 'OPTIONFREE'?'미 입력시 각인없이 배송됩니다.':'문구는 10자 이내로 입력해 주세요.'}" aria-required="true"/>
+					</span>
+				</fieldset>
+				<div class="prod_img">
+					<img th:src="${productGroup.optionValue3}"/>
+				</div>
+			</div>
+	        </th:block>
+	        <th:block th:if="${productGroupInfo.optionValue2 == 'DELIVERYCHARGE'}">
+		 	<div class="fix_wrap">
+				<img src="/mobileResources/doctornoah/img/deliveryinfo.png" alt="배송비 2,500원은 주문시 결제 됩니다. 30,000원 이상 구매시 무료배송 됩니다." />
+			</div>
+	        </th:block>
+			<!--// 20191118 수정 -->
+		</div>
+		<!--// 각인입력 -->
+
+        <div class="btm_btns_wrap">
+            <div class="btm_btns">
+                <button type="button" class="em check_alert" id="saleButton">배송 신청하기</button>
+            </div>
+        </div>
+    </div>
+</form>
+</div>
+</body>
+</html>

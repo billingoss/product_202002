@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml"	xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<link	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"	media="screen" rel="stylesheet" />
+	<style>
+	</style>
+</head>
+<body>
+	<div class="container">
+		임시 비밀번호 : 
+		<div th:text="${bizInfo.passWord}"></div>
+	</div>
+</body>
+</html>
